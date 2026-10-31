@@ -1,5 +1,5 @@
 """Approval, durable wait declarations, reuse, and workflow handoff."""
-from myworkflow import Artifact, Binding, Catalog, Lock, Pipeline, Step, Use, Workflow, render
+from myworkflow import Artifact, Binding, Catalog, Lock, Pipeline, Step, Trigger, Use, Workflow, render
 
 catalog = Catalog(
     artifacts=(
@@ -24,7 +24,9 @@ catalog = Catalog(
         Workflow("w.approval", "申請・承認", (
             Binding("b.submit", "p.submit", "ユーザーがFEから申請", (("a.application", "HTTPリクエスト本文"),)),
             Binding("b.approve", "p.approve", "承認者がFEで承認", (("a.id", "承認イベントの申請ID"),), after="b.submit", wait="申請IDが一致する承認イベントを受信"),
-            Binding("b.timer", "p.dispatch", "指定日時に到達", (("a.id", "永続化した待機状態"),), after="b.approve", wait="承認済みかつ実行希望日時に到達", next_workflow_id="w.execution"),
+            Binding("b.timer", "p.dispatch", "指定日時に到達", (("a.id", "永続化した待機状態"),), after="b.approve", wait="承認済みかつ実行希望日時に到達", next_workflow_id="w.execution", additional_triggers=(
+                Trigger("t.approved-manual", "承認済み申請をユーザーがFEで実行", (("a.id", "HTTPリクエスト本文"),), after="b.approve", wait="承認済みであること"),
+            )),
         )),
         Workflow("w.manual", "手動実行", (
             Binding("b.manual", "p.dispatch", "ユーザーがFEで実行", (("a.id", "HTTPリクエスト本文"),), next_workflow_id="w.execution"),

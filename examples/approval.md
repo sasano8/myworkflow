@@ -6,7 +6,7 @@
 
 | 連番 | トリガー | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 | 固定ID |
 | --- | --- | --- | --- | --- | --- | --- |
-| 001-00001-00000 | ユーザーがFEから申請 | 受付 | 入力元：申請 ← HTTPリクエスト本文 | 入力：申請 | — | w.approval/b.submit/p.submit/request |
+| 001-00001-00000 | トリガー1：ユーザーがFEから申請 | 受付 | 入力元：申請 ← HTTPリクエスト本文 | 入力：申請 | — | w.approval/b.submit/p.submit/request |
 | 001-00001-00001 | — | 申請保存 | 申請を承認待ちとして保存する。 | — | DB作成：申請／保持：申請ID | w.approval/b.submit/p.submit/s.save |
 | 001-00001-00002 | — | 承認待ち登録 | 申請IDに対応する承認イベントを待つ状態を永続化する。 | — | 参照：申請ID／DB作成：待機状態 | w.approval/b.submit/p.submit/s.wait |
 | 001-00001-00003 | — | 結果返却 | 結果を返す。 | 出力：受付結果 | — | w.approval/b.submit/p.submit/response |
@@ -15,7 +15,7 @@
 
 | 連番 | トリガー | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 | 固定ID |
 | --- | --- | --- | --- | --- | --- | --- |
-| 001-00002-00000 | 承認者がFEで承認 | 受付 | 先行配置：b.submit。待機・再開条件：申請IDが一致する承認イベントを受信。入力元：申請ID ← 承認イベントの申請ID | 入力：申請ID | — | w.approval/b.approve/p.approve/request |
+| 001-00002-00000 | トリガー1：承認者がFEで承認 | 受付 | 先行配置：b.submit。待機・再開条件：申請IDが一致する承認イベントを受信。入力元：申請ID ← 承認イベントの申請ID | 入力：申請ID | — | w.approval/b.approve/p.approve/request |
 | 001-00002-00001 | — | 申請の排他制御 | 排他キー：申請ID。範囲：パイプライン終了まで（異常終了を含む）。競合時：拒否。 | — | 参照：申請ID／保持：排他キー・ロック | w.approval/b.approve/p.approve/s.lock |
 | 001-00002-00002 | — | 承認反映 | 承認権限と現在の状態を確認して承認済みに更新する。 | — | DB読取：申請／DB更新：申請 | w.approval/b.approve/p.approve/s.approve |
 | 001-00002-00003 | — | 実行待ち登録 | 指定日時までの待機状態を永続化する。 | — | DB更新：待機状態 | w.approval/b.approve/p.approve/s.schedule |
@@ -25,7 +25,8 @@
 
 | 連番 | トリガー | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 | 固定ID |
 | --- | --- | --- | --- | --- | --- | --- |
-| 001-00003-00000 | 指定日時に到達 | 受付 | 先行配置：b.approve。待機・再開条件：承認済みかつ実行希望日時に到達。入力元：申請ID ← 永続化した待機状態 | 入力：申請ID | — | w.approval/b.timer/p.dispatch/request |
+| 001-00003-00000 | トリガー1：指定日時に到達 | 受付 | 先行配置：b.approve。待機・再開条件：承認済みかつ実行希望日時に到達。入力元：申請ID ← 永続化した待機状態 | 入力：申請ID | — | w.approval/b.timer/p.dispatch/request |
+| 001-00003-00000 | トリガー2：承認済み申請をユーザーがFEで実行 | 受付 | 先行配置：b.approve。待機・再開条件：承認済みであること。入力元：申請ID ← HTTPリクエスト本文 | 入力：申請ID | — | w.approval/b.timer/p.dispatch/request/t.approved-manual |
 | 001-00003-00001 | — | 実行引継ぎ | 申請IDを次ワークフローに引き継ぐ。 | — | 参照：申請ID | w.approval/b.timer/p.dispatch/s.dispatch |
 | 001-00003-00002 | — | 完了 | 処理を完了する。応答は返さない。次ワークフロー起動：申請実行。 | 出力：なし（応答不要） | — | w.approval/b.timer/p.dispatch/response |
 
@@ -35,7 +36,7 @@
 
 | 連番 | トリガー | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 | 固定ID |
 | --- | --- | --- | --- | --- | --- | --- |
-| 002-00001-00000 | ユーザーがFEで実行 | 受付 | 入力元：申請ID ← HTTPリクエスト本文 | 入力：申請ID | — | w.manual/b.manual/p.dispatch/request |
+| 002-00001-00000 | トリガー1：ユーザーがFEで実行 | 受付 | 入力元：申請ID ← HTTPリクエスト本文 | 入力：申請ID | — | w.manual/b.manual/p.dispatch/request |
 | 002-00001-00001 | — | 実行引継ぎ | 申請IDを次ワークフローに引き継ぐ。 | — | 参照：申請ID | w.manual/b.manual/p.dispatch/s.dispatch |
 | 002-00001-00002 | — | 完了 | 処理を完了する。応答は返さない。次ワークフロー起動：申請実行。 | 出力：なし（応答不要） | — | w.manual/b.manual/p.dispatch/response |
 

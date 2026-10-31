@@ -19,6 +19,27 @@ class ContractTests(unittest.TestCase):
         self.assertIn("指定日時に到達", text)
         self.assertIn("ユーザーがFEで実行", text)
 
+    def test_multiple_triggers_share_steps_but_not_receipt_identity(self):
+        text = render(catalog)
+        section = text.split("### 001-00003 実行開始", 1)[1].split("## 002", 1)[0]
+        self.assertEqual(section.count("| 001-00003-00000 |"), 2)
+        self.assertIn("トリガー1：指定日時に到達", section)
+        self.assertIn("トリガー2：承認済み申請をユーザーがFEで実行", section)
+        self.assertEqual(section.count("| 実行引継ぎ |"), 1)
+        self.assertIn("w.approval/b.timer/p.dispatch/request |", section)
+        self.assertIn("w.approval/b.timer/p.dispatch/request/t.approved-manual", section)
+        self.assertIn("承認済みであること", section)
+
+    def test_additional_trigger_contract_is_validated(self):
+        w = catalog.workflows[0]
+        b = w.bindings[2]
+        t = b.additional_triggers[0]
+        for invalid in (replace(t, input_mapping=()), replace(t, id=b.id), replace(t, after=b.id)):
+            modified = replace(b, additional_triggers=(invalid,))
+            case = replace(catalog, workflows=(replace(w, bindings=(*w.bindings[:2], modified)), *catalog.workflows[1:]))
+            with self.subTest(trigger=invalid), self.assertRaises(ValueError):
+                render(case)
+
     def test_rename_and_reorder_preserve_ids(self):
         renamed = replace(catalog.workflows[0], name="変更後")
         modified = replace(catalog, workflows=(catalog.workflows[1], renamed, catalog.workflows[2]))

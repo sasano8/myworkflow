@@ -42,6 +42,15 @@ class Pipeline:
 
 
 @dataclass(frozen=True)
+class Trigger:
+    id: str
+    name: str
+    input_mapping: tuple[tuple[str, str], ...]
+    after: str | None = None
+    wait: str | None = None
+
+
+@dataclass(frozen=True)
 class Binding:
     id: str  # placement identity, independent of reusable pipeline identity
     pipeline_id: str
@@ -50,6 +59,7 @@ class Binding:
     after: str | None = None  # preceding placement, if any
     wait: str | None = None
     next_workflow_id: str | None = None
+    additional_triggers: tuple[Trigger, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -69,6 +79,7 @@ class Catalog:
         entities = [*self.artifacts, *self.pipelines, *self.workflows]
         entities += [s for p in self.pipelines for s in p.steps]
         entities += [b for w in self.workflows for b in w.bindings]
+        entities += [t for w in self.workflows for b in w.bindings for t in b.additional_triggers]
         ids = [e.id for e in entities]
         if any(not i.strip() for i in ids) or len(ids) != len(set(ids)):
             raise ValueError("IDs must be nonempty and globally unique")
@@ -98,13 +109,15 @@ class Catalog:
             for b in w.bindings:
                 if b.pipeline_id not in pipelines:
                     raise ValueError("Unknown pipeline reference")
-                mapped = [target for target, source in b.input_mapping]
-                if len(mapped) != len(set(mapped)) or set(mapped) != set(pipelines[b.pipeline_id].inputs):
-                    raise ValueError("Input mapping must cover the pipeline contract exactly")
-                if not b.trigger.strip() or any(not source.strip() for _, source in b.input_mapping):
-                    raise ValueError("Trigger and input sources must be described")
-                if b.after is not None and (b.after not in placements or b.after == b.id):
-                    raise ValueError("Unknown or self-referencing preceding placement")
+                triggers = (Trigger(b.id, b.trigger, b.input_mapping, b.after, b.wait), *b.additional_triggers)
+                for t in triggers:
+                    mapped = [target for target, source in t.input_mapping]
+                    if len(mapped) != len(set(mapped)) or set(mapped) != set(pipelines[b.pipeline_id].inputs):
+                        raise ValueError("Input mapping must cover the pipeline contract exactly")
+                    if not t.name.strip() or any(not source.strip() for _, source in t.input_mapping):
+                        raise ValueError("Trigger and input sources must be described")
+                    if t.after is not None and (t.after not in placements or t.after == b.id):
+                        raise ValueError("Unknown or self-referencing preceding placement")
                 if b.next_workflow_id is not None and b.next_workflow_id not in workflows:
                     raise ValueError("Unknown next workflow reference")
 
@@ -133,13 +146,19 @@ def render(catalog: Catalog) -> str:
             lines.extend([f"### {wi:03}-{bi:05} {cell(p.name)}", "",
                           "| 連番 | トリガー | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 | 固定ID |",
                           "| --- | --- | --- | --- | --- | --- | --- |"])
-            summary = ""
-            if b.after:
-                summary += f"先行配置：{b.after}。"
-            if b.wait:
-                summary += f"待機・再開条件：{b.wait}。"
-            summary += "入力元：" + ("、".join(f"{artifacts[t]} ← {s}" for t, s in b.input_mapping) or "なし")
-            rows = [("受付", summary, "入力：" + (names(p.inputs) or "なし"), "—", identity + "/request")]
+            triggers = (Trigger(b.id, b.trigger, b.input_mapping, b.after, b.wait), *b.additional_triggers)
+            for ti, t in enumerate(triggers, 1):
+                summary = ""
+                if t.after:
+                    summary += f"先行配置：{t.after}。"
+                if t.wait:
+                    summary += f"待機・再開条件：{t.wait}。"
+                summary += "入力元：" + ("、".join(f"{artifacts[target]} ← {source}" for target, source in t.input_mapping) or "なし")
+                fixed_id = identity + "/request" + (f"/{t.id}" if ti > 1 else "")
+                values = (f"{wi:03}-{bi:05}-00000", f"トリガー{ti}：{t.name}", "受付", summary,
+                          "入力：" + (names(p.inputs) or "なし"), "—", fixed_id)
+                lines.append("| " + " | ".join(map(cell, values)) + " |")
+            rows = []
             for s in p.steps:
                 if isinstance(s, Lock):
                     rows.append((s.name, f"排他キー：{names(s.keys)}。範囲：{s.scope}。競合時：{s.conflict}。", "—", f"参照：{names(s.keys)}／保持：排他キー・ロック", identity + "/" + s.id))
@@ -150,9 +169,9 @@ def render(catalog: Catalog) -> str:
             if b.next_workflow_id:
                 ending += f"次ワークフロー起動：{workflows[b.next_workflow_id]}。"
             rows.append(("結果返却" if p.reply else "完了", ending, "出力：" + ((names(p.outputs) or "なし") if p.reply else "なし（応答不要）"), "—", identity + "/response"))
-            for si, (name, overview, io, uses, fixed_id) in enumerate(rows):
+            for si, (name, overview, io, uses, fixed_id) in enumerate(rows, 1):
                 number = f"{wi:03}-{bi:05}-{si:05}"
-                values = (number, b.trigger if si == 0 else "—", name, overview, io, uses, fixed_id)
+                values = (number, "—", name, overview, io, uses, fixed_id)
                 lines.append("| " + " | ".join(map(cell, values)) + " |")
             lines.append("")
     return "\n".join(lines).rstrip() + "\n"
