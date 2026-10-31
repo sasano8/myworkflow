@@ -1,5 +1,13 @@
 name: contracts
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      temporal:
+        description: Run optional Temporal integration tests
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -10,9 +18,30 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.14'
-      - name: Test contracts and sample snapshot
-        run: python -m unittest discover -s tests -v
-      - name: Verify generated sample
+      - name: Install library
+        run: python -m pip install --no-deps .
+      - name: Test contracts, runtime, faults and generation
+        run: python -W error::ResourceWarning -m unittest discover -s tests -v
+      - name: Verify generated samples
         run: |
           python -m examples.approval > /tmp/approval.md
           diff -u examples/approval.md /tmp/approval.md
+          python -m examples.purchase --docs > /tmp/purchase.md
+          diff -u examples/purchase/requirements.md /tmp/purchase.md
+      - name: Run purchase flow
+        run: python -m examples.purchase
+  temporal:
+    if: github.event_name == 'workflow_dispatch' && inputs.temporal
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - run: python -m pip install 'temporalio==1.35.0'
+      - run: bash scripts/install-temporal-cli.sh /tmp/myworkflow-temporal
+      - name: Run Temporal integration tests
+        env:
+          TEMPORAL_CLI_PATH: /tmp/myworkflow-temporal/temporal
+        run: python -m unittest discover -s integration -v
