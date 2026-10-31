@@ -1,0 +1,8 @@
+[project]
+name = "myworkflow"
+version = "0.1.0"
+description = "Executable-contract declarations and reproducible business documentation"
+requires-python = ">=3.14"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
