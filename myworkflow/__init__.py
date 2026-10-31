@@ -115,7 +115,7 @@ def render(catalog: Catalog) -> str:
     artifacts = {a.id: a.name for a in catalog.artifacts}
     pipelines = {p.id: p for p in catalog.pipelines}
     workflows = {w.id: w.name for w in catalog.workflows}
-    lines = ["# 業務要件", "", "| 連番 | ワークフロー名 | パイプライン名 | ステップ名 | 処理概要 | 入出力 | 過程で扱うアーティファクト | 固定ID |", "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+    lines = ["# 業務要件", ""]
 
     def names(ids):
         return "、".join(artifacts[i] for i in ids)
@@ -124,10 +124,16 @@ def render(catalog: Catalog) -> str:
         return str(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("|", "&#124;").replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>")
 
     for wi, w in enumerate(catalog.workflows, 1):
+        lines.extend([f"## {wi:03} {cell(w.name)}", ""])
+        if not w.bindings:
+            lines.extend(["起動定義なし（処理内容は未定義）。", ""])
         for bi, b in enumerate(w.bindings, 1):
             p = pipelines[b.pipeline_id]
             identity = f"{w.id}/{b.id}/{p.id}"
-            summary = f"トリガー：{b.trigger}。"
+            lines.extend([f"### {wi:03}-{bi:05} {cell(p.name)}", "",
+                          "| 連番 | トリガー | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 |",
+                          "| --- | --- | --- | --- | --- | --- |"])
+            summary = ""
             if b.after:
                 summary += f"先行配置：{b.after}。"
             if b.wait:
@@ -144,7 +150,11 @@ def render(catalog: Catalog) -> str:
             if b.next_workflow_id:
                 ending += f"次ワークフロー起動：{workflows[b.next_workflow_id]}。"
             rows.append(("結果返却" if p.reply else "完了", ending, "出力：" + ((names(p.outputs) or "なし") if p.reply else "なし（応答不要）"), "—", identity + "/response"))
+            identities = []
             for si, (name, overview, io, uses, fixed_id) in enumerate(rows):
-                values = (f"{wi:03}-{bi:05}-{si:05}", w.name, p.name, name, overview, io, uses, fixed_id)
+                number = f"{wi:03}-{bi:05}-{si:05}"
+                values = (number, b.trigger if si == 0 else "—", name, overview, io, uses)
+                identities.append(f"- {number}: {cell(fixed_id)}")
                 lines.append("| " + " | ".join(map(cell, values)) + " |")
-    return "\n".join(lines) + "\n"
+            lines.extend(["", "<details>", "<summary>固定ID対応表</summary>", "", *identities, "", "</details>", ""])
+    return "\n".join(lines).rstrip() + "\n"
