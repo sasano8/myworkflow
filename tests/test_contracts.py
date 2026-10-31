@@ -72,6 +72,38 @@ class ContractTests(unittest.TestCase):
         self.assertIn("申請&#124;明細<br>&lt;script&gt;", text)
         self.assertNotIn("<script>", text)
 
+    def test_roles_show_operator_and_system_separately(self):
+        text = render(catalog)
+        self.assertIn("| role.requester | 購買依頼部門の担当者 | 申請者 |", text)
+        self.assertIn("| 承認者 | 受付 |", text)
+        self.assertIn("| システム | 承認反映 |", text)
+        self.assertIn("| 発注担当者 | 受付 |", text)
+
+    def test_abstract_step_role_can_be_bound_at_placement(self):
+        p = catalog.pipelines[0]
+        step = replace(p.steps[0], actor="processor")
+        w = catalog.workflows[0]
+        b = replace(w.bindings[0], role_mapping=(("system", "role.system"), ("processor", "role.buyer")))
+        modified = replace(catalog, pipelines=(replace(p, steps=(step, *p.steps[1:])), *catalog.pipelines[1:]),
+                           workflows=(replace(w, bindings=(b, *w.bindings[1:])), *catalog.workflows[1:]))
+        self.assertIn("| 発注担当者 | 申請保存 |", render(modified))
+        self.assertEqual(p.steps[0].actor, "system")
+
+    def test_invalid_roles_are_rejected(self):
+        w = catalog.workflows[0]
+        b = w.bindings[0]
+        for invalid in (replace(b, actor_role_id="missing"), replace(b, role_mapping=()),
+                        replace(b, role_mapping=(("system", "missing"),)),
+                        replace(b, role_mapping=(("system", "role.system"), ("system", "role.buyer")))):
+            case = replace(catalog, workflows=(replace(w, bindings=(invalid, *w.bindings[1:])), *catalog.workflows[1:]))
+            with self.subTest(binding=invalid), self.assertRaises(ValueError):
+                render(case)
+        b = w.bindings[2]
+        t = replace(b.additional_triggers[0], actor_role_id="missing")
+        case = replace(catalog, workflows=(replace(w, bindings=(*w.bindings[:2], replace(b, additional_triggers=(t,)))), *catalog.workflows[1:]))
+        with self.assertRaises(ValueError):
+            render(case)
+
     def test_purchase_workflows_define_attachment_and_confirmation(self):
         text = render(catalog)
         self.assertIn("## 001 購買申請の受付・承認", text)

@@ -1,7 +1,13 @@
 """Approval, durable wait declarations, reuse, and workflow handoff."""
-from myworkflow import Artifact, Binding, Catalog, Lock, Pipeline, Step, Trigger, Use, Workflow, render
+from myworkflow import Artifact, Binding, Catalog, Lock, Pipeline, Role, Step, Trigger, Use, Workflow, render
 
 catalog = Catalog(
+    roles=(
+        Role("role.requester", "購買依頼部門の担当者", "申請者"),
+        Role("role.approver", "購買依頼部門の部門長", "承認者"),
+        Role("role.buyer", "購買部の発注担当者", "発注担当者"),
+        Role("role.system", "購買管理システム", "システム"),
+    ),
     artifacts=(
         Artifact("a.application", "購買申請"), Artifact("a.id", "申請ID"),
         Artifact("a.result", "受付結果"), Artifact("a.wait", "待機状態"),
@@ -34,17 +40,17 @@ catalog = Catalog(
     ),
     workflows=(
         Workflow("w.approval", "購買申請の受付・承認", (
-            Binding("b.submit", "p.submit", "ユーザーがFEから申請", (("a.application", "HTTPリクエスト本文"),)),
-            Binding("b.approve", "p.approve", "承認者がFEで承認", (("a.id", "承認イベントの申請ID"),), after="b.submit", wait="申請IDが一致する承認イベントを受信"),
+            Binding("b.submit", "p.submit", "ユーザーがFEから申請", (("a.application", "HTTPリクエスト本文"),), actor_role_id="role.requester", role_mapping=(("system", "role.system"),)),
+            Binding("b.approve", "p.approve", "承認者がFEで承認", (("a.id", "承認イベントの申請ID"),), after="b.submit", wait="申請IDが一致する承認イベントを受信", actor_role_id="role.approver", role_mapping=(("system", "role.system"),)),
             Binding("b.timer", "p.dispatch", "指定日時に到達", (("a.id", "永続化した待機状態"),), after="b.approve", wait="承認済みかつ実行希望日時に到達", next_workflow_id="w.execution", additional_triggers=(
-                Trigger("t.approved-manual", "承認済み申請をユーザーがFEで実行", (("a.id", "HTTPリクエスト本文"),), after="b.approve", wait="承認済みであること"),
-            )),
+                Trigger("t.approved-manual", "承認済み申請をユーザーがFEで実行", (("a.id", "HTTPリクエスト本文"),), after="b.approve", wait="承認済みであること", actor_role_id="role.buyer"),
+            ), actor_role_id="role.system", role_mapping=(("system", "role.system"),)),
         )),
         Workflow("w.manual", "購買申請への見積書添付", (
-            Binding("b.manual", "p.upload", "申請者がFEで見積書をアップロード", (("a.id", "HTTPリクエストの申請ID"), ("a.quote", "アップロードしたファイル"))),
+            Binding("b.manual", "p.upload", "申請者がFEで見積書をアップロード", (("a.id", "HTTPリクエストの申請ID"), ("a.quote", "アップロードしたファイル")), actor_role_id="role.requester", role_mapping=(("system", "role.system"),)),
         )),
         Workflow("w.execution", "承認済み購買申請の発注確定", (
-            Binding("b.confirm", "p.confirm", "購買申請の承認ワークフローから起動", (("a.id", "起動元から引き継いだ購買申請ID"),)),
+            Binding("b.confirm", "p.confirm", "購買申請の承認ワークフローから起動", (("a.id", "起動元から引き継いだ購買申請ID"),), actor_role_id="role.system", role_mapping=(("system", "role.system"),)),
         )),
     ),
 )
