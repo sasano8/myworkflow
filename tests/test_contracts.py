@@ -15,17 +15,20 @@ class ContractTests(unittest.TestCase):
     def test_reuse_has_distinct_placement_identity_and_shared_definition(self):
         text = render(catalog)
         self.assertIn("w.approval/b.timer/p.dispatch/s.dispatch", text)
-        self.assertIn("w.manual/b.manual/p.dispatch/s.dispatch", text)
+        w = catalog.workflows[1]
+        reused = replace(w.bindings[0], pipeline_id="p.dispatch", input_mapping=(("a.id", "HTTPリクエスト本文"),))
+        modified = replace(catalog, workflows=(catalog.workflows[0], replace(w, bindings=(reused,)), catalog.workflows[2]))
+        self.assertIn("w.manual/b.manual/p.dispatch/s.dispatch", render(modified))
         self.assertIn("指定日時に到達", text)
-        self.assertIn("ユーザーがFEで実行", text)
+        self.assertIn("申請者がFEで見積書をアップロード", text)
 
     def test_multiple_triggers_share_steps_but_not_receipt_identity(self):
         text = render(catalog)
-        section = text.split("### 001-00003 実行開始", 1)[1].split("## 002", 1)[0]
+        section = text.split("### 001-00003 発注確定開始", 1)[1].split("## 002", 1)[0]
         self.assertEqual(section.count("| 001-00003-00000 |"), 2)
         self.assertIn("トリガー1：指定日時に到達", section)
         self.assertIn("トリガー2：承認済み申請をユーザーがFEで実行", section)
-        self.assertEqual(section.count("| 実行引継ぎ |"), 1)
+        self.assertEqual(section.count("| 発注確定への引継ぎ |"), 1)
         self.assertIn("w.approval/b.timer/p.dispatch/request |", section)
         self.assertIn("w.approval/b.timer/p.dispatch/request/t.approved-manual", section)
         self.assertIn("承認済みであること", section)
@@ -69,9 +72,20 @@ class ContractTests(unittest.TestCase):
         self.assertIn("申請&#124;明細<br>&lt;script&gt;", text)
         self.assertNotIn("<script>", text)
 
+    def test_purchase_workflows_define_attachment_and_confirmation(self):
+        text = render(catalog)
+        self.assertIn("## 001 購買申請の受付・承認", text)
+        self.assertIn("## 002 購買申請への見積書添付", text)
+        self.assertIn("## 003 承認済み購買申請の発注確定", text)
+        self.assertIn("入力：申請ID、見積書ファイル", text)
+        self.assertIn("出力：見積書登録情報", text)
+        self.assertIn("DB作成：発注情報／DB更新：購買申請", text)
+        self.assertIn("同一トランザクション", text)
+        self.assertNotIn("起動定義なし", text)
+
     def test_wait_lock_and_no_reply_are_visible(self):
         text = render(catalog)
-        for expected in ("待機・再開条件", "次ワークフロー起動：申請実行", "異常終了を含む", "参照：申請ID／保持：排他キー・ロック", "出力：なし（応答不要）"):
+        for expected in ("待機・再開条件", "次ワークフロー起動：承認済み購買申請の発注確定", "異常終了を含む", "参照：申請ID／保持：排他キー・ロック", "出力：なし（応答不要）"):
             self.assertIn(expected, text)
 
 
