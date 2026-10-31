@@ -59,3 +59,7 @@ diff -u examples/approval.md /tmp/approval.md
 `Binding.actor_role_id` と `Trigger.actor_role_id` は受付の操作主体です。時刻・イベントによる自動起動にはシステムのロールを指定します。`Step.actor` と `Lock.actor` は抽象的な役割名（既定値 `system`）で、`Binding.role_mapping` が具体的なロールIDへ割り当てます。返却・完了の実行者には `system` の割当を使います。人が承認操作をしても、承認状態をDB更新するステップはシステムとして表現できます。
 
 未定義のロール、割当不足、重複割当は検証エラーになります。これは文書化のための役割契約です。認可の実施や、承認者と申請者が別人であることなどの実行時検証はまだ実装していません。
+
+## Temporalの任意実行
+
+[Temporal接続実験](docs/temporal.md) に起動・停止方法と検証範囲をまとめています。通常のテスト・CIから分離し、必要なときだけ実行できます。

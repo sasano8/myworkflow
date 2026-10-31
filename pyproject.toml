@@ -4,5 +4,8 @@ version = "0.1.0"
 description = "Executable-contract declarations and reproducible business documentation"
 requires-python = ">=3.14"
 
+[project.optional-dependencies]
+temporal = ["temporalio==1.35.0"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
