@@ -15,7 +15,7 @@ from examples.purchase.contract import SPEC
 from examples.purchase.handlers import registry
 from examples.purchase.services import Services
 from examples.purchase.temporal_workflow import ApprovePurchase, ConfirmPurchase
-from myworkflow.executable import Engine, Program
+from myworkflow.executable import Engine, Principal, Program
 from myworkflow.temporal import PipelineActivity
 
 
@@ -50,6 +50,10 @@ class PurchaseTemporalTests(unittest.IsolatedAsyncioTestCase):
         async with self.worker():
             handle = await self.start()
             self.assertEqual(self.services.application('x')['status'], 'waiting-approval')
+            history = await handle.fetch_history()
+            self.assertFalse(any(e.HasField('start_child_workflow_execution_initiated_event_attributes') for e in history.events))
+            with self.services.connect() as db:
+                self.assertEqual(db.execute('SELECT count(*) FROM orders').fetchone()[0], 0)
         # The worker disappears while waiting. A new worker replays persisted history.
         async with self.worker():
             await handle.signal(ApprovePurchase.decide, {'approved': True, 'actor': 'bob', 'roles': ['role.approver']})
@@ -63,7 +67,7 @@ class PurchaseTemporalTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(any(e.HasField('timer_started_event_attributes') for e in history.events))
         child = next(e.start_child_workflow_execution_initiated_event_attributes for e in history.events
                      if e.HasField('start_child_workflow_execution_initiated_event_attributes'))
-        self.assertEqual(child.workflow_type.name, SPEC['workflows'][0]['bindings'][2]['next_workflow'])
+        self.assertEqual(child.workflow_type.name, self.activity.engine.program.binding('b.dispatch').next_workflow_id)
 
     async def test_rejection_never_starts_confirmation(self):
         async with self.worker():
@@ -85,3 +89,17 @@ class PurchaseTemporalTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(application_error.type, 'PermissionDenied')
             self.assertIn('secondary_errors', application_error.details[0])
         self.assertEqual(self.services.application('x')['status'], 'waiting-approval')
+
+    async def test_missing_quotation_fails_without_order(self):
+        engine = self.activity.engine
+        engine.invoke('b.submit', 't.submit', {'id': 'x', 'vendor': 'V', 'amount': 100},
+                      Principal('alice', frozenset({'role.requester'})), run_id='submit')
+        engine.invoke('b.approve', 't.approve', {'id': 'x', 'decision': True},
+                      Principal('bob', frozenset({'role.approver'})), run_id='approve')
+        async with self.worker():
+            with self.assertRaises(WorkflowFailureError):
+                await asyncio.wait_for(self.environment.client.execute_workflow(
+                    ConfirmPurchase.run, {'application_id': 'x'}, id=str(uuid4()), task_queue=self.queue), 20)
+        self.assertEqual(self.services.application('x')['status'], 'approved')
+        with self.services.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM orders').fetchone()[0], 0)

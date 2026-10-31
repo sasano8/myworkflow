@@ -32,7 +32,7 @@ Python 3.14.8で通常37テスト、Temporal結合5テストが成功。通常�
 | インストール | Python 3.14の仮想環境へライブラリをeditable install | 成功 |
 | CI | 通常チェックと任意のTemporal手動ジョブを定義 | リモートの実行結果は未確認 |
 
-テストの詳細は `tests/test_executable.py`、`tests/test_contracts.py`、`integration/test_purchase.py`、`integration/test_temporal.py` にある。障害注入は実際の保存結果・状態・件数を検査し、出力一致だけを実行の証拠にはしていない。
+テストの詳細は `tests/test_executable.py`、`tests/test_contracts.py`、`integration/test_purchase.py` にある。障害注入は実際の保存結果・状態・件数を検査し、出力一致だけを実行の証拠にはしていない。
 
 ## 初期要件との一次照合
 
@@ -74,3 +74,5 @@ PoCの中核である表層の対応は、今回の対象では継続可能と�
 ## 受入テストの追加
 
 上記は初回PoCの記録。追加で、購買サンプルのGherkinから受入シナリオ文書とpytest-bddの実行を結び付けた。[追加評価](acceptance-evaluation.md)に現在の件数と保証範囲を記録している。
+
+初期の宣言専用サンプルと模擬Temporal実験はその後削除した。宣言APIは汎用のテスト内データで検証し、購買の定義・実行は `examples/purchase/contract.py` に一本化している。上記の件数は評価当時の記録である。

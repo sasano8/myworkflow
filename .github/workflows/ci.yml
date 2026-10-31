@@ -54,8 +54,6 @@ jobs:
         run: python -W error::ResourceWarning -m pytest -q --acceptance-report artifacts/acceptance.json
       - name: Verify generated samples
         run: |
-          python -m examples.approval > /tmp/approval.md
-          diff -u examples/approval.md /tmp/approval.md
           python -m examples.purchase --docs > /tmp/purchase.md
           diff -u examples/purchase/requirements.md /tmp/purchase.md
           python -m examples.purchase.acceptance docs --check

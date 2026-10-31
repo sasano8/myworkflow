@@ -1,125 +1,129 @@
+"""Declaration API tests use synthetic data; purchase requirements live in contract.py."""
 from dataclasses import replace
-from pathlib import Path
 import unittest
 
-from examples.approval import catalog
-from myworkflow import Artifact, Use, render
+from myworkflow import Artifact, Binding, Catalog, Lock, Pipeline, Role, Step, Trigger, Use, Workflow, render
+
+
+def small_catalog():
+    return Catalog(
+        artifacts=(Artifact('a.input', '入力値'), Artifact('a.output', '処理結果')),
+        pipelines=(Pipeline('p.convert', '変換', ('a.input',), ('a.output',), (
+            Lock('s.lock', '排他制御', ('a.input',)),
+            Step('s.convert', '値の変換', '入力値を整形する。', (Use('a.input', '参照'), Use('a.output', '保持'))),
+        )),),
+        workflows=(
+            Workflow('w.first', '受付', (Binding('b.first', 'p.convert', '入力イベント', (('a.input', '本文'),),
+                next_workflow_id='w.second', actor_role_id='role.operator', role_mapping=(('system', 'role.system'),),
+                additional_triggers=(Trigger('t.timer', '指定日時', (('a.input', '待機情報'),),
+                                             wait='予定時刻に到達', actor_role_id='role.system'),)),)),
+            Workflow('w.second', '後続', (Binding('b.second', 'p.convert', '内部イベント', (('a.input', 'イベント'),),
+                actor_role_id='role.system', role_mapping=(('system', 'role.system'),)),)),
+        ),
+        roles=(Role('role.operator', '入力担当部署の担当者', '操作者'), Role('role.system', '処理システム', 'システム')),
+    )
 
 
 class ContractTests(unittest.TestCase):
-    def test_sample_matches_exactly(self):
-        expected = Path(__file__).resolve().parents[1] / "examples" / "approval.md"
-        self.assertEqual(render(catalog), expected.read_text(encoding="utf-8"))
-        self.assertEqual(render(catalog), render(catalog))
+    def setUp(self):
+        self.catalog = small_catalog()
+
+    def first_binding(self, **changes):
+        w = self.catalog.workflows[0]
+        return replace(self.catalog, workflows=(replace(w, bindings=(replace(w.bindings[0], **changes),)), self.catalog.workflows[1]))
+
+    def test_declarations_render_deterministically(self):
+        text = render(self.catalog)
+        self.assertEqual(text, render(self.catalog))
+        self.assertIn('| 001-00001-00002 | — | システム | 値の変換 | 入力値を整形する。 | — | 参照：入力値／保持：処理結果 | w.first/b.first/p.convert/s.convert |', text)
+        self.assertIn('入力：入力値', text)
+        self.assertIn('出力：処理結果', text)
 
     def test_reuse_has_distinct_placement_identity_and_shared_definition(self):
-        text = render(catalog)
-        self.assertIn("w.approval/b.timer/p.dispatch/s.dispatch", text)
-        w = catalog.workflows[1]
-        reused = replace(w.bindings[0], pipeline_id="p.dispatch", input_mapping=(("a.id", "HTTPリクエスト本文"),))
-        modified = replace(catalog, workflows=(catalog.workflows[0], replace(w, bindings=(reused,)), catalog.workflows[2]))
-        self.assertIn("w.manual/b.manual/p.dispatch/s.dispatch", render(modified))
-        self.assertIn("指定日時に到達", text)
-        self.assertIn("申請者がFEで見積書をアップロード", text)
+        text = render(self.catalog)
+        self.assertIn('w.first/b.first/p.convert/s.convert', text)
+        self.assertIn('w.second/b.second/p.convert/s.convert', text)
 
     def test_multiple_triggers_share_steps_but_not_receipt_identity(self):
-        text = render(catalog)
-        section = text.split("### 001-00003 発注確定開始", 1)[1].split("## 002", 1)[0]
-        self.assertEqual(section.count("| 001-00003-00000 |"), 2)
-        self.assertIn("トリガー1：指定日時に到達", section)
-        self.assertIn("トリガー2：承認済み申請をユーザーがFEで実行", section)
-        self.assertEqual(section.count("| 発注確定への引継ぎ |"), 1)
-        self.assertIn("w.approval/b.timer/p.dispatch/request |", section)
-        self.assertIn("w.approval/b.timer/p.dispatch/request/t.approved-manual", section)
-        self.assertIn("承認済みであること", section)
+        section = render(self.catalog).split('## 002', 1)[0]
+        self.assertEqual(section.count('| 001-00001-00000 |'), 2)
+        self.assertIn('トリガー1：入力イベント', section)
+        self.assertIn('トリガー2：指定日時', section)
+        self.assertEqual(section.count('| 値の変換 |'), 1)
+        self.assertIn('w.first/b.first/p.convert/request |', section)
+        self.assertIn('w.first/b.first/p.convert/request/t.timer', section)
 
     def test_additional_trigger_contract_is_validated(self):
-        w = catalog.workflows[0]
-        b = w.bindings[2]
+        b = self.catalog.workflows[0].bindings[0]
         t = b.additional_triggers[0]
         for invalid in (replace(t, input_mapping=()), replace(t, id=b.id), replace(t, after=b.id)):
-            modified = replace(b, additional_triggers=(invalid,))
-            case = replace(catalog, workflows=(replace(w, bindings=(*w.bindings[:2], modified)), *catalog.workflows[1:]))
             with self.subTest(trigger=invalid), self.assertRaises(ValueError):
-                render(case)
+                render(self.first_binding(additional_triggers=(invalid,)))
 
     def test_rename_and_reorder_preserve_ids(self):
-        renamed = replace(catalog.workflows[0], name="変更後")
-        modified = replace(catalog, workflows=(catalog.workflows[1], renamed, catalog.workflows[2]))
-        text = render(modified)
-        self.assertIn("w.approval/b.timer/p.dispatch/s.dispatch", text)
-        self.assertIn("002-00003-00001", text)
-        self.assertIn("変更後", text)
+        first, second = self.catalog.workflows
+        text = render(replace(self.catalog, workflows=(second, replace(first, name='変更後'))))
+        self.assertIn('w.first/b.first/p.convert/s.convert', text)
+        self.assertIn('002-00001-00002', text)
+        self.assertIn('変更後', text)
 
     def test_invalid_references_and_contracts(self):
-        p = catalog.pipelines[0]
-        b = catalog.workflows[0].bindings[0]
-        invalid = [
-            replace(catalog, artifacts=catalog.artifacts + (catalog.artifacts[0],)),
-            replace(catalog, pipelines=(replace(p, inputs=("missing",)),)),
-            replace(catalog, pipelines=(replace(p, reply=False),)),
-            replace(catalog, pipelines=(replace(p, steps=(replace(p.steps[0], uses=(Use("a.id", "invalid"),)),)),)),
+        p = self.catalog.pipelines[0]
+        cases = [
+            replace(self.catalog, artifacts=self.catalog.artifacts + (self.catalog.artifacts[0],)),
+            replace(self.catalog, pipelines=(replace(p, inputs=('missing',)),)),
+            replace(self.catalog, pipelines=(replace(p, reply=False),)),
+            replace(self.catalog, pipelines=(replace(p, steps=(replace(p.steps[1], uses=(Use('a.input', 'invalid'),)),)),)),
         ]
-        for binding in [replace(b, input_mapping=()), replace(b, pipeline_id="missing"), replace(b, after=b.id), replace(b, next_workflow_id="missing")]:
-            invalid.append(replace(catalog, workflows=(replace(catalog.workflows[0], bindings=(binding,)),)))
-        for case in invalid:
-            with self.subTest(case=case), self.assertRaises(ValueError):
-                render(case)
+        for changes in ({'input_mapping': ()}, {'pipeline_id': 'missing'}, {'after': 'b.first'}, {'next_workflow_id': 'missing'}):
+            cases.append(self.first_binding(**changes))
+        for case in cases:
+            with self.subTest(case=case), self.assertRaises(ValueError): render(case)
 
     def test_markdown_escaping(self):
-        a = replace(catalog.artifacts[0], name="申請|明細\n<script>")
-        text = render(replace(catalog, artifacts=(a,) + catalog.artifacts[1:]))
-        self.assertIn("申請&#124;明細<br>&lt;script&gt;", text)
-        self.assertNotIn("<script>", text)
+        artifact = replace(self.catalog.artifacts[0], name='入力|明細\n<script>')
+        text = render(replace(self.catalog, artifacts=(artifact, self.catalog.artifacts[1])))
+        self.assertIn('入力&#124;明細<br>&lt;script&gt;', text)
+        self.assertNotIn('<script>', text)
 
     def test_roles_show_operator_and_system_separately(self):
-        text = render(catalog)
-        self.assertIn("| role.requester | 購買依頼部門の担当者 | 申請者 |", text)
-        self.assertIn("| 承認者 | 受付 |", text)
-        self.assertIn("| システム | 承認反映 |", text)
-        self.assertIn("| 発注担当者 | 受付 |", text)
+        text = render(self.catalog)
+        self.assertIn('| role.operator | 入力担当部署の担当者 | 操作者 |', text)
+        self.assertIn('| 操作者 | 受付 |', text)
+        self.assertIn('| システム | 値の変換 |', text)
 
     def test_abstract_step_role_can_be_bound_at_placement(self):
-        p = catalog.pipelines[0]
-        step = replace(p.steps[0], actor="processor")
-        w = catalog.workflows[0]
-        b = replace(w.bindings[0], role_mapping=(("system", "role.system"), ("processor", "role.buyer")))
-        modified = replace(catalog, pipelines=(replace(p, steps=(step, *p.steps[1:])), *catalog.pipelines[1:]),
-                           workflows=(replace(w, bindings=(b, *w.bindings[1:])), *catalog.workflows[1:]))
-        self.assertIn("| 発注担当者 | 申請保存 |", render(modified))
-        self.assertEqual(p.steps[0].actor, "system")
+        p = self.catalog.pipelines[0]
+        step = replace(p.steps[1], actor='processor')
+        catalog = self.first_binding(role_mapping=(('system', 'role.system'), ('processor', 'role.operator')))
+        w = catalog.workflows[1]
+        second = replace(w.bindings[0], role_mapping=(('system', 'role.system'), ('processor', 'role.system')))
+        catalog = replace(catalog, pipelines=(replace(p, steps=(p.steps[0], step)),), workflows=(catalog.workflows[0], replace(w, bindings=(second,))))
+        self.assertIn('| 操作者 | 値の変換 |', render(catalog))
+        self.assertEqual(p.steps[1].actor, 'system')
 
     def test_invalid_roles_are_rejected(self):
-        w = catalog.workflows[0]
-        b = w.bindings[0]
-        for invalid in (replace(b, actor_role_id="missing"), replace(b, role_mapping=()),
-                        replace(b, role_mapping=(("system", "missing"),)),
-                        replace(b, role_mapping=(("system", "role.system"), ("system", "role.buyer")))):
-            case = replace(catalog, workflows=(replace(w, bindings=(invalid, *w.bindings[1:])), *catalog.workflows[1:]))
-            with self.subTest(binding=invalid), self.assertRaises(ValueError):
-                render(case)
-        b = w.bindings[2]
-        t = replace(b.additional_triggers[0], actor_role_id="missing")
-        case = replace(catalog, workflows=(replace(w, bindings=(*w.bindings[:2], replace(b, additional_triggers=(t,)))), *catalog.workflows[1:]))
-        with self.assertRaises(ValueError):
-            render(case)
+        for changes in ({'actor_role_id': 'missing'}, {'role_mapping': ()},
+                        {'role_mapping': (('system', 'missing'),)},
+                        {'role_mapping': (('system', 'role.system'), ('system', 'role.operator'))}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError): render(self.first_binding(**changes))
+        t = replace(self.catalog.workflows[0].bindings[0].additional_triggers[0], actor_role_id='missing')
+        with self.assertRaises(ValueError): render(self.first_binding(additional_triggers=(t,)))
 
-    def test_purchase_workflows_define_attachment_and_confirmation(self):
-        text = render(catalog)
-        self.assertIn("## 001 購買申請の受付・承認", text)
-        self.assertIn("## 002 購買申請への見積書添付", text)
-        self.assertIn("## 003 承認済み購買申請の発注確定", text)
-        self.assertIn("入力：申請ID、見積書ファイル", text)
-        self.assertIn("出力：見積書登録情報", text)
-        self.assertIn("DB作成：発注情報／DB更新：購買申請", text)
-        self.assertIn("同一トランザクション", text)
-        self.assertNotIn("起動定義なし", text)
+    def test_artifact_operations_and_boundaries_are_visible(self):
+        text = render(self.catalog)
+        self.assertIn('参照：入力値／保持：処理結果', text)
+        self.assertIn('入力：入力値', text)
+        self.assertIn('出力：処理結果', text)
+        self.assertNotIn('起動定義なし', text)
 
     def test_wait_lock_and_no_reply_are_visible(self):
-        text = render(catalog)
-        for expected in ("待機・再開条件", "次ワークフロー起動：承認済み購買申請の発注確定", "異常終了を含む", "参照：申請ID／保持：排他キー・ロック", "出力：なし（応答不要）"):
+        p = replace(self.catalog.pipelines[0], reply=False, outputs=())
+        text = render(replace(self.catalog, pipelines=(p,)))
+        for expected in ('待機・再開条件：予定時刻に到達', '次ワークフロー起動：後続', '異常終了を含む',
+                         '参照：入力値／保持：排他キー・ロック', '出力：なし（応答不要）'):
             self.assertIn(expected, text)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
