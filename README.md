@@ -87,6 +87,16 @@ python -m myworkflow.acceptance --config examples.tickets.acceptance.catalog doc
 python -m pytest tests/tickets -q
 ```
 
+## 元要件と生成コードの往復品質
+
+[継続品質検査](docs/requirements-quality.md)で、原文 → レビュー済み出力形式 → インターフェース生成 → コードから再出力 → 比較を自動化しています。[レポート例](examples/purchase/quality/quality-example.md)では、構造の一致率と、原文の構造化・概要文のみ・未表現を区別します。
+
+```sh
+python -m myworkflow.quality --case examples/purchase/quality/case.json --output artifacts/requirement-roundtrip
+```
+
+現在の変換は固定サンプルで、AIによる意味変換は未実装です。期待値をテスト中に作り直さず、欠損・余計な項目・型や順序の違いを検出します。
+
 ## 判断と限界
 
 [PoC評価](docs/poc-evaluation.md)、[実行設計・保証範囲](docs/execution-design.md)、[ゴールとタスク](docs/poc-plan.md)を参照してください。表層の契約対応を検証するPoCであり、本番用のワークフロー製品としての完成を意味しません。

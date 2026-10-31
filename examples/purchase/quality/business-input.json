@@ -1,0 +1,575 @@
+{
+  "schema_version": 1,
+  "roles": {
+    "role.requester": {
+      "name": "購買依頼部門の担当者",
+      "display_name": "申請者"
+    },
+    "role.approver": {
+      "name": "購買依頼部門の部門長",
+      "display_name": "承認者"
+    },
+    "role.buyer": {
+      "name": "購買部の発注担当者",
+      "display_name": "発注担当者"
+    },
+    "role.system": {
+      "name": "購買管理システム",
+      "display_name": "システム"
+    }
+  },
+  "artifacts": {
+    "a.id": {
+      "name": "購買申請ID",
+      "key": "application_id",
+      "type": "str"
+    },
+    "a.vendor": {
+      "name": "取引先",
+      "key": "vendor",
+      "type": "str"
+    },
+    "a.amount": {
+      "name": "申請金額",
+      "key": "amount",
+      "type": "int"
+    },
+    "a.status": {
+      "name": "申請状態",
+      "key": "status",
+      "type": "str"
+    },
+    "a.quote-a": {
+      "name": "見積書A",
+      "key": "quote_a",
+      "type": "str"
+    },
+    "a.quote-b": {
+      "name": "見積書B",
+      "key": "quote_b",
+      "type": "str"
+    },
+    "a.receipt": {
+      "name": "添付登録結果",
+      "key": "receipt",
+      "type": "str"
+    },
+    "a.decision": {
+      "name": "承認判断",
+      "key": "decision",
+      "type": "bool"
+    },
+    "a.eligible": {
+      "name": "発注可能",
+      "key": "eligible",
+      "type": "bool"
+    },
+    "a.order": {
+      "name": "発注番号",
+      "key": "order_id",
+      "type": "str"
+    }
+  },
+  "pipelines": {
+    "p.submit": {
+      "name": "購買申請受付",
+      "inputs": [
+        "a.id",
+        "a.vendor",
+        "a.amount"
+      ],
+      "outputs": [
+        "a.id",
+        "a.status"
+      ],
+      "reply": true,
+      "request_interface": "PSubmitRequest",
+      "response_interface": "PSubmitResponse",
+      "steps": [
+        "s.submit-lock",
+        "s.submit"
+      ]
+    },
+    "p.upload": {
+      "name": "見積書2件登録",
+      "inputs": [
+        "a.id",
+        "a.quote-a",
+        "a.quote-b"
+      ],
+      "outputs": [
+        "a.receipt"
+      ],
+      "reply": true,
+      "request_interface": "PUploadRequest",
+      "response_interface": "PUploadResponse",
+      "steps": [
+        "s.upload-lock",
+        "s.check-upload",
+        "s.put-a",
+        "s.put-b"
+      ]
+    },
+    "p.approve": {
+      "name": "承認判断の反映",
+      "inputs": [
+        "a.id",
+        "a.decision"
+      ],
+      "outputs": [
+        "a.status"
+      ],
+      "reply": true,
+      "request_interface": "PApproveRequest",
+      "response_interface": "PApproveResponse",
+      "steps": [
+        "s.approve-lock",
+        "s.check-approval",
+        "s.approve",
+        "s.reject"
+      ]
+    },
+    "p.dispatch": {
+      "name": "発注確定の起動",
+      "inputs": [
+        "a.id"
+      ],
+      "outputs": [
+        "a.id"
+      ],
+      "reply": true,
+      "request_interface": "PDispatchRequest",
+      "response_interface": "PDispatchResponse",
+      "steps": [
+        "s.dispatch"
+      ]
+    },
+    "p.confirm": {
+      "name": "発注確定",
+      "inputs": [
+        "a.id"
+      ],
+      "outputs": [],
+      "reply": false,
+      "request_interface": "PConfirmRequest",
+      "response_interface": "PConfirmResponse",
+      "steps": [
+        "s.order-lock",
+        "s.eligibility",
+        "s.confirm",
+        "s.stop"
+      ]
+    }
+  },
+  "steps": {
+    "s.submit-lock": {
+      "name": "申請単位の排他",
+      "kind": "lock",
+      "reads": [
+        "a.id"
+      ],
+      "namespace": "business",
+      "timeout": 0,
+      "conflict": "拒否",
+      "scope": "パイプライン終了まで（異常終了を含む）"
+    },
+    "s.submit": {
+      "name": "申請保存",
+      "kind": "action",
+      "summary": "正の金額と取引先を確認し、申請者に紐づく承認待ちの申請を保存する。",
+      "reads": [
+        "a.id",
+        "a.vendor",
+        "a.amount"
+      ],
+      "writes": [
+        "a.status"
+      ],
+      "uses": [
+        [
+          "a.id",
+          "DB作成"
+        ],
+        [
+          "a.status",
+          "保持"
+        ]
+      ],
+      "actor": "system",
+      "when": null,
+      "attempts": 1,
+      "compensate": null
+    },
+    "s.upload-lock": {
+      "name": "申請単位の排他",
+      "kind": "lock",
+      "reads": [
+        "a.id"
+      ],
+      "namespace": "business",
+      "timeout": 0,
+      "conflict": "拒否",
+      "scope": "パイプライン終了まで（異常終了を含む）"
+    },
+    "s.check-upload": {
+      "name": "添付可否確認",
+      "kind": "action",
+      "summary": "申請者本人であり、申請が承認待ちであることを確認する。",
+      "reads": [
+        "a.id"
+      ],
+      "writes": [],
+      "uses": [],
+      "actor": "system",
+      "when": null,
+      "attempts": 1,
+      "compensate": null
+    },
+    "s.put-a": {
+      "name": "見積書A保存",
+      "kind": "action",
+      "summary": "今回の実行専用キーで見積書Aを保存する。",
+      "reads": [
+        "a.id",
+        "a.quote-a"
+      ],
+      "writes": [],
+      "uses": [
+        [
+          "a.quote-a",
+          "参照"
+        ]
+      ],
+      "actor": "system",
+      "when": null,
+      "attempts": 2,
+      "compensate": "c.delete-a"
+    },
+    "s.put-b": {
+      "name": "見積書B保存",
+      "kind": "action",
+      "summary": "見積書Bを保存し、両方の添付情報を申請に紐づける。",
+      "reads": [
+        "a.id",
+        "a.quote-b"
+      ],
+      "writes": [
+        "a.receipt"
+      ],
+      "uses": [
+        [
+          "a.quote-b",
+          "参照"
+        ],
+        [
+          "a.receipt",
+          "DB作成"
+        ]
+      ],
+      "actor": "system",
+      "when": null,
+      "attempts": 2,
+      "compensate": "c.delete-b"
+    },
+    "s.approve-lock": {
+      "name": "申請単位の排他",
+      "kind": "lock",
+      "reads": [
+        "a.id"
+      ],
+      "namespace": "business",
+      "timeout": 0,
+      "conflict": "拒否",
+      "scope": "パイプライン終了まで（異常終了を含む）"
+    },
+    "s.check-approval": {
+      "name": "承認対象確認",
+      "kind": "action",
+      "summary": "承認待ちかつ申請者と承認者が別人であることを確認する。",
+      "reads": [
+        "a.id"
+      ],
+      "writes": [],
+      "uses": [],
+      "actor": "system",
+      "when": null,
+      "attempts": 1,
+      "compensate": null
+    },
+    "s.approve": {
+      "name": "承認",
+      "kind": "action",
+      "summary": "承認済みに更新する。",
+      "reads": [
+        "a.id"
+      ],
+      "writes": [
+        "a.status"
+      ],
+      "uses": [
+        [
+          "a.status",
+          "DB更新"
+        ]
+      ],
+      "actor": "system",
+      "when": [
+        "a.decision",
+        true
+      ],
+      "attempts": 1,
+      "compensate": null
+    },
+    "s.reject": {
+      "name": "却下",
+      "kind": "action",
+      "summary": "却下済みに更新する。発注は行わない。",
+      "reads": [
+        "a.id"
+      ],
+      "writes": [
+        "a.status"
+      ],
+      "uses": [
+        [
+          "a.status",
+          "DB更新"
+        ]
+      ],
+      "actor": "system",
+      "when": [
+        "a.decision",
+        false
+      ],
+      "attempts": 1,
+      "compensate": null
+    },
+    "s.dispatch": {
+      "name": "引継ぎ条件確認",
+      "kind": "action",
+      "summary": "承認済みの購買申請IDを次ワークフローへ引き継ぐ。",
+      "reads": [
+        "a.id"
+      ],
+      "writes": [],
+      "uses": [],
+      "actor": "system",
+      "when": null,
+      "attempts": 1,
+      "compensate": null
+    },
+    "s.order-lock": {
+      "name": "申請単位の排他",
+      "kind": "lock",
+      "reads": [
+        "a.id"
+      ],
+      "namespace": "business",
+      "timeout": 0,
+      "conflict": "拒否",
+      "scope": "パイプライン終了まで（異常終了を含む）"
+    },
+    "s.eligibility": {
+      "name": "発注条件照会",
+      "kind": "action",
+      "summary": "承認済み、見積書2件あり、未発注であることを確認する。",
+      "reads": [
+        "a.id"
+      ],
+      "writes": [
+        "a.eligible"
+      ],
+      "uses": [
+        [
+          "a.eligible",
+          "保持"
+        ]
+      ],
+      "actor": "system",
+      "when": null,
+      "attempts": 1,
+      "compensate": null
+    },
+    "s.confirm": {
+      "name": "発注確定",
+      "kind": "action",
+      "summary": "発注作成と申請の発注確定済みへの更新を同一DBトランザクションで行う。",
+      "reads": [
+        "a.id"
+      ],
+      "writes": [
+        "a.order"
+      ],
+      "uses": [
+        [
+          "a.order",
+          "DB作成"
+        ],
+        [
+          "a.status",
+          "DB更新"
+        ]
+      ],
+      "actor": "system",
+      "when": [
+        "a.eligible",
+        true
+      ],
+      "attempts": 1,
+      "compensate": null
+    },
+    "s.stop": {
+      "name": "発注拒否",
+      "kind": "action",
+      "summary": "発注条件を満たさなければエラーとして終了し、発注しない。",
+      "reads": [
+        "a.id"
+      ],
+      "writes": [],
+      "uses": [],
+      "actor": "system",
+      "when": [
+        "a.eligible",
+        false
+      ],
+      "attempts": 1,
+      "compensate": null
+    }
+  },
+  "workflows": {
+    "w.approval": {
+      "name": "購買申請の受付・承認",
+      "bindings": [
+        "b.submit",
+        "b.approve",
+        "b.dispatch"
+      ]
+    },
+    "w.attach": {
+      "name": "購買申請への見積書添付",
+      "bindings": [
+        "b.upload"
+      ]
+    },
+    "w.execution": {
+      "name": "承認済み購買申請の発注確定",
+      "bindings": [
+        "b.confirm"
+      ]
+    }
+  },
+  "bindings": {
+    "b.submit": {
+      "pipeline": "p.submit",
+      "triggers": [
+        "t.submit"
+      ],
+      "next_workflow": null,
+      "role_mapping": {
+        "system": "role.system"
+      }
+    },
+    "b.approve": {
+      "pipeline": "p.approve",
+      "triggers": [
+        "t.approve"
+      ],
+      "next_workflow": null,
+      "role_mapping": {
+        "system": "role.system"
+      }
+    },
+    "b.dispatch": {
+      "pipeline": "p.dispatch",
+      "triggers": [
+        "t.timer",
+        "t.manual"
+      ],
+      "next_workflow": "w.execution",
+      "role_mapping": {
+        "system": "role.system"
+      }
+    },
+    "b.upload": {
+      "pipeline": "p.upload",
+      "triggers": [
+        "t.upload"
+      ],
+      "next_workflow": null,
+      "role_mapping": {
+        "system": "role.system"
+      }
+    },
+    "b.confirm": {
+      "pipeline": "p.confirm",
+      "triggers": [
+        "t.confirm"
+      ],
+      "next_workflow": null,
+      "role_mapping": {
+        "system": "role.system"
+      }
+    }
+  },
+  "triggers": {
+    "t.submit": {
+      "name": "申請者がFEで申請",
+      "mapping": {
+        "a.id": "id",
+        "a.vendor": "vendor",
+        "a.amount": "amount"
+      },
+      "role": "role.requester",
+      "after": null,
+      "wait": null
+    },
+    "t.approve": {
+      "name": "承認者がFEで承認または却下",
+      "mapping": {
+        "a.id": "id",
+        "a.decision": "decision"
+      },
+      "role": "role.approver",
+      "after": null,
+      "wait": "承認イベントを受信"
+    },
+    "t.timer": {
+      "name": "指定日時に到達",
+      "mapping": {
+        "a.id": "id"
+      },
+      "role": "role.system",
+      "after": null,
+      "wait": "承認済みかつ指定日時に到達"
+    },
+    "t.manual": {
+      "name": "発注担当者がFEで開始",
+      "mapping": {
+        "a.id": "application"
+      },
+      "role": "role.buyer",
+      "after": null,
+      "wait": null
+    },
+    "t.upload": {
+      "name": "申請者が見積書2件をアップロード",
+      "mapping": {
+        "a.id": "id",
+        "a.quote-a": "file_a",
+        "a.quote-b": "file_b"
+      },
+      "role": "role.requester",
+      "after": null,
+      "wait": null
+    },
+    "t.confirm": {
+      "name": "承認ワークフローから起動",
+      "mapping": {
+        "a.id": "id"
+      },
+      "role": "role.system",
+      "after": null,
+      "wait": null
+    }
+  }
+}
