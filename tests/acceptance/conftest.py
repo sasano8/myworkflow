@@ -6,10 +6,13 @@ from examples.purchase.acceptance.world import World
 @pytest.fixture
 def ctx(tmp_path, request):
     world = World(tmp_path)
-    mutation = request.config.getoption('--purchase-mutation')
+    mutation = request.config.getoption('acceptance_fault')
     world.mutation = mutation
     if mutation == 'compensation':
-        world.registry.handlers['c.delete-a'] = lambda ctx: None
+        from myworkflow.executable import Context
+        def omit_compensation(ctx: Context) -> None:
+            pass
+        world.registry.replace('c.delete-a', omit_compensation)
     if mutation == 'duplicate':
         # Deliberately faulty adapter: remove the storage guard as well as the event guard.
         with world.services.connect() as db:
@@ -19,6 +22,6 @@ def ctx(tmp_path, request):
         yield world
     finally:
         try:
-            request.node.purchase_diagnostics = world.diagnose()
+            request.node.acceptance_diagnostics = world.diagnose()
         finally:
             world.close()

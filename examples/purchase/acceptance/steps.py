@@ -26,7 +26,7 @@ def clock(ctx, instant):
 
 @given('発注予定日時は "{instant}" である', 'テスト基盤', ('w.approval',))
 def schedule(ctx, instant):
-    ctx.flow = ScheduledPurchase(ctx.engine, ctx.clock, instant)
+    ctx.flow = ScheduledPurchase(ctx.engine, ctx.clock, instant, application_id=ctx.application_id, run_id=ctx.run_id)
 
 
 @given('見積書2件を添付した承認待ちの購買申請がある', '申請者', ('p.submit', 'p.upload'))

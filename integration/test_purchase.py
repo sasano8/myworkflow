@@ -79,6 +79,9 @@ class PurchaseTemporalTests(unittest.IsolatedAsyncioTestCase):
         async with self.worker():
             handle = await self.start()
             await handle.signal(ApprovePurchase.decide, {'approved': True, 'actor': 'mallory', 'roles': ['role.requester']})
-            with self.assertRaises(WorkflowFailureError):
+            with self.assertRaises(WorkflowFailureError) as caught:
                 await asyncio.wait_for(handle.result(), 20)
+            application_error = caught.exception.cause.cause
+            self.assertEqual(application_error.type, 'PermissionDenied')
+            self.assertIn('secondary_errors', application_error.details[0])
         self.assertEqual(self.services.application('x')['status'], 'waiting-approval')

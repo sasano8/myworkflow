@@ -6,7 +6,7 @@ Python 3.14向けの、業務契約から型・実装の骨格・業務概要を
 
 [要件定義から開発までの工程図](docs/development-process.md)と、[受入テストのタスク](docs/acceptance-plan.md)を整理しています。顧客フローを繰り返しコードへ反映して概要で合意し、開発移行後はコードと受入シナリオを正本として生成資料で確認します。購買サンプルでは、同じGherkinからシナリオ文書生成とpytest-bddによる実行を行えます。
 
-[リファクタリング計画](docs/refactoring-plan.md)に、契約モデル・実行・ロック・保存・受入ツールの整理順序と完了条件をまとめています。
+[現在の構成と移行方法](docs/architecture.md)に、共通モデル、実行基盤のProtocol、ロック、保存、受入プラグインの境界をまとめています。
 
 ## 動く購買申請サンプル
 
@@ -77,6 +77,15 @@ featureを正本とし、操作・検証関数をPythonで実装します。概�
 [Temporal実行手順](docs/temporal.md)に従い、必要なときだけ結合テスト用サーバーを起動できます。Temporalからも同じEngineを使います。承認待ち中のWorker再作成・履歴再生、重複Signal、タイマー、子ワークフロー、却下を試験します。
 
 通常のCIはPython 3.14で型・契約・実処理・障害試験と出力一致を検証します。TemporalはGitHub Actionsの手動実行で `temporal` をオンにした場合だけ実行します。
+
+## 別の業務への適用例
+
+[チケット発行の業務概要](examples/tickets/acceptance/business.md)と[受入条件](examples/tickets/acceptance/acceptance.md)は購買の型・保存処理を使わない第二の例です。本体を業務名で分岐させず、同じ実行・生成・受入ツールを設定で利用します。
+
+```sh
+python -m myworkflow.acceptance --config examples.tickets.acceptance.catalog docs --check
+python -m pytest tests/tickets -q
+```
 
 ## 判断と限界
 

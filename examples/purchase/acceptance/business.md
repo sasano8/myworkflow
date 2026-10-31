@@ -110,7 +110,7 @@
 | s.stop | examples.purchase.handlers.stop |
 | s.submit | examples.purchase.handlers.submit |
 
-ロックはEngine → services.lock、受付認可はEngine → Principal.rolesで実行。詳細は[実行設計](../../../docs/execution-design.md)を参照。
+ロックはEngine → LockProvider、受付認可はEngine → Principal.rolesで実行。詳細は[実行設計](../../../docs/execution-design.md)を参照。
 
 ## 受入条件との対応
 

@@ -28,11 +28,12 @@ class World:
     def __init__(self, directory):
         self.services = Services(Path(directory) / 'purchase.sqlite')
         self.program = Program(SPEC)
-        self.registry = Registry()
-        self.registry.handlers = dict(registry.handlers)
+        self.registry = registry.fork()
         self.engine = Engine(self.program, self.registry, self.services, interfaces)
+        self.application_id = 'purchase-001'
+        self.run_id = 'purchase-acceptance'
         self.clock = ManualClock()
-        self.flow = ScheduledPurchase(self.engine, self.clock, '2030-04-01T10:00:00+09:00')
+        self.flow = ScheduledPurchase(self.engine, self.clock, '2030-04-01T10:00:00+09:00', application_id=self.application_id, run_id=self.run_id)
         self.applicant = Principal('alice', frozenset({'role.requester'}))
         self.approver = Principal('bob', frozenset({'role.approver'}))
         self.system = Principal('scheduler', frozenset({'role.system'}))
@@ -121,8 +122,7 @@ class TemporalDriver:
     def __init__(self, world):
         self.world = world
         self.runner = asyncio.Runner()
-        self.worker = None
-        self.environment = None
+        self.harness = None
         try:
             self.runner.run(self.start())
         except BaseException:
@@ -132,20 +132,17 @@ class TemporalDriver:
     async def start(self):
         import os
         from uuid import uuid4
-        from temporalio.testing import WorkflowEnvironment
-        from temporalio.worker import Worker
+        from myworkflow.adapters.temporal_testing import TemporalHarness
         from examples.purchase.temporal_workflow import ApprovePurchase, ConfirmPurchase
         from myworkflow.temporal import PipelineActivity
         executable = os.environ.get('TEMPORAL_CLI_PATH')
         if not executable:
             raise RuntimeError('Set TEMPORAL_CLI_PATH to run Temporal acceptance scenarios')
-        self.environment = await WorkflowEnvironment.start_local(dev_server_existing_path=executable)
         activity = PipelineActivity(self.world.engine)
         queue = f'acceptance-{uuid4()}'
-        self.worker = Worker(self.environment.client, task_queue=queue,
-                             workflows=[ApprovePurchase, ConfirmPurchase], activities=[activity.invoke])
-        await self.worker.__aenter__()
-        self.handle = await self.environment.client.start_workflow(
+        self.harness = TemporalHarness(executable, queue, workflows=[ApprovePurchase, ConfirmPurchase], activities=[activity.invoke])
+        await self.harness.__aenter__()
+        self.handle = await self.harness.client.start_workflow(
             ApprovePurchase.run,
             {'application_id': 'purchase-001', 'vendor': 'サンプル商事', 'amount': 10000,
              'quote_a': '見積書A', 'quote_b': '見積書B', 'applicant': 'alice', 'delay_seconds': 0.1},
@@ -170,12 +167,8 @@ class TemporalDriver:
 
     def close(self):
         async def stop():
-            try:
-                if self.worker:
-                    await self.worker.__aexit__(None, None, None)
-            finally:
-                if self.environment:
-                    await self.environment.shutdown()
+            if self.harness:
+                await self.harness.__aexit__(None, None, None)
         try:
             self.runner.run(stop())
         finally:

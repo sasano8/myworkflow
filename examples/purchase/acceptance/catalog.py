@@ -1,33 +1,19 @@
 from pathlib import Path
-
 from examples.purchase.contract import SPEC
 from examples.purchase.handlers import registry
 from examples.purchase.acceptance.steps import steps
-from myworkflow.acceptance import load_cases
+from myworkflow.acceptance.config import AcceptanceConfig
+from myworkflow.acceptance.rendering import DocumentOptions
 from myworkflow.executable import Program
 
 DIRECTORY = Path(__file__).resolve().parent
+ROOT = DIRECTORY.parents[2]
 program = Program(SPEC)
+DOCUMENTS = DocumentOptions(title='購買フローの受入シナリオ', report_title='購買フローの受入テスト結果',
+                            details_link='../../../docs/execution-design.md')
+CONFIG = AcceptanceConfig(program, steps, tuple(sorted((DIRECTORY / 'features').glob('*.feature'))), ROOT,
+                          (ROOT / 'myworkflow', ROOT / 'examples/purchase', ROOT / 'tests', ROOT / 'pyproject.toml'), DOCUMENTS, registry=registry, output_directory=DIRECTORY)
 
 
-def cases():
-    return load_cases(list((DIRECTORY / 'features').glob('*.feature')), program, steps)
-
-
-def implementation_hash():
-    """Invalidate old results if business code, adapters or the test harness change."""
-    import hashlib
-    root = DIRECTORY.parents[2]
-    paths = [DIRECTORY / 'steps.py', DIRECTORY / 'world.py', DIRECTORY / 'catalog.py', DIRECTORY / '__main__.py',
-             root / 'examples/purchase/scheduling.py', root / 'examples/purchase/handlers.py',
-             root / 'examples/purchase/services.py', root / 'examples/purchase/interfaces.py',
-             root / 'examples/purchase/temporal_workflow.py', root / 'myworkflow/executable.py',
-             root / 'myworkflow/acceptance.py', root / 'myworkflow/temporal.py', root / 'myworkflow/__init__.py',
-             root / 'tests/conftest.py', root / 'tests/acceptance/conftest.py', root / 'tests/acceptance/test_purchase.py']
-    digest = hashlib.sha256()
-    for path in paths:
-        digest.update(str(path.relative_to(root)).encode())
-        digest.update(b'\0')
-        digest.update(path.read_bytes())
-        digest.update(b'\0')
-    return digest.hexdigest()
+def cases(): return CONFIG.cases()
+def implementation_hash(): return CONFIG.implementation_hash()

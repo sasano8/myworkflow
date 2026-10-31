@@ -10,7 +10,7 @@ import sys
 import pytest
 from pytest_bdd import parsers
 
-from examples.purchase.acceptance.catalog import DIRECTORY, cases, program, registry, steps
+from examples.purchase.acceptance.catalog import DIRECTORY, DOCUMENTS, cases, program, registry, steps
 from examples.purchase.acceptance.world import World
 from myworkflow.acceptance import Definitions, load_cases, render_business, render_cases, render_report
 from myworkflow.executable import Program
@@ -28,8 +28,8 @@ def test_docs_match_canonical_features():
     catalog = cases()
     assert len(catalog) == 14
     assert len([c for c in catalog if c.scenario_id == 'scenario.purchase.upload']) == 6
-    assert render_cases(catalog, steps) == (DIRECTORY / 'acceptance.md').read_text()
-    assert render_business(program, registry, catalog) == (DIRECTORY / 'business.md').read_text()
+    assert render_cases(catalog, steps, options=DOCUMENTS) == (DIRECTORY / 'acceptance.md').read_text()
+    assert render_business(program, registry, catalog, options=DOCUMENTS) == (DIRECTORY / 'business.md').read_text()
 
 
 def test_python_declaration_and_gherkin_express_same_small_case(tmp_path):
@@ -119,7 +119,7 @@ def test_check_mode_does_not_rewrite_sources():
 def test_report_distinguishes_missing_skipped_and_stale():
     catalog = cases()
     digest = hashlib.sha256(json.dumps(program.spec, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
-    payload = {'commit': 'example', 'working_tree_dirty': True, 'session_exitstatus': 0,
+    payload = {'schema_version': 1, 'implementation_sha256': 'impl', 'commit': 'example', 'working_tree_dirty': True, 'session_exitstatus': 0,
                'contract_sha256': digest, 'cases': [
                    {'case_id': catalog[0].id, 'status': 'passed', 'source_sha256': catalog[0].source_hash},
                    {'case_id': catalog[1].id, 'status': 'skipped', 'source_sha256': catalog[1].source_hash}]}
@@ -170,7 +170,7 @@ def test_clock_requires_timezone_and_cannot_move_backwards():
 def test_report_invalidates_changed_implementation():
     catalog = cases()
     digest = 'contract'
-    payload = {'contract_sha256': digest, 'implementation_sha256': 'old', 'cases': [
+    payload = {'schema_version': 1, 'session_exitstatus': 0, 'contract_sha256': digest, 'implementation_sha256': 'old', 'cases': [
         {'case_id': catalog[0].id, 'status': 'passed', 'source_sha256': catalog[0].source_hash}]}
     assert '過去結果（定義変更あり）：合格' in render_report(payload, catalog, digest, 'new')
 

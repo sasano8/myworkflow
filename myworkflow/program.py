@@ -1,0 +1,83 @@
+from myworkflow.errors import ContractError
+from myworkflow.codegen import class_name
+
+TYPES = {"str": str, "int": int, "bool": bool, "float": float}
+
+class Program:
+    def __init__(self, spec):
+        import json
+        from types import MappingProxyType
+        from myworkflow.loading import load_catalog
+        self.model = load_catalog(spec)
+        try:
+            self._source_json = json.dumps(spec, ensure_ascii=False)
+        except (TypeError, ValueError) as exc:
+            raise ContractError(f'contract: only serializable declarations are accepted ({exc})') from exc
+        self.artifacts = MappingProxyType({a.id: a for a in self.model.artifacts})
+        self.plans = MappingProxyType({p.id: p for p in self.model.pipelines})
+        self.bindings = MappingProxyType({b.id: b for w in self.model.workflows for b in w.bindings})
+        self.steps = MappingProxyType({s.id: s for p in self.model.pipelines for s in p.steps})
+        self.validate()
+
+    @property
+    def spec(self):
+        """Compatibility snapshot; mutating it never changes the compiled model."""
+        import json
+        return json.loads(self._source_json)
+
+    def validate(self):
+        from myworkflow.validation import validate_program
+        try:
+            validate_program(self)
+        except (KeyError, TypeError, AttributeError, ValueError) as exc:
+            if isinstance(exc, ContractError):
+                raise
+            raise ContractError(f'contract: {exc}') from exc
+
+    def catalog(self):
+        return self.model
+
+    def binding(self, identity):
+        try:
+            return self.bindings[identity]
+        except KeyError as exc:
+            raise ContractError(f'{identity}: unknown binding') from exc
+
+    def trigger(self, binding_id, trigger_id):
+        return next((t for t in self.binding(binding_id).triggers if t.id == trigger_id), None) or self._missing(trigger_id)
+
+    def _missing(self, identity):
+        raise ContractError(f'{identity}: unknown definition')
+
+    def payload(self, binding_id, trigger_id, values):
+        """Map context keys to an ingress payload using the declared trigger."""
+        from dataclasses import asdict, is_dataclass
+        values = asdict(values) if is_dataclass(values) else values
+        trigger = self.trigger(binding_id, trigger_id)
+        return {source: values[self.artifacts[artifact].key] for artifact, source in trigger.input_mapping}
+
+    def next_binding(self, binding_id, target_binding_id):
+        workflow_id = self.binding(binding_id).next_workflow_id
+        workflow = next((w for w in self.model.workflows if w.id == workflow_id), None)
+        if workflow is None or target_binding_id not in {b.id for b in workflow.bindings}:
+            raise ContractError(f'{binding_id}: invalid next binding {target_binding_id}')
+        return self.binding(target_binding_id)
+
+    def values(self, ids, values, where):
+        expected = {self.artifacts[i]["key"]: TYPES[self.artifacts[i]["type"]] for i in ids}
+        if set(values) != set(expected):
+            raise ContractError(f"{where}: expected fields {sorted(expected)}, got {sorted(values)}")
+        for key, typ in expected.items():
+            if type(values[key]) is not typ:
+                raise ContractError(f"{where}: {key} must be {typ.__name__}")
+
+    def check(self, registry):
+        for s in self.steps.values():
+            if s["kind"] != "lock":
+                for identity in [s["id"], *([s["compensate"]] if s.get("compensate") else [])]:
+                    if identity not in registry.handlers:
+                        raise ContractError(f"{identity}: missing implementation")
+
+    def documentation(self, registry=None, *, details_link=None):
+        from myworkflow.rendering import document_program
+        return document_program(self, registry, details_link=details_link)

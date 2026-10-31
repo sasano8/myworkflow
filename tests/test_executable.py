@@ -203,7 +203,7 @@ class ExecutableTests(unittest.TestCase):
 
     def test_source_snapshots_match(self):
         self.assertEqual(interfaces_source(self.program), (ROOT / 'examples/purchase/interfaces.py').read_text())
-        self.assertEqual(self.program.documentation(registry), (ROOT / 'examples/purchase/requirements.md').read_text())
+        self.assertEqual(self.program.documentation(registry, details_link="../../docs/execution-design.md"), (ROOT / 'examples/purchase/requirements.md').read_text())
 
     def test_initial_generation_and_unimplemented_skeleton(self):
         initial = json.loads((ROOT / 'docs/requirements/purchase-initial.json').read_text())
@@ -235,9 +235,8 @@ class ExecutableTests(unittest.TestCase):
         self.assertEqual((target / 'interfaces.py').read_text(), interfaces_source(self.program))
 
     def test_missing_implementation_and_bad_signature_detected(self):
-        missing = Registry()
-        missing.handlers = dict(registry.handlers)
-        del missing.handlers['s.confirm']
+        missing = registry.fork()
+        missing.remove('s.confirm')
         with self.assertRaisesRegex(ContractError, 's.confirm'):
             self.program.check(missing)
         with self.assertRaisesRegex(ContractError, 's.invalid'):
@@ -245,14 +244,13 @@ class ExecutableTests(unittest.TestCase):
 
     def test_output_and_undeclared_writes_detected(self):
         for wrong in ('type', 'extra'):
-            modified = Registry()
-            modified.handlers = dict(registry.handlers)
+            modified = registry.fork()
             @modified.implements('s.test')
             def invalid(ctx: Context) -> None:
                 ctx.values['status'] = 123 if wrong == 'type' else 'waiting-approval'
                 if wrong == 'extra':
                     ctx.values['secret'] = 'undeclared'
-            modified.handlers['s.submit'] = modified.handlers['s.test']
+            modified.replace('s.submit', modified.handlers['s.test'])
             engine = Engine(self.program, modified, self.services, interfaces)
             with self.subTest(wrong=wrong), self.assertRaises(ExecutionFailed) as caught:
                 self.invoke('b.submit', 't.submit', {'id': f'x-{wrong}', 'vendor': 'V', 'amount': 1}, engine=engine)
@@ -287,8 +285,7 @@ class ExecutableTests(unittest.TestCase):
             Engine(changed, registry, self.services, interfaces)
         generated = SimpleNamespace()
         exec(interfaces_source(changed), generated.__dict__)
-        updated_registry = Registry()
-        updated_registry.handlers = dict(registry.handlers)
+        updated_registry = registry.fork()
         # Extend both the step contract and implementation for the new requirement.
         spec['pipelines'][0]['steps'][1]['reads'].append('a.department')
         changed = Program(spec)
@@ -299,7 +296,7 @@ class ExecutableTests(unittest.TestCase):
                 raise ValueError('Department is required')
             seen_departments.append(ctx.values['department'])
             registry.handlers['s.submit'](ctx)
-        updated_registry.handlers['s.submit'] = updated_registry.handlers['s.department-submit']
+        updated_registry.replace('s.submit', updated_registry.handlers['s.department-submit'])
         engine = Engine(changed, updated_registry, self.services, generated)
         with self.assertRaises(ContractError):
             self.invoke('b.submit', 't.submit', {'id': 'x', 'vendor': 'V', 'amount': 1}, engine=engine)
@@ -315,12 +312,11 @@ class ExecutableTests(unittest.TestCase):
         changed.PSubmitResponse = dataclasses.make_dataclass('WrongResponse', [('application_id', str), ('status', int)])
         with self.assertRaisesRegex(ContractError, 'p.submit'):
             Engine(self.program, registry, self.services, changed)
-        modified = Registry()
-        modified.handlers = dict(registry.handlers)
+        modified = registry.fork()
         @modified.implements('s.read-test')
         def invalid_read(ctx: Context) -> None:
             ctx.values['decision']
-        modified.handlers['s.submit'] = modified.handlers['s.read-test']
+        modified.replace('s.submit', modified.handlers['s.read-test'])
         with self.assertRaises(ExecutionFailed) as caught:
             self.invoke('b.submit', 't.submit', {'id': 'x', 'vendor': 'V', 'amount': 1},
                         engine=Engine(self.program, modified, self.services, interfaces))

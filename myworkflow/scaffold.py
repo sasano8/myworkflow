@@ -6,6 +6,7 @@ from pathlib import Path
 from pprint import pformat
 
 from myworkflow.executable import Program, interfaces_source, skeleton_source
+from myworkflow.generation import write_outputs
 
 
 def initialize(spec, directory):
@@ -14,10 +15,10 @@ def initialize(spec, directory):
     if directory.exists() and any(directory.iterdir()):
         raise FileExistsError(f"Refusing to overwrite existing work: {directory}")
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / '__init__.py').write_text('', encoding='utf-8')
-    (directory / 'contract.py').write_text('"""Reviewed code-owned business contract."""\nSPEC = ' + pformat(spec, sort_dicts=False, width=110) + '\n', encoding='utf-8')
-    (directory / 'interfaces.py').write_text(interfaces_source(program), encoding='utf-8')
-    (directory / 'handlers.py').write_text(skeleton_source(program), encoding='utf-8')
+    write_outputs({directory / '__init__.py': '',
+        directory / 'contract.py': '"""Reviewed code-owned business contract."""\nSPEC = ' + pformat(spec, sort_dicts=False, width=110) + '\n',
+        directory / 'interfaces.py': interfaces_source(program),
+        directory / 'handlers.py': skeleton_source(program)})
     return program
 
 
@@ -34,8 +35,10 @@ def main():
     if args.command == 'init':
         initialize(json.loads(Path(args.reviewed_requirements).read_text(encoding='utf-8')), args.directory)
     else:
-        program = Program(importlib.import_module(args.contract_module).SPEC)
-        Path(args.output).write_text(interfaces_source(program), encoding='utf-8')
+        module = importlib.import_module(args.contract_module)
+        program = Program(module.SPEC)
+        source = Path(module.__file__)
+        write_outputs({Path(args.output): interfaces_source(program)}, protected=(source, source.with_name('handlers.py')))
 
 
 if __name__ == '__main__':
