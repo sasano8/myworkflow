@@ -131,8 +131,8 @@ def render(catalog: Catalog) -> str:
             p = pipelines[b.pipeline_id]
             identity = f"{w.id}/{b.id}/{p.id}"
             lines.extend([f"### {wi:03}-{bi:05} {cell(p.name)}", "",
-                          "| 連番 | トリガー | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 |",
-                          "| --- | --- | --- | --- | --- | --- |"])
+                          "| 連番 | トリガー | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 | 固定ID |",
+                          "| --- | --- | --- | --- | --- | --- | --- |"])
             summary = ""
             if b.after:
                 summary += f"先行配置：{b.after}。"
@@ -150,11 +150,9 @@ def render(catalog: Catalog) -> str:
             if b.next_workflow_id:
                 ending += f"次ワークフロー起動：{workflows[b.next_workflow_id]}。"
             rows.append(("結果返却" if p.reply else "完了", ending, "出力：" + ((names(p.outputs) or "なし") if p.reply else "なし（応答不要）"), "—", identity + "/response"))
-            identities = []
             for si, (name, overview, io, uses, fixed_id) in enumerate(rows):
                 number = f"{wi:03}-{bi:05}-{si:05}"
-                values = (number, b.trigger if si == 0 else "—", name, overview, io, uses)
-                identities.append(f"- {number}: {cell(fixed_id)}")
+                values = (number, b.trigger if si == 0 else "—", name, overview, io, uses, fixed_id)
                 lines.append("| " + " | ".join(map(cell, values)) + " |")
-            lines.extend(["", "<details>", "<summary>固定ID対応表</summary>", "", *identities, "", "</details>", ""])
+            lines.append("")
     return "\n".join(lines).rstrip() + "\n"
