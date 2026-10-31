@@ -4,7 +4,7 @@ Python 3.14向けの、業務契約から型・実装の骨格・業務概要を
 
 ## 工程と次のタスク
 
-[要件定義から開発までの工程図](docs/development-process.md)と、[受入テストのタスク](docs/acceptance-plan.md)を整理しています。顧客フローを繰り返しコードへ反映して概要で合意し、開発移行後はコードと受入シナリオを正本として生成資料で確認します。共通シナリオからの文書生成・実行は今後の実装対象です。
+[要件定義から開発までの工程図](docs/development-process.md)と、[受入テストのタスク](docs/acceptance-plan.md)を整理しています。顧客フローを繰り返しコードへ反映して概要で合意し、開発移行後はコードと受入シナリオを正本として生成資料で確認します。購買サンプルでは、同じGherkinからシナリオ文書生成とpytest-bddによる実行を行えます。
 
 ## 動く購買申請サンプル
 
@@ -56,6 +56,19 @@ python3.14 -m unittest discover -s tests -v
 受付・返却は契約から表示用の行を生成します。入力と出力は1列、途中のアーティファクト操作は別列です。複数トリガーの受付行を分け、後続ステップを共通表示します。名前・順序が変わっても定義の固定IDは維持します。実行IDは定義IDと別に発行します。
 
 概要はパイプラインごとに表を分け、固定IDも表に表示します。複雑な状態遷移や復旧手順は別文書と実装へ整理します。[初期の宣言専用サンプル](examples/approval.py)も互換性確認用に残しています。
+
+## 購買フローの受入テスト
+
+[業務概要と受入条件](examples/purchase/acceptance/business.md)、[受入シナリオ文書](examples/purchase/acceptance/acceptance.md)、[実装・評価・実行手順](docs/acceptance-evaluation.md)を参照してください。対象はフレームワークそのものではなく、購買サンプルの業務フローです。
+
+```sh
+python -m pip install -e '.[acceptance]'
+python -m examples.purchase.acceptance docs --check
+python -m pytest -q --acceptance-report artifacts/acceptance.json
+python -m examples.purchase.acceptance report artifacts/acceptance.json > artifacts/acceptance.md
+```
+
+featureを正本とし、操作・検証関数をPythonで実装します。概要・シナリオ文書は自動生成し、テスト結果は別に出力します。通常はローカル12ケース、Temporalをオンにすると計14ケースを実行します。
 
 ## TemporalとCI
 

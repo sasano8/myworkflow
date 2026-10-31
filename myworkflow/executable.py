@@ -179,7 +179,7 @@ class Program:
                     if identity not in registry.handlers:
                         raise ContractError(f"{identity}: missing implementation")
 
-    def documentation(self, registry=None):
+    def documentation(self, registry=None, *, details_link="../../docs/execution-design.md"):
         text = render(self.catalog()) + "\n## 型付き契約\n\n| 固定ID | 名前 | コード上のキー | Python型 |\n| --- | --- | --- | --- |\n"
         def safe(v):
             return str(v).replace('&', '&amp;').replace('<', '&lt;').replace('|', '&#124;').replace('\n', '<br>')
@@ -195,7 +195,7 @@ class Program:
             for identity in sorted({s['id'] for s in self.steps.values() if s['kind'] != 'lock'} | {s['compensate'] for s in self.steps.values() if s.get('compensate')}):
                 fn = registry.handlers[identity]
                 text += f"| {safe(identity)} | {safe(fn.__module__)}.{safe(fn.__name__)} |\n"
-            text += "\nロックはEngine → services.lock、受付認可はEngine → Principal.rolesで実行。詳細は[実行設計](../../docs/execution-design.md)を参照。\n"
+            text += f"\nロックはEngine → services.lock、受付認可はEngine → Principal.rolesで実行。詳細は[実行設計]({details_link})を参照。\n"
         return text
 
 

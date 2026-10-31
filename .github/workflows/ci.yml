@@ -19,17 +19,30 @@ jobs:
         with:
           python-version: '3.14'
       - name: Install library
-        run: python -m pip install --no-deps .
+        run: python -m pip install '.[acceptance]'
       - name: Test contracts, runtime, faults and generation
-        run: python -W error::ResourceWarning -m unittest discover -s tests -v
+        run: python -W error::ResourceWarning -m pytest -q --acceptance-report artifacts/acceptance.json
       - name: Verify generated samples
         run: |
           python -m examples.approval > /tmp/approval.md
           diff -u examples/approval.md /tmp/approval.md
           python -m examples.purchase --docs > /tmp/purchase.md
           diff -u examples/purchase/requirements.md /tmp/purchase.md
+          python -m examples.purchase.acceptance docs --check
       - name: Run purchase flow
         run: python -m examples.purchase
+      - name: Render acceptance results
+        if: always()
+        run: |
+          if test -f artifacts/acceptance.json; then
+            python -m examples.purchase.acceptance report artifacts/acceptance.json > artifacts/acceptance.md
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: purchase-acceptance
+          path: artifacts/
+          if-no-files-found: warn
   temporal:
     if: github.event_name == 'workflow_dispatch' && inputs.temporal
     runs-on: ubuntu-latest
@@ -39,9 +52,26 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.14'
-      - run: python -m pip install 'temporalio==1.35.0'
+      - run: python -m pip install '.[acceptance,temporal]'
       - run: bash scripts/install-temporal-cli.sh /tmp/myworkflow-temporal
       - name: Run Temporal integration tests
         env:
           TEMPORAL_CLI_PATH: /tmp/myworkflow-temporal/temporal
         run: python -m unittest discover -s integration -v
+      - name: Run purchase acceptance scenarios with Temporal enabled
+        env:
+          RUN_TEMPORAL_ACCEPTANCE: '1'
+          TEMPORAL_CLI_PATH: /tmp/myworkflow-temporal/temporal
+        run: python -m pytest tests/acceptance -q --acceptance-report artifacts/temporal-acceptance.json
+      - name: Render Temporal acceptance results
+        if: always()
+        run: |
+          if test -f artifacts/temporal-acceptance.json; then
+            python -m examples.purchase.acceptance report artifacts/temporal-acceptance.json > artifacts/temporal-acceptance.md
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: purchase-acceptance-temporal
+          path: artifacts/
+          if-no-files-found: warn
