@@ -85,12 +85,12 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.14'
-      - run: python -m pip install '.[acceptance,temporal]'
+      - run: python -m pip install '.[test,acceptance,temporal]'
       - run: bash scripts/install-temporal-cli.sh /tmp/myworkflow-temporal
       - name: Run Temporal integration tests
         env:
           TEMPORAL_CLI_PATH: /tmp/myworkflow-temporal/temporal
-        run: python -m unittest discover -s integration -v
+        run: python -W error::ResourceWarning -m pytest integration -q
       - name: Run purchase acceptance scenarios with Temporal enabled
         env:
           RUN_TEMPORAL_ACCEPTANCE: '1'

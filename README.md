@@ -18,11 +18,11 @@ Python 3.14向けの、業務契約から型・実装の骨格・業務概要を
 
 ## 動く購買申請サンプル
 
-リポジトリ直下で実行します。
+リポジトリ直下で実行します。テスト用依存は `python3.14 -m pip install -e '.[test,acceptance]'` で導入します。
 
 ```sh
 python3.14 -m examples.purchase
-python3.14 -m unittest discover -s tests -v
+python3.14 -m pytest -q
 python3.14 -m examples.purchase --docs > /tmp/purchase.md
 diff -u examples/purchase/requirements.md /tmp/purchase.md
 ```
@@ -46,7 +46,7 @@ python3.14 -m myworkflow.scaffold init docs/requirements/purchase-initial.json /
 ```sh
 python3.14 -m myworkflow.scaffold interfaces examples.purchase.contract examples/purchase/interfaces.py
 python3.14 -m examples.purchase --docs > examples/purchase/requirements.md
-python3.14 -m unittest discover -s tests -v
+python3.14 -m pytest -q
 ```
 
 期待値の更新は差分をレビューして行います。テスト中には再生成しません。初期要件の記録は履歴として残し、移行後の契約へ手作業で追従させません。
