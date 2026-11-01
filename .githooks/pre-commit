@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+if [ -n "${MYWORKFLOW_PYTHON:-}" ]; then
+    docs_python="$MYWORKFLOW_PYTHON"
+elif [ -x .venv/bin/python ]; then
+    docs_python=.venv/bin/python
+else
+    docs_python=python3
+fi
+exec "$docs_python" -m scripts.generate_docs --hook

@@ -8,6 +8,15 @@ Python 3.14向けの、業務契約から型・実装の骨格・業務概要を
 
 [プロダクトの概念](docs/product-concept.md)に、業務契約、正本と生成物、要件定義から開発への流れ、現在の保証範囲を整理しています。[既存製品との比較](docs/product-comparison.md)では、n8n・Power Automate・Camunda・Windmill・SpiffWorkflow・Temporal・Prefectとの違い、強みと弱み、継続する価値を検証する条件をまとめています。
 
+## コミット時の自動生成
+
+`sh scripts/install-hooks.sh` でpre-commit hookを有効にすると、宣言から文書・型を再生成し、生成物を自動でコミットへ含めます。Python 3.14の `.venv` と `.[test,acceptance]` が必要です。[設定・対象・部分コミットの扱い](docs/generated-documents.md)を参照してください。
+
+```sh
+.venv/bin/python -m scripts.generate_docs         # 手動生成
+.venv/bin/python -m scripts.generate_docs --check # 差分検査
+```
+
 ## ビルド
 
 購買の正本はPythonのクラス宣言です。型付きモデルから業務概要・型・中間表現を生成し、Kestra向けには説明用YAMLを出力します。未対応の待機・遷移等はビルド失敗になります。[使い方と対応範囲](docs/build.md)を参照してください。

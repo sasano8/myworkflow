@@ -2,7 +2,6 @@
 import asyncio
 from pathlib import Path
 
-from examples.purchase import interfaces
 from examples.purchase import contract as c
 from examples.purchase.handlers import registry
 from examples.purchase.scheduling import ScheduledPurchase, aware_time
@@ -27,6 +26,7 @@ class ManualClock:
 
 class World:
     def __init__(self, directory):
+        from examples.purchase import interfaces
         self.services = Services(Path(directory) / 'purchase.sqlite')
         self.program = c.program
         self.registry = registry.fork()

@@ -36,7 +36,7 @@ python -m myworkflow build --config examples.approval_values_build \
 | ファイル | 内容 |
 | --- | --- |
 | `requirements.md` | 業務概要と、データ定義ファイルへの固定ID付き参照 |
-| `data-definitions.md` | 名称・意味・必須項目・制約・既定値・例・補足ルール・完全なJSON Schema |
+| `data-definitions.md` | 名称・意味・必須項目・制約・既定値・例・補足ルールを簡易表で表示 |
 | `data-definitions.json` | 同じ定義の機械可読形式、Python型、独自バリデーター、アーティファクト対応 |
 
 [生成したデータ定義](../examples/approval-values/data-definitions.md)と[業務概要](../examples/approval-values/requirements.md)を別ファイルとして保存し、テストとCIで固定出力との一致を確認する。JSON Schemaは検証用の形式で出力し、入力の別名がある場合は正規の項目名とは別に記録する。build.jsonのハッシュ対象にも含める。
@@ -96,3 +96,5 @@ python -m myworkflow build --config examples.purchase.build --target temporal --
 既存の検証と一致するよう、金額は正の整数、取引先は空文字・空白のみを拒否する。通貨・税区分、申請IDの書式等の未定義な制約を補ってはいない。申請ID等の未確定部分はデータ定義にも記載する。他の項目は基本型のままで、保存先Repositoryをchangesへ移行したものではない。
 
 先行するapproval-valuesの例は、納品期間の独自検証や確定前検証を示す追加サンプルとして維持する。購買の固定原文・変換結果を使う往復評価は従来の独立した基準を維持し、今回のデータ定義全体を採点済みとは扱わない。
+
+バリューオブジェクトの生成Markdownはすべて簡易表に統一し、完全なJSON SchemaはJSONファイルだけに出力する。[pre-commitでの自動生成](generated-documents.md)は、この別ファイル出力も更新してコミットへ含める。

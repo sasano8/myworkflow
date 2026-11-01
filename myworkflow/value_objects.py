@@ -109,38 +109,127 @@ def data_definitions_source(catalog):
     return json.dumps(data_definitions(catalog), ensure_ascii=False, indent=2, allow_nan=False) + '\n'
 
 
+def _display(value):
+    if value is None:
+        return 'null'
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value)
+
+
+def _type_label(schema):
+    if '$ref' in schema:
+        return schema['$ref'].rsplit('/', 1)[-1]
+    for union in ('anyOf', 'oneOf'):
+        if union in schema:
+            return ' / '.join(_type_label(part) for part in schema[union])
+    if schema.get('format') in ('date', 'date-time', 'uuid'):
+        return {'date': '日付', 'date-time': '日時', 'uuid': 'UUID'}[schema['format']]
+    kind = schema.get('type')
+    if isinstance(kind, list):
+        return ' / '.join(_type_label({'type': part}) for part in kind)
+    if kind == 'array':
+        return _type_label(schema.get('items', {})) + 'の配列'
+    return {'string': '文字列', 'integer': '整数', 'number': '数値', 'boolean': '真偽値',
+            'object': 'オブジェクト', 'null': 'null'}.get(kind, 'JSON参照')
+
+
+def _constraints(schema):
+    rules = []
+    labels = {'minimum': '以上', 'exclusiveMinimum': 'より大きい', 'maximum': '以下', 'exclusiveMaximum': '未満'}
+    for key, label in labels.items():
+        if key in schema:
+            rules.append(_display(schema[key]) + label)
+    for key, label in (('minLength', '文字数の下限'), ('maxLength', '文字数の上限'),
+                       ('minItems', '要素数の下限'), ('maxItems', '要素数の上限'),
+                       ('pattern', '形式'), ('multipleOf', '倍数')):
+        if key in schema:
+            rules.append(label + '：' + _display(schema[key]))
+    if schema.get('format') and schema['format'] not in ('date', 'date-time', 'uuid'):
+        rules.append('形式：' + schema['format'])
+    if 'enum' in schema:
+        rules.append('選択肢：' + '、'.join(_display(v) for v in schema['enum']))
+    if 'const' in schema:
+        rules.append('固定値：' + _display(schema['const']))
+    if schema.get('additionalProperties') is False:
+        rules.append('未知の項目を拒否')
+    if schema.get('uniqueItems'):
+        rules.append('重複不可')
+    for union in ('anyOf', 'oneOf', 'allOf'):
+        if union in schema:
+            branches = [part for part in schema[union] if part.get('type') != 'null']
+            if len(branches) > 1:
+                relation = 'すべて' if union == 'allOf' else 'いずれか'
+                rules.append(relation + '：' + '／'.join(_type_label(part) + '（' + _constraints(part) + '）' for part in branches))
+            elif branches:
+                rule = _constraints(branches[0])
+                if rule != '—':
+                    rules.append(rule)
+    # This is a summary. Preserve less common schema conditions in the JSON output.
+    covered = {'title', 'description', 'type', 'format', 'default', 'examples', '$defs', '$ref',
+               'properties', 'required', 'items', 'additionalProperties', 'enum', 'const', 'uniqueItems',
+               'anyOf', 'oneOf', 'allOf', *labels, 'minLength', 'maxLength', 'minItems', 'maxItems', 'pattern', 'multipleOf'}
+    if set(schema) - covered or any(k in schema for k in ('oneOf', 'allOf')):
+        rules.append('追加条件はJSON参照')
+    return '／'.join(dict.fromkeys(rules)) or '—'
+
+
+def _field_rows(schema):
+    definitions = schema.get('$defs', {})
+    def walk(field, path, required, active=()):
+        reference = field.get('$ref')
+        resolved = definitions.get(reference.rsplit('/', 1)[-1], {}) if reference else {}
+        field = {**resolved, **field}
+        cells = (path, _type_label(field), required, field.get('description', '—'), _constraints(field),
+                 _display(field['default']) if 'default' in field else '—',
+                 '、'.join(_display(v) for v in field.get('examples', ())) or '—')
+        yield cells
+        if reference and reference in active:
+            return
+        active = (*active, reference) if reference else active
+        for name, child in field.get('properties', {}).items():
+            condition = '親あり時に必須' if name in field.get('required', ()) else '任意'
+            yield from walk(child, path + '.' + name, condition, active)
+        if field.get('type') == 'array' and isinstance(field.get('items'), dict):
+            yield from walk(field['items'], path + '[]', '要素ごと', active)
+        for union in ('anyOf', 'oneOf', 'allOf'):
+            for index, child in enumerate(field.get(union, ())):
+                if '$ref' in child or 'properties' in child:
+                    yield from walk(child, f'{path}(候補{index + 1})', '条件付き', active)
+    if 'properties' in schema:
+        for name, child in schema['properties'].items():
+            yield from walk(child, name, '必須' if name in schema.get('required', ()) else '任意')
+    else:
+        yield from walk(schema, '(値全体)', '必須')
+
+
 def render_data_definitions(catalog):
     document = data_definitions(catalog)
-    lines = ['# データ定義', '',
-             'Pythonのバリューオブジェクトから生成。業務要件の概要とは別に、値の意味と制約を示す。', '']
+    lines = ['# データ定義', '', '| 項目 | 内容 |', '| --- | --- |',
+             '| 用途 | バリューオブジェクトの意味・制約の概要 |',
+             '| 詳細 | [機械可読の定義・完全なJSON Schema](data-definitions.json) |',
+             '| 検証 | 入力と、型を結び付けた更新の確定時に検証。内部の全変数でのクラス利用や直接DB更新は保証しない |', '']
+    def row(cells):
+        return '| ' + ' | '.join(escape(c) for c in cells) + ' |'
     for definition in document['value_objects']:
+        validators = '、'.join(v.get('model', '') + ('.' if v.get('model') else '') + v['name']
+                              for v in definition['validators'])
         lines.extend([f'<a id="{definition["id"]}"></a>', f'## {escape(definition["name"])}', '',
-                      f'固定ID：{escape(definition["id"])}。Python型：{escape(definition["python_type"])}。', '',
-                      escape(definition['description']) or '説明未記載。', '',
-                      '| 項目 | 必須 | 説明 | 定義・制約・例 |', '| --- | --- | --- | --- |'])
-        schema = definition['schema']
-        properties = schema.get('properties', {'(値全体)': schema})
-        required = schema.get('required', [])
-        for name, field in properties.items():
-            detail = {k: v for k, v in field.items() if k not in ('title', 'description')}
-            cells = (name, '必須' if name in required or name == '(値全体)' else '任意',
-                     field.get('description', '—'), json.dumps(detail, ensure_ascii=False, sort_keys=True))
-            lines.append('| ' + ' | '.join(escape(c) for c in cells) + ' |')
+                      '| 項目 | 内容 |', '| --- | --- |', row(('固定ID', definition['id'])),
+                      row(('Python型', definition['python_type'])),
+                      row(('説明', definition['description'] or '未記載')),
+                      row(('全体の制約', _constraints(definition['schema']))),
+                      row(('補足ルール', '\n'.join(definition['rules']) or '未記載')),
+                      row(('独自検証', (validators + '。意味は補足ルールと受入テストで確認。JSON Schemaだけでは全条件を表せない。')
+                           if validators else 'なし'))])
         if definition.get('input_aliases'):
-            lines.extend(['', '入力の別名：' + escape(json.dumps(definition['input_aliases'], ensure_ascii=False)) + '。表とSchemaは正規の項目名を使う。'])
-        lines.extend(['', '### 補足ルール', ''])
-        lines.extend('- ' + escape(rule) for rule in definition['rules'])
-        if not definition['rules']:
-            lines.append('補足未記載。')
-        if definition['validators']:
-            lines.extend(['', '独自検証：' + '、'.join(escape(v['name']) for v in definition['validators']) +
-                          '。検証の意味は補足ルールと受入テストで確認する。JSON Schemaだけでは全条件を表せない。'])
-        lines.extend(['', '### 完全なJSON Schema', '', '```json',
-                      # Escape HTML-sensitive characters and backticks inside fenced JSON.
-                      json.dumps(schema, ensure_ascii=False, indent=2, sort_keys=True).replace('`', '\\u0060').replace('<', '\\u003c'),
-                      '```', ''])
+            lines.append(row(('入力の別名', '／'.join(f'{name} ← {_display(alias)}' for name, alias in definition['input_aliases'].items()))))
+        lines.extend(['', '| 項目 | 型 | 必須 | 意味 | 制約 | 既定値 | 例 |', '| --- | --- | --- | --- | --- | --- | --- |'])
+        lines.extend(row(cells) for cells in _field_rows(definition['schema']))
+        lines.append('')
     lines.extend(['## アーティファクトとの対応', '', '| 固定ID | 名前 | バリューオブジェクト |', '| --- | --- | --- |'])
     for artifact in document['artifacts']:
-        lines.append('| ' + ' | '.join(escape(artifact[k]) for k in ('id', 'name', 'value_object')) + ' |')
-    lines.extend(['', '入力と宣言された更新の確定時に検証する。内部の全変数でこのクラスを使うことや、直接DB更新の検証は保証しない。', ''])
-    return '\n'.join(lines)
+        lines.append(row(artifact[k] for k in ('id', 'name', 'value_object')))
+    return '\n'.join(lines).rstrip() + '\n'

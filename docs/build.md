@@ -113,3 +113,5 @@ Temporal固有のコードはアプリ側の手書き実装を維持する。ビ
 ローカルProviderの準備・確定と限定したTemporal実験は既存の到達点として維持する。今回のビルド成功を、これら未実装項目の達成へ読み替えない。
 
 [バリューオブジェクト](value-objects.md)はPydanticモデルを正本とし、IRにSchemaと実装参照を含める。生成Requestは同じモデルを参照する。独自バリデーターをSchemaから復元する処理は行わない。
+
+サンプルの保存済み出力は[pre-commit hook](generated-documents.md)でも再生成する。CIは同じ生成器の `--check` で更新漏れを検出する。
