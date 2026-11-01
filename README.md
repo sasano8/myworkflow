@@ -22,6 +22,10 @@ python -m scripts.generate_docs --check
 
 `install-hooks.sh` がGitのpre-commit hookを有効にします。新しいcloneごとに実行してください。既存hookとの接続方法やPython環境の指定は[hookの設定手順](docs/generated-documents.md#有効化)を参照してください。
 
+## ライブラリとテストの構成
+
+ソースは `contracts/`、`compiler/`、`runtime/`、`storage/`、`adapters/`、`generation/`、`build/`、`acceptance/`、`quality/` に責務を分けています。テストも同じ分類に対応させ、業務サンプルの受入テストは `tests/apps/` に置いています。[依存方向とAPI](docs/architecture.md#責務と依存方向)、[テスト構成](tests/README.md)を参照してください。
+
 ## サンプル構成
 
 ### 業務アプリのサンプル：`examples/apps/`
@@ -91,7 +95,7 @@ diff -u examples/apps/purchase/docs/requirements.md /tmp/purchase.md
 [初期の業務要件](docs/requirements/purchase.md)と解釈結果は履歴として保持しています。現在の共通終了結果を前提とした[回帰入力](docs/requirements/purchase-completion.md)と生成・比較は[継続品質検査](docs/requirements-quality.md)を参照してください。次のコマンドは初期入力の構造から現在の契約方式で骨格を生成するもので、旧レスポンス契約との意味の一致を保証しません。
 
 ```sh
-python3.14 -m myworkflow.scaffold init docs/requirements/purchase-initial.json /tmp/purchase-scaffold
+python3.14 -m myworkflow.generation.scaffold init docs/requirements/purchase-initial.json /tmp/purchase-scaffold
 ```
 
 空のディレクトリに契約コード、型付きdataclass、未実装関数を作ります。既存の実装は上書きしません。自然言語の解釈・確認はAIと人が担当します。
@@ -99,7 +103,7 @@ python3.14 -m myworkflow.scaffold init docs/requirements/purchase-initial.json /
 移行後の正本は [contract.py](examples/apps/purchase/contract.py) です。手書き処理は [handlers.py](examples/apps/purchase/handlers.py) に固定IDで接続します。変更後は型と概要を再生成します。
 
 ```sh
-python3.14 -m myworkflow.scaffold interfaces examples.apps.purchase.contract examples/apps/purchase/interfaces.py
+python3.14 -m myworkflow.generation.scaffold interfaces examples.apps.purchase.contract examples/apps/purchase/interfaces.py
 python3.14 -m examples.apps.purchase --docs > examples/apps/purchase/docs/requirements.md
 python3.14 -m pytest -q
 ```
@@ -155,7 +159,7 @@ featureを正本とし、操作・検証関数をPythonで実装します。概�
 
 ```sh
 python -m myworkflow.acceptance --config examples.apps.tickets.acceptance.catalog docs --check
-python -m pytest tests/tickets -q
+python -m pytest tests/apps/tickets -q
 ```
 
 ## 元要件と生成コードの往復品質

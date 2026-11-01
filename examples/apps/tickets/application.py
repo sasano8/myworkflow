@@ -1,6 +1,6 @@
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.executable import Context, Engine, Principal, Program, Registry
-from myworkflow.locking import InProcessLockProvider
+from myworkflow.adapters.inprocess import InProcessLockProvider
 from examples.apps.tickets.contract import SPEC
 
 registry = Registry()

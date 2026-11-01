@@ -1,7 +1,7 @@
 """Run the example catalog."""
 import argparse
 from examples.feature_demos.declarative_review.contract import compiled, documentation
-from myworkflow.flowchart import render_business_flow
+from myworkflow.generation.flowcharts import render_business_flow
 
 
 parser = argparse.ArgumentParser(description=__doc__)

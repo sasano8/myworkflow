@@ -32,7 +32,7 @@ Python 3.14.8で通常37テスト、Temporal結合5テストが成功。通常�
 | インストール | Python 3.14の仮想環境へライブラリをeditable install | 成功 |
 | CI | 通常チェックと任意のTemporal手動ジョブを定義 | リモートの実行結果は未確認 |
 
-テストの詳細は `tests/test_executable.py`、`tests/test_contracts.py`、`integration/test_purchase.py` にある。障害注入は実際の保存結果・状態・件数を検査し、出力一致だけを実行の証拠にはしていない。
+テストの詳細は `tests/runtime/test_engine.py`、`tests/contracts/test_models.py`、`tests/adapters/temporal/test_purchase.py` にある。障害注入は実際の保存結果・状態・件数を検査し、出力一致だけを実行の証拠にはしていない。
 
 ## 初期要件との一次照合
 

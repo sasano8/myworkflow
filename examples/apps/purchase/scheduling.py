@@ -3,7 +3,7 @@ from datetime import datetime
 
 from myworkflow.executable import Principal
 from examples.apps.purchase import contract as c
-from myworkflow.identity import execution_id
+from myworkflow.contracts.identity import execution_id
 
 
 def aware_time(value):

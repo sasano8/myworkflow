@@ -1,6 +1,6 @@
 """Generated interfaces. Edit the contract, then regenerate."""
 from dataclasses import dataclass
-from myworkflow.results import PipelineResult as _PipelineResult
+from myworkflow import PipelineResult as _PipelineResult
 
 import examples.apps.purchase.value_objects as _ValueModule0
 _Value0 = _ValueModule0.ApplicationId

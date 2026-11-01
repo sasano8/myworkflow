@@ -10,16 +10,16 @@ Python 3.14.8、temporalio 1.35.0、Temporal CLI 1.9.1（Server 1.32.0）で確�
 uv venv --python 3.14
 uv pip install -e '.[test,temporal]'
 bash scripts/install-temporal-cli.sh /tmp/myworkflow-temporal
-TEMPORAL_CLI_PATH=/tmp/myworkflow-temporal/temporal .venv/bin/python -m pytest integration -q
+TEMPORAL_CLI_PATH=/tmp/myworkflow-temporal/temporal .venv/bin/python -m pytest tests/adapters/temporal -q
 ```
 
-SDKは任意依存 `temporal`、pytest・pytest-asyncioは任意依存 `test` に宣言しています。非同期fixtureでサーバーの終了処理を管理し、各結合テストを独立したイベントループで実行します。同名のテストファイルを同時収集できるようimportlibモードを使用します。通常の `pytest` は `tests/` だけを収集するため、Temporal結合テストは `pytest integration` で明示して実行します。CLI取得ヘルパーはLinux x86_64用で、GitHub公式リリースのSHA256を照合します。他環境では公式CLIの絶対パスを `TEMPORAL_CLI_PATH` に指定します。
+SDKは任意依存 `temporal`、pytest・pytest-asyncioは任意依存 `test` に宣言しています。非同期fixtureでサーバーの終了処理を管理し、各結合テストを独立したイベントループで実行します。同名のテストファイルを同時収集できるようimportlibモードを使用します。Temporalのテストも対応する `tests/adapters/temporal/` に置きます。SDKがなければ収集対象外とし、実サーバーを使うテストはTEMPORAL_CLI_PATHを指定した場合に実行します。明示して実行する場合は `pytest tests/adapters/temporal` を使います。CLI取得ヘルパーはLinux x86_64用で、GitHub公式リリースのSHA256を照合します。他環境では公式CLIの絶対パスを `TEMPORAL_CLI_PATH` に指定します。
 
 このクラウド環境では必要に応じて `UV_CACHE_DIR=/tmp/myworkflow-uv-cache` を指定します。今回のCLIは `/workspace/temporal-tools/temporal`、Python 3.14は `/workspace/.myworkflow-python` 配下、仮想環境はリポジトリの `.venv` です。
 
 ## 検証内容
 
-`integration/test_purchase.py` は実行契約を同じEngineへ接続します。
+`tests/adapters/temporal/test_purchase.py` は実行契約を同じEngineへ接続します。
 
 - 申請・見積書登録・承認・発注確定のDB処理。
 - 承認待ち中にWorkerを停止し、新しいWorkerによる履歴再生後に再開する。

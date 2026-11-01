@@ -3,10 +3,11 @@
 Run: python -m examples.feature_demos.declarative_review
 This example declares contracts only; it does not persist a review or its state.
 """
+from myworkflow.generation.documents import document_program
 from myworkflow import Artifact, Pipeline, Role, Step, Use
-from myworkflow.declarations import bind, compile_workflows, state, transition, trigger, workflow
-from myworkflow.state_graph import render_state_graph
-from myworkflow.flowchart import render_business_flow
+from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, workflow
+from myworkflow.generation.state_tables import render_state_graph
+from myworkflow.generation.flowcharts import render_business_flow
 
 application_id = Artifact('a.review_id', '申請ID', 'application_id', 'str')
 decision = Artifact('a.review_decision', '審査判断', 'decision', 'str')
@@ -55,5 +56,5 @@ program = compiled.program
 
 
 def documentation():
-    return (program.documentation() + '\n' + render_business_flow(compiled.graphs[0], compiled.catalog)
+    return (document_program(program) + '\n' + render_business_flow(compiled.graphs[0], compiled.catalog)
             + '\n' + render_state_graph(compiled.graphs[0], compiled.catalog))

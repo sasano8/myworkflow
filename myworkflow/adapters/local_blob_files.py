@@ -6,8 +6,8 @@ from pathlib import Path
 import shutil
 import tempfile
 
-from myworkflow.artifact_jobs import InvalidJobState, JobConflict, JobState
-from myworkflow.blob_files import BlobRef
+from myworkflow.storage.artifacts import InvalidJobState, JobConflict, JobState
+from myworkflow.storage.blobs import BlobRef
 
 CHUNK_SIZE = 1024 * 1024
 

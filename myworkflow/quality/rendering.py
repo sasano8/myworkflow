@@ -1,4 +1,4 @@
-from myworkflow.markdown import escape
+from myworkflow._internal.markdown import escape
 
 
 def render_quality(report):

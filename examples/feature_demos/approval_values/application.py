@@ -4,10 +4,10 @@ from pathlib import Path
 from myworkflow import Artifact, Role
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
-from myworkflow.artifact_jobs import ArtifactWrite
-from myworkflow.declarations import bind, compile_workflows, state, transition, trigger, workflow
+from myworkflow.storage.artifacts import ArtifactWrite
+from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, workflow
 from myworkflow.executable import Context, Engine, Registry
-from myworkflow.pipeline_declarations import Action, PipelineDeclaration
+from myworkflow.compiler.pipelines import Action, PipelineDeclaration
 from myworkflow.runtime.transitions import GuardContext, TransitionRuntime
 
 from examples.feature_demos.approval_values.value_objects import application_identifier, approval_application, purchase_amount, delivery_period

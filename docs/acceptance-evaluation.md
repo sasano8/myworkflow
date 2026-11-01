@@ -6,7 +6,7 @@
 
 今回、Gherkinのfeatureファイルを受入シナリオの正本として採用した。pytest-bddで実行し、同じファイルから業務向けのシナリオ文書を生成する。契約コードは業務構造の正本、featureは具体的な受入条件の正本で、固定IDで関連付ける。生成文書を手で更新しない。
 
-Python宣言との最小比較は `tests/acceptance_tools/test_acceptance.py` で行った。同じ前提・期待結果はPythonの構造でも表現・実行できるが、今回は既存のScenario Outline、Examples、Given／When／Then、pytestのfixtureと結果処理を利用できるGherkinを選んだ。Pythonから同じfeatureを二重生成する方式にはしない。
+Python宣言との最小比較は `tests/acceptance/test_acceptance.py` で行った。同じ前提・期待結果はPythonの構造でも表現・実行できるが、今回は既存のScenario Outline、Examples、Given／When／Then、pytestのfixtureと結果処理を利用できるGherkinを選んだ。Pythonから同じfeatureを二重生成する方式にはしない。
 
 ## 生成物
 
@@ -33,8 +33,8 @@ python -m examples.apps.purchase.acceptance report artifacts/acceptance.json > a
 受入テストだけ、または固定IDを指定して実行することもできる。
 
 ```sh
-python -m pytest tests/acceptance -q
-python -m pytest tests/acceptance --acceptance-case scenario.purchase.schedule -q
+python -m pytest tests/apps/purchase -q
+python -m pytest tests/apps/purchase --acceptance-case scenario.purchase.schedule -q
 ```
 
 Temporalを使う場合は任意依存とCLIを用意する。
@@ -43,7 +43,7 @@ Temporalを使う場合は任意依存とCLIを用意する。
 python -m pip install -e '.[acceptance,temporal]'
 bash scripts/install-temporal-cli.sh /tmp/myworkflow-temporal
 RUN_TEMPORAL_ACCEPTANCE=1 TEMPORAL_CLI_PATH=/tmp/myworkflow-temporal/temporal \
-  python -m pytest tests/acceptance -q --acceptance-report artifacts/temporal-acceptance.json
+  python -m pytest tests/apps/purchase -q --acceptance-report artifacts/temporal-acceptance.json
 ```
 
 このクラウドの既存仮想環境は `.venv`、検証したCLIは `/workspace/temporal-tools/temporal` にある。

@@ -2,9 +2,9 @@
 from copy import deepcopy
 from dataclasses import dataclass
 
-from myworkflow.artifact_jobs import ArtifactWrite
-from myworkflow.errors import ContractError
-from myworkflow.value_objects import ValueObject
+from myworkflow.storage.artifacts import ArtifactWrite
+from myworkflow.contracts.errors import ContractError
+from myworkflow.contracts.value_objects import ValueObject
 
 
 @dataclass(frozen=True)

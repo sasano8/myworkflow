@@ -2,10 +2,10 @@
 
 ## クラス宣言からのコンパイル
 
-実験用APIを `myworkflow.declarations` に追加した。承認・差戻し・再申請・却下を含む[宣言例](../examples/feature_demos/declarative_review/contract.py)と、その[生成結果](../examples/feature_demos/declarative_review/docs/requirements.md)を参照できる。
+実験用APIを `myworkflow.compiler.declarations` に追加した。承認・差戻し・再申請・却下を含む[宣言例](../examples/feature_demos/declarative_review/contract.py)と、その[生成結果](../examples/feature_demos/declarative_review/docs/requirements.md)を参照できる。
 
 ```python
-from myworkflow.declarations import workflow, state, trigger, bind, transition, compile_workflows
+from myworkflow.compiler.declarations import workflow, state, trigger, bind, transition, compile_workflows
 
 # reviewer / system は Role、review_pipeline は既存の Pipeline オブジェクト。
 # 以下は入力を持たないパイプラインを配置する場合の例。
@@ -41,12 +41,12 @@ state_graph = compiled.graphs[0]
 
 ```sh
 python -m examples.feature_demos.declarative_review
-python -m pytest tests/test_declarations.py tests/test_state_graph.py -q
+python -m pytest tests/compiler/test_declarations.py tests/contracts/test_state_graph.py -q
 ```
 
 ## 業務フロー図の生成
 
-`myworkflow.flowchart.render_business_flow(graph, catalog)` は、同じ状態・遷移の宣言からMermaidのフローチャートを含むMarkdownを生成する。GitHubで閲覧できる[図の出力例](../examples/feature_demos/declarative_review/docs/flow.md)を用意した。通常の[概要出力](../examples/feature_demos/declarative_review/docs/requirements.md)にも図を含む。
+`myworkflow.generation.flowcharts.render_business_flow(graph, catalog)` は、同じ状態・遷移の宣言からMermaidのフローチャートを含むMarkdownを生成する。GitHubで閲覧できる[図の出力例](../examples/feature_demos/declarative_review/docs/flow.md)を用意した。通常の[概要出力](../examples/feature_demos/declarative_review/docs/requirements.md)にも図を含む。
 
 ```sh
 python -m examples.feature_demos.declarative_review --flowchart
@@ -62,7 +62,7 @@ python -m examples.feature_demos.declarative_review --flowchart
 
 ## 中間モデルの実装
 
-`myworkflow.state_graph` は、クラス宣言構文から独立した中間モデルである。`ContractCatalog` と組み合わせて使い、状態を宣言したクラスから生成する。購買の正本はクラス形式へ移行済みだが、購買の状態グラフの宣言と実行への接続は残課題である。
+`myworkflow.contracts.state_graph` は、クラス宣言構文から独立した中間モデルである。`ContractCatalog` と組み合わせて使い、状態を宣言したクラスから生成する。購買の正本はクラス形式へ移行済みだが、購買の状態グラフの宣言と実行への接続は残課題である。
 
 - `State` は固定IDと業務上の名前を持つ。
 - `Transition` は現在の状態、成功後の状態、既存の配置 `Binding`、その配置の `Trigger` をオブジェクトで参照する。条件の概要も記載できる。

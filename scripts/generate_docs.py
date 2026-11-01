@@ -1,10 +1,11 @@
 """Refresh current generated examples; reviewed requirements and test oracles are inputs."""
+from myworkflow.generation.documents import document_program
 import argparse
 from pathlib import Path
 import subprocess
 import sys
 
-from myworkflow.generation import write_outputs
+from myworkflow.generation.files import write_outputs
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -18,14 +19,14 @@ def outputs():
     from examples.apps.purchase.acceptance.catalog import CONFIG as purchase_acceptance
     from examples.apps.tickets.acceptance.catalog import CONFIG as ticket_acceptance
     from myworkflow.acceptance.rendering import render_business, render_cases
-    from myworkflow.build import compile_outputs
-    from myworkflow.flowchart import render_business_flow
+    from myworkflow.build.cli import compile_outputs
+    from myworkflow.generation.flowcharts import render_business_flow
     purchase = compile_outputs(PURCHASE, target='temporal')
     preview = compile_outputs(PURCHASE, target='kestra', workflows=('w.attach',))
     values = compile_outputs(VALUES, target='temporal')
     result = {
         'examples/apps/purchase/interfaces.py': purchase['interfaces.py'],
-        'examples/apps/purchase/docs/requirements.md': contract.program.documentation(handlers.registry, details_link='../../../../docs/execution-design.md'),
+        'examples/apps/purchase/docs/requirements.md': document_program(contract.program, handlers.registry, details_link='../../../../docs/execution-design.md'),
         'examples/apps/purchase/docs/data-definitions.md': purchase['data-definitions.md'],
         'examples/apps/purchase/docs/data-definitions.json': purchase['data-definitions.json'],
         'examples/apps/purchase/docs/kestra-attachment.yaml': preview['manifest.yaml'],

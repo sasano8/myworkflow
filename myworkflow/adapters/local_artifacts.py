@@ -11,8 +11,8 @@ from pathlib import Path
 import tempfile
 
 from myworkflow.adapters.sqlite import SQLiteDatabase
-from myworkflow.blob_files import BlobRef
-from myworkflow.artifact_jobs import (ArtifactConflict, ArtifactJob, ArtifactSnapshot, ArtifactWrite,
+from myworkflow.storage.blobs import BlobRef
+from myworkflow.storage.artifacts import (ArtifactConflict, ArtifactJob, ArtifactSnapshot, ArtifactWrite,
                                      InvalidJobState, JobConflict, JobState)
 
 

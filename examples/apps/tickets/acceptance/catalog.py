@@ -2,7 +2,7 @@ from pathlib import Path
 from examples.apps.tickets.application import registry
 from examples.apps.tickets.contract import SPEC
 from examples.apps.tickets.acceptance.steps import steps
-from myworkflow.program import Program
+from myworkflow.compiler.program import Program
 from myworkflow.acceptance.config import AcceptanceConfig
 from myworkflow.acceptance import DocumentOptions
 

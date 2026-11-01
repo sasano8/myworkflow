@@ -7,7 +7,7 @@ from examples.apps.purchase.handlers import registry
 from examples.apps.purchase.scheduling import ScheduledPurchase, aware_time
 from examples.apps.purchase.services import Services
 from myworkflow.executable import Engine, Principal, Program, Registry
-from myworkflow.results import PipelineResult
+from myworkflow.contracts.results import PipelineResult
 
 
 class ManualClock:
@@ -137,7 +137,7 @@ class TemporalDriver:
         from uuid import uuid4
         from myworkflow.adapters.temporal_testing import TemporalHarness
         from examples.apps.purchase.temporal_workflow import ApprovePurchase, ConfirmPurchase
-        from myworkflow.temporal import PipelineActivity
+        from myworkflow.adapters.temporal import PipelineActivity
         executable = os.environ.get('TEMPORAL_CLI_PATH')
         if not executable:
             raise RuntimeError('Set TEMPORAL_CLI_PATH to run Temporal acceptance scenarios')

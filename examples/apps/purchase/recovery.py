@@ -1,5 +1,5 @@
 """Explicit operator recovery; active runs require a stopped-run confirmation."""
-from myworkflow.ports import RunStatus
+from myworkflow.runtime.ports import RunStatus
 
 
 class Recovery:

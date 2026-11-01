@@ -1,6 +1,6 @@
 """Compatibility facade composing the purchase sample's independent adapters."""
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
-from myworkflow.locking import InProcessLockProvider
+from myworkflow.adapters.inprocess import InProcessLockProvider
 from examples.apps.purchase.object_store import FileObjectStore
 from examples.apps.purchase.recovery import Recovery
 from examples.apps.purchase.testing import Faults, ObservedObjectStore, ObservedRepository

@@ -1,6 +1,6 @@
 """Explicit fault/observation wrappers for the sample's development adapters."""
 from examples.apps.purchase.repository import PurchaseRepository
-from myworkflow.errors import RetryableError
+from myworkflow.contracts.errors import RetryableError
 
 
 class Faults:

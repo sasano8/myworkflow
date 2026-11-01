@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from myworkflow.results import Message, MessageLevel
+from myworkflow.contracts.results import Message, MessageLevel
 from myworkflow.runtime.changes import Changes
 
 

@@ -1,4 +1,5 @@
 """Source → reviewed business format → generated code → independently checked output."""
+from myworkflow.generation.documents import document_program
 from contextlib import contextmanager
 from difflib import SequenceMatcher
 import hashlib
@@ -11,11 +12,11 @@ import sys
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
-from myworkflow.program import Program
-from myworkflow.fingerprints import tree_fingerprint
-from myworkflow.quality.jsonio import read_json
-from myworkflow.scaffold import initialize
-from myworkflow.quality.business import business_to_spec, export_business
+from myworkflow.compiler.program import Program
+from myworkflow._internal.fingerprints import tree_fingerprint
+from myworkflow._internal.jsonio import read_json
+from myworkflow.generation.scaffold import initialize
+from myworkflow.generation.business import business_to_spec, export_business
 from myworkflow.quality.interfaces import check_interfaces
 from myworkflow.quality.metrics import compare, source_coverage
 
@@ -99,7 +100,7 @@ def run_case(case_path, *, converter=None, generator=initialize):
                 metrics['skeleton'] = {'missing': sorted(wanted_handlers - actual_handlers),
                                        'unexpected': sorted(actual_handlers - wanted_handlers),
                                        'passed': wanted_handlers == actual_handlers}
-                markdown = actual_program.documentation()
+                markdown = document_program(actual_program)
             report['stages'][stage] = 'passed'
         stage = 'compare'
         metrics['roundtrip'] = compare(expected, actual)

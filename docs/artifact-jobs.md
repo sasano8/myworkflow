@@ -27,7 +27,7 @@
 ```python
 from tempfile import TemporaryDirectory
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
-from myworkflow.artifact_jobs import ArtifactConflict, ArtifactWrite
+from myworkflow.storage.artifacts import ArtifactConflict, ArtifactWrite
 
 with TemporaryDirectory() as root:
     coordinator = TemporaryArtifactCoordinator(root=root, namespace="optimistic-example")
@@ -80,7 +80,7 @@ ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.
 
 ```python
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
-from myworkflow.artifact_jobs import ArtifactWrite
+from myworkflow.storage.artifacts import ArtifactWrite
 
 coordinator = TemporaryArtifactCoordinator(namespace='purchase')
 coordinator.prepare('approval-job-001', (
@@ -150,7 +150,7 @@ commit前にファイルの存在・サイズ・SHA256を検証する。大き�
 
 ```sh
 python -m examples.feature_demos.prepared_approval
-python -m pytest tests/test_artifact_jobs.py -q
+python -m pytest tests/storage/test_artifacts.py -q
 ```
 
 停止後は同じroot・名前空間でProviderを開き直し、`status(job_id)` で確認する。準備済みなら同じジョブを確定または破棄し、確定済みならその結果を採用する。確定の応答が失われても、結果照会と同じIDでの再送ができる。

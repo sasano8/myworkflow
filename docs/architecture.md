@@ -38,31 +38,38 @@ catalog: ContractCatalog = compiled.catalog
 
 状態・トランジションは `compiled.graphs` のStateGraphとして保持し、`CompiledWorkflows` が業務契約カタログとともに束ねる。今回の名称変更で保存形式や実行時の保証範囲は変更しない。従来の `Catalog` は `ContractCatalog` と同じクラスを指す互換名として残す。新しいコードと型注釈では `ContractCatalog` を使う。
 
-## モジュール
+## 責務と依存方向
 
-| 場所 | 責務 |
-| --- | --- |
-| myworkflow/models.py | 共通の不変宣言モデル |
-| pipeline_declarations.py | Artifact・条件・補償をオブジェクト参照するパイプライン宣言のコンパイル |
-| building.py / build.py / cli.py | 共通IR・概要・型とKestraプレビューの生成、未対応宣言の拒否、差分検査 |
-| declarations.py / state_graph.py | 実験用クラス宣言のコンパイル、状態・遷移の静的検査と概要出力。実行は明示的に接続するruntime/transitions.pyが担当 |
-| flowchart.py | 同じ状態宣言から閲覧用のMermaid業務フロー図を生成 |
-| serialization.py | 型付き契約から互換用の辞書スナップショットを生成 |
-| loading.py / validation.py | 外部の辞書形式の解釈、構造・名前・参照・型・データフロー検証 |
-| program.py | 検証済みモデルの索引、配置・トリガー・入力変換・引継ぎ先の解決 |
-| registry.py | 関数の登録、検索、明示的な差替え |
-| results.py | 終了コードと重大度付きメッセージの共通契約 |
-| runtime/ | Context、実行、ステップ境界で記録する補償状態 |
-| blob_files.py / adapters/local_blob_files.py | blobの参照契約と、ジョブ単位のファイル保存。本文はDBへ保存しない |
-| artifact_jobs.py / adapters/local_artifacts.py | ジョブIDによる準備・確定のProtocolと、一時領域SQLiteのProvider |
-| ports.py / locking.py | 基盤Protocol、実行状態、プロセス内ロック |
-| adapters/sqlite.py | SQLite接続と実行履歴。業務SQLは含まない |
-| temporal.py / adapters/temporal_testing.py | 任意のTemporal接続とテスト資源の管理 |
-| rendering.py / codegen.py / generation.py | 文書・型・骨格の生成と、比較・書込み |
-| acceptance/ | 受入モデル、Gherkin検証、文書、レポート、CLI、pytest-bddとの接続境界 |
-| pytest_plugin.py | 利用側の設定に基づくケース選択・結果収集 |
-| examples/apps/purchase/ | 購買の業務定義、処理、保存、補償、オーケストレーション |
-| examples/apps/tickets/ | 購買に依存しない第二の業務例 |
+| パッケージ | 責務 | 対応するテスト |
+| --- | --- | --- |
+| `contracts/` | 業務契約カタログ、状態、値、終了結果・例外、構造上の不変条件 | `tests/contracts/` |
+| `compiler/` | 宣言、読込み、名前・参照・データフロー検証、Programの索引 | `tests/compiler/` |
+| `runtime/` | Engine・Context・実装登録・変更収集・遷移・補償、実行用Protocol | `tests/runtime/` |
+| `storage/` | アーティファクト・blob・準備／確定の型とProtocol | `tests/storage/` |
+| `adapters/` | SQLite、一時ファイル、プロセス内ロック、任意のTemporal接続 | `tests/adapters/` |
+| `generation/` | 業務要件・データ定義・状態表・図・型・骨格・安全なファイル出力 | `tests/generation/` |
+| `build/` | 共通生成と出力先の対応判定、Kestraプレビュー、ビルドCLI | `tests/build/` |
+| `acceptance/` | Gherkin、定義、受入文書・レポート、pytestプラグイン | `tests/acceptance/` |
+| `quality/` | 元要件と出力・生成型の比較、欠損・充足率の評価 | `tests/quality/` |
+| `_internal/` | 複数領域で共有するMarkdownエスケープ、厳密なJSON処理、指紋計算 | 各利用側と `tests/architecture/` |
+
+contractsはcompiler・runtime・表示・保存実装へ依存しない。compilerは生成器へ依存せず、実行と生成が同じコンパイル結果を利用する。storageは保存契約のみを持ち、実装はadaptersへ置く。共通の業務形式の出力はgenerationが所有し、qualityとbuildが利用する。_internalは業務契約や実行処理をimportしない。
+
+これらの依存方向は `tests/architecture/` で検査する。業務アプリの受入テストは `tests/apps/`、複数テストで共有するデータ構築は `tests/_support/` とする。実行や表示が混在していた旧テストファイルは、対象の振る舞いに応じて分割した。
+
+## 公開APIと生成API
+
+`from myworkflow import ContractCatalog, ValueObject, PipelineResult` の公開入口と、既存の `myworkflow.executable` の互換入口は維持する。内部の各モジュールは新しい責務のパッケージへ移し、同じ実装を旧ファイルへ複製しない。
+
+文書生成はProgramのメソッドから分離した。利用側は生成APIを明示して呼ぶ。
+
+```python
+from myworkflow.generation.documents import document_program
+
+markdown = document_program(compiled.program, registry)
+```
+
+以前の `program.documentation(...)` は上記へ変更する。内部モジュールを直接importしていたコードも、この表のパッケージへ更新する。例えば宣言は `myworkflow.compiler.declarations`、アーティファクトは `myworkflow.storage.artifacts`、Temporalは `myworkflow.adapters.temporal` とする。`myworkflow.build` の設定API・CLIは維持し、骨格生成CLIは `python -m myworkflow.generation.scaffold` に配置する。
 
 `myworkflow` の宣言クラスと `myworkflow.executable` のimportは互換窓口として残す。内部ファイルを分けたことを理由に、固定ID・業務の実行順序・受入条件は変更しない。
 
@@ -119,11 +126,11 @@ Contextは値・業務用の依存・実行情報を分けて保持し、`ctx.ex
 ```sh
 python -m myworkflow.acceptance --config examples.apps.purchase.acceptance.catalog docs --check
 python -m myworkflow.acceptance --config examples.apps.tickets.acceptance.catalog docs --check
-python -m pytest tests/acceptance -q
-python -m pytest tests/tickets -q
+python -m pytest tests/apps/purchase -q
+python -m pytest tests/apps/tickets -q
 ```
 
-pytest利用側は `myworkflow.pytest_plugin` を読み込み、`acceptance_config` マーカーまたは `--acceptance-config` で設定を指定する。コアの試験だけなら購買のfeatureやpytest-bddを読み込まない。pytest-bddの呼出フレームとExamplesのパラメータへの依存はpytest_bridgeへ隔離している。
+pytest利用側は `myworkflow.acceptance.pytest_plugin` を読み込み、`acceptance_config` マーカーまたは `--acceptance-config` で設定を指定する。コアの試験だけなら購買のfeatureやpytest-bddを読み込まない。pytest-bddの呼出フレームとExamplesのパラメータへの依存はpytest_bridgeへ隔離している。
 
 結果JSONはschema_version=1。未知の形式、不正な状態、重複ケースID、実行結果のソースハッシュ欠落を拒否する。以前のバージョンなし結果は、そのまま現行の保証には使わず、再実行して作り直す。
 

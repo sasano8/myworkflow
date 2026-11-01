@@ -1,6 +1,6 @@
 """Command line entrypoint for framework development tools."""
 import argparse
-from myworkflow.build import main as build_main
+from myworkflow.build.cli import main as build_main
 
 
 def main(argv=None):

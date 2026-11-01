@@ -1,4 +1,5 @@
 """Run the documented purchase flow without external services."""
+from myworkflow.generation.documents import document_program
 import argparse
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -17,7 +18,7 @@ def main():
     parser.add_argument('--docs', action='store_true')
     args = parser.parse_args()
     if args.docs:
-        print(program.documentation(registry, details_link="../../../../docs/execution-design.md"), end='')
+        print(document_program(program, registry, details_link="../../../../docs/execution-design.md"), end='')
         return
     with TemporaryDirectory() as directory:
         services = Services(Path(directory) / 'purchase.db')

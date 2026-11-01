@@ -3,16 +3,16 @@ from contextlib import ExitStack
 from copy import deepcopy
 from dataclasses import asdict, dataclass, is_dataclass
 from typing import get_type_hints
-from myworkflow.errors import ContractError, RetryableError, ExecutionFailed
+from myworkflow.contracts.errors import ContractError, RetryableError, ExecutionFailed
 from myworkflow.runtime.context import Context
 from myworkflow.runtime.transitions import TransitionRuntime
-from myworkflow.codegen import class_name
+from myworkflow.contracts.names import class_name
 from myworkflow.runtime.compensation import CompensationStack
-from myworkflow.results import PipelineResult
-from myworkflow.identity import definition_id
-from myworkflow.ports import ExecutionStore, LockProvider, RunStatus
+from myworkflow.contracts.results import PipelineResult
+from myworkflow.contracts.identity import definition_id
+from myworkflow.runtime.ports import ExecutionStore, LockProvider, RunStatus
 
-from myworkflow.value_objects import PRIMITIVES as TYPES
+from myworkflow.contracts.value_objects import PRIMITIVES as TYPES
 
 @dataclass(frozen=True)
 class Principal:

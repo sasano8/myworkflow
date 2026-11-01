@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from collections.abc import Callable
 
-from myworkflow.errors import ContractError
+from myworkflow.contracts.errors import ContractError
 from myworkflow.runtime.changes import Changes
 
 

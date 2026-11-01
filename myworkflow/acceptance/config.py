@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from myworkflow.acceptance.gherkin import load_cases
 from myworkflow.acceptance.rendering import DocumentOptions
-from myworkflow.fingerprints import contract_fingerprint, tree_fingerprint
+from myworkflow._internal.fingerprints import contract_fingerprint, tree_fingerprint
 
 
 @dataclass(frozen=True)

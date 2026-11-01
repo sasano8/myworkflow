@@ -3,7 +3,7 @@ from pytest_bdd import parsers
 
 from examples.apps.purchase.scheduling import ScheduledPurchase, aware_time
 from myworkflow.acceptance import Definitions
-from myworkflow.identity import definition_id
+from myworkflow.contracts.identity import definition_id
 from examples.apps.purchase import contract as c
 
 steps = Definitions()
@@ -127,7 +127,7 @@ def permission_denied(ctx):
 @then('最後の操作は失敗である', '検証基盤', (c.confirm_purchase,))
 def failed(ctx):
     from myworkflow.executable import ExecutionFailed
-    from myworkflow.results import PipelineResult
+    from myworkflow.contracts.results import PipelineResult
     return isinstance(ctx.error, ExecutionFailed) or (isinstance(ctx.error, PipelineResult) and not ctx.error.ok)
 
 

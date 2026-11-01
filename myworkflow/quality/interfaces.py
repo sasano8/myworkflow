@@ -1,7 +1,7 @@
 """Inspect emitted dataclasses independently of the generator's source template."""
 from dataclasses import fields, is_dataclass
 from typing import get_type_hints
-from myworkflow.results import PipelineResult
+from myworkflow.contracts.results import PipelineResult
 
 
 def check_interfaces(expected_business, module):

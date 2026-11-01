@@ -1,7 +1,7 @@
 """Canonical symbolic purchase declarations. SPEC is a generated compatibility snapshot."""
 from myworkflow import Artifact, Role
-from myworkflow.declarations import bind, compile_workflows, trigger, workflow
-from myworkflow.pipeline_declarations import Action, Mutex, Operation, PipelineDeclaration
+from myworkflow.compiler.declarations import bind, compile_workflows, trigger, workflow
+from myworkflow.compiler.pipelines import Action, Mutex, Operation, PipelineDeclaration
 from examples.apps.purchase import value_objects as vo
 
 requester = Role('role.requester', '購買依頼部門の担当者', '申請者')

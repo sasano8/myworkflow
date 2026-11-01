@@ -20,6 +20,7 @@ acceptance = ["pytest==9.2.0", "pytest-bdd==9.0.1", "gherkin-official==42.0.1"]
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 testpaths = ["tests"]
+norecursedirs = [".*", "__pycache__", "*.egg-info", "dist"]
 
 [tool.setuptools.packages.find]
 include = ["myworkflow*"]

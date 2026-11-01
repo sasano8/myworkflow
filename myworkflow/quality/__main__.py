@@ -2,9 +2,9 @@ import argparse
 import json
 from pathlib import Path
 
-from myworkflow.generation import write_outputs
+from myworkflow.generation.files import write_outputs
 from myworkflow.quality.runner import run_case
-from myworkflow.quality.jsonio import read_json
+from myworkflow._internal.jsonio import read_json
 from myworkflow.quality.rendering import render_quality
 
 

@@ -86,5 +86,5 @@ prepareの応答消失でも準備が残っている可能性があるため、�
 
 ```sh
 python -m examples.feature_demos.approval_values
-python -m pytest tests/test_transition_runtime.py -q
+python -m pytest tests/runtime/test_transitions.py -q
 ```
