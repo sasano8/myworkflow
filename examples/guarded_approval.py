@@ -11,7 +11,9 @@ from myworkflow.executable import Context, Engine, Principal, Registry
 from myworkflow.pipeline_declarations import Action, PipelineDeclaration
 from myworkflow.runtime.transitions import GuardContext, TransitionRuntime
 
-application_id = Artifact('a.guarded_id', '申請ID', 'application_id', 'str')
+from examples.approval_values import application_identifier, approval_application, purchase_amount, delivery_period
+
+application_id = Artifact('a.guarded_id', '申請ID', 'application_id', 'str', value_object=application_identifier)
 reviewer = Role('role.guarded_reviewer', '審査責任者', '承認者')
 system = Role('role.guarded_system', '業務システム', 'システム')
 record_approval = Action('s.guarded_approve', '承認変更の作成',
@@ -33,7 +35,8 @@ class Approval:
                          condition='申請者本人ではなく、金額が正である', guard=may_approve)
 
 
-compiled = compile_workflows(Approval, artifacts=(application_id,))
+compiled = compile_workflows(Approval, artifacts=(application_id,),
+                             value_objects=(application_identifier, purchase_amount, approval_application, delivery_period))
 registry = Registry()
 
 
@@ -46,14 +49,16 @@ def approve(ctx: Context) -> None:
 
 def seed(coordinator, identity='example'):
     coordinator.prepare(f'seed:{identity}', (
-        ArtifactWrite(f'application:{identity}', {'owner': 'alice', 'amount': 100, 'status': Approval.waiting.id}),
+        ArtifactWrite(f'application:{identity}', approval_application.normalize(
+            {'owner': 'alice', 'amount': 100, 'status': Approval.waiting.id})),
     ))
     coordinator.commit(f'seed:{identity}')
 
 
 def engine(coordinator, journal_path: Path, *, handlers=None):
     transitions = TransitionRuntime(compiled, compiled.graphs[0], coordinator,
-                                    key=lambda values: f"application:{values['application_id']}")
+                                    key=lambda values: f"application:{values['application_id']}",
+                                    value_object=approval_application)
     return Engine(compiled.program, handlers or registry, None,
                   store=SQLiteExecutionStore(SQLiteDatabase(journal_path)), transitions=transitions)
 

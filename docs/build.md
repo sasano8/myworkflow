@@ -65,6 +65,7 @@ flowchart TD
 | `ir.json` | 業務構造、終了結果の共通契約、実装関数への対応、宣言された状態グラフ |
 | `requirements.md` | 選択した業務概要と実装対応。状態宣言があれば図と遷移表も含む |
 | `interfaces.py` | リクエスト型と共通PipelineResultの別名 |
+| `data-definitions.md` / `data-definitions.json` | ValueObject宣言がある場合の別ファイルのデータ定義。業務要件から参照する |
 | `build.json` | 出力先・選択範囲・各生成物のSHA256 |
 | `manifest.yaml` | Kestra選択時だけ生成するプレビュー |
 
@@ -110,3 +111,5 @@ Temporal固有のコードはアプリ側の手書き実装を維持する。ビ
 - 顧客レビューと工数・トークン削減の実測、GitHub Actionsの結果確認。
 
 ローカルProviderの準備・確定と限定したTemporal実験は既存の到達点として維持する。今回のビルド成功を、これら未実装項目の達成へ読み替えない。
+
+[バリューオブジェクト](value-objects.md)はPydanticモデルを正本とし、IRにSchemaと実装参照を含める。生成Requestは同じモデルを参照する。独自バリデーターをSchemaから復元する処理は行わない。

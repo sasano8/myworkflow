@@ -1,5 +1,6 @@
 from collections.abc import MutableMapping
 from contextlib import ExitStack
+from copy import deepcopy
 from dataclasses import asdict, dataclass, is_dataclass
 from typing import get_type_hints
 from myworkflow.errors import ContractError, RetryableError, ExecutionFailed
@@ -11,7 +12,7 @@ from myworkflow.results import PipelineResult
 from myworkflow.identity import definition_id
 from myworkflow.ports import ExecutionStore, LockProvider, RunStatus
 
-TYPES = {"str": str, "int": int, "bool": bool, "float": float}
+from myworkflow.value_objects import PRIMITIVES as TYPES
 
 @dataclass(frozen=True)
 class Principal:
@@ -40,7 +41,7 @@ class Engine:
                         if cls is not PipelineResult:
                             raise ContractError(f"{p['id']}: stale or invalid Response interface")
                         continue
-                    expected = {program.artifacts[i]["key"]: TYPES[program.artifacts[i]["type"]] for i in ids}
+                    expected = {program.artifacts[i]["key"]: (program.artifacts[i].value_object.model if program.artifacts[i].value_object else TYPES[program.artifacts[i]["type"]]) for i in ids}
                     if cls is None or not is_dataclass(cls) or get_type_hints(cls) != expected:
                         raise ContractError(f"{p['id']}: stale or invalid {direction} interface")
 
@@ -79,7 +80,7 @@ class Engine:
     def _run_or_raise(self, pipeline_id, request, *, actor, run_id, binding_id=None, trigger_id=None):
         p = self.program.plans[pipeline_id]
         values = asdict(request) if is_dataclass(request) else dict(request)
-        self.program.values(p["inputs"], values, pipeline_id)
+        values = self.program.values(p["inputs"], values, pipeline_id)
         ctx = Context(values, self.services, run_id, actor, [])
         self.store.begin(run_id)
         compensations = CompensationStack()
@@ -119,7 +120,7 @@ class Engine:
                                 compensations.capture(ctx)
                 failure_id = pipeline_id + "/response"
                 produced = {self.program.artifacts[a]["key"]: values[self.program.artifacts[a]["key"]] for a in p["outputs"]}
-                self.program.values(p["outputs"], produced, pipeline_id)
+                values.update(self.program.values(p["outputs"], produced, pipeline_id))
                 if session is not None:
                     failure_id = pipeline_id + "/transition"
                     session.finish(ctx)
@@ -164,8 +165,8 @@ class Engine:
     def _call(self, identity, ctx, reads, writes):
         keys = {self.program.artifacts[a]["key"] for a in reads}
         selected = {k: ctx.values[k] for k in keys if k in ctx.values}
-        self.program.values(reads, selected, identity)
-        before = dict(ctx.values)
+        ctx.values.update(self.program.values(reads, selected, identity))
+        before = deepcopy(ctx.values)
         allowed = {self.program.artifacts[a]["key"] for a in writes}
         raw = ctx.values
         ctx.values = StepValues(raw, keys, allowed, identity)
@@ -177,7 +178,7 @@ class Engine:
         changed = {k for k in before.keys() | ctx.values.keys() if k not in before or k not in ctx.values or before[k] != ctx.values[k]}
         if changed - allowed:
             raise ContractError(f"{identity}: undeclared context writes {sorted(changed - allowed)}")
-        self.program.values(writes, {k: ctx.values[k] for k in allowed if k in ctx.values}, identity)
+        ctx.values.update(self.program.values(writes, {k: ctx.values[k] for k in allowed if k in ctx.values}, identity))
 
 
 class StepValues(MutableMapping):

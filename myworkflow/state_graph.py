@@ -44,7 +44,7 @@ class StateGraph:
             raise ContractError(f'{self.workflow.id}: workflow must belong to catalog')
         if not isinstance(self.states, tuple) or not isinstance(self.transitions, tuple):
             raise ContractError(f'{self.workflow.id}: graph declarations must be tuples')
-        ids = {e.id for e in (*catalog.artifacts, *catalog.roles, *catalog.pipelines, *catalog.workflows)}
+        ids = {e.id for e in (*catalog.artifacts, *catalog.roles, *catalog.pipelines, *catalog.workflows, *catalog.value_objects)}
         ids.update(s.id for p in catalog.pipelines for s in p.steps)
         ids.update(b.id for w in catalog.workflows for b in w.bindings)
         ids.update(t.id for w in catalog.workflows for b in w.bindings for t in b.triggers)

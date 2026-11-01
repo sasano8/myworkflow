@@ -5,8 +5,9 @@ from myworkflow.models import Catalog, Lock
 def catalog_to_spec(catalog: Catalog) -> dict:
     """Serialize references; this export is never the typed declarations' source."""
     return {
+        **({'value_objects': [d.definition() for d in catalog.value_objects]} if catalog.value_objects else {}),
         'roles': [{'id': r.id, 'name': r.name, 'display_name': r.display_name} for r in catalog.roles],
-        'artifacts': [{'id': a.id, 'name': a.name, 'key': a.key, 'type': a.type} for a in catalog.artifacts],
+        'artifacts': [{'id': a.id, 'name': a.name, 'key': a.key, 'type': a.type, **({'value_object': a.value_object.id} if a.value_object else {})} for a in catalog.artifacts],
         'pipelines': [{
             'id': p.id, 'name': p.name, 'inputs': list(p.inputs), 'outputs': list(p.outputs), 'reply': p.reply,
             'steps': [{

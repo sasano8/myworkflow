@@ -3,7 +3,8 @@ from myworkflow.models import Lock, Trigger
 
 
 def validate_catalog(catalog):
-    entities = [*catalog.artifacts, *catalog.pipelines, *catalog.workflows, *catalog.roles]
+    validate_definitions(catalog.value_objects)
+    entities = [*catalog.artifacts, *catalog.pipelines, *catalog.workflows, *catalog.roles, *catalog.value_objects]
     entities += [s for p in catalog.pipelines for s in p.steps]
     entities += [b for w in catalog.workflows for b in w.bindings]
     entities += [t for w in catalog.workflows for b in w.bindings for t in b.additional_triggers]
@@ -16,6 +17,9 @@ def validate_catalog(catalog):
     artifacts = {a.id for a in catalog.artifacts}
     pipelines = {p.id: p for p in catalog.pipelines}
     workflows = {w.id for w in catalog.workflows}
+    for a in catalog.artifacts:
+        if a.value_object is not None and not any(a.value_object is d for d in catalog.value_objects):
+            raise ValueError(f'{a.id}: value object must belong to catalog')
     for p in catalog.pipelines:
         if type(p.reply) is not bool:
             raise ValueError("Pipeline reply must be boolean")
@@ -64,12 +68,12 @@ import re
 from myworkflow.errors import ContractError
 from myworkflow.codegen import class_name
 
-TYPES = {"str": str, "int": int, "bool": bool, "float": float}
+from myworkflow.value_objects import PRIMITIVES as TYPES, validate_definitions
 
 
 def validate_names(program):
     catalog = program.model
-    entities = [*catalog.artifacts, *catalog.pipelines, *catalog.workflows, *catalog.roles]
+    entities = [*catalog.artifacts, *catalog.pipelines, *catalog.workflows, *catalog.roles, *catalog.value_objects]
     entities += [s for p in catalog.pipelines for s in p.steps]
     entities += [b for w in catalog.workflows for b in w.bindings]
     entities += [t for w in catalog.workflows for b in w.bindings for t in b.triggers]
@@ -85,6 +89,12 @@ def validate_names(program):
     for a in program.artifacts.values():
         if a["type"] not in TYPES:
             raise ContractError(f"{a['id']}: unsupported type")
+        if a.value_object is not None:
+            a.value_object.check()
+            schema_type = a.value_object.model.model_json_schema().get('type')
+            expected = {'str': 'string', 'int': 'integer', 'bool': 'boolean', 'float': 'number', 'dict': 'object'}[a.type]
+            if schema_type != expected:
+                raise ContractError(f'{a.id}: value object JSON type must match {a.type}')
     handler_ids = [s['id'] for s in program.steps.values() if s['kind'] != 'lock']
     compensation_ids = {s['compensate'] for s in program.steps.values() if s.get('compensate')}
     if compensation_ids & set(ids) or any(not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]*", i) for i in compensation_ids):
@@ -127,6 +137,8 @@ def validate_flow(program):
                 import math
                 if not isinstance(s.namespace, str) or not s.namespace or type(s.timeout) not in (int, float) or not math.isfinite(s.timeout) or s.timeout < 0:
                     raise ContractError(f"{s['id']}: invalid lock namespace or timeout")
+                if any(program.artifacts[a].type == 'dict' for a in reads):
+                    raise ContractError(f'{s.id}: lock keys require scalar artifacts')
                 if not reads or condition or s.get("writes"):
                     raise ContractError(f"{s['id']}: lock requires unconditional keys, no writes")
             target = conditional.setdefault(tuple(condition), set()) if condition else available

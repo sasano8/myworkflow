@@ -11,6 +11,7 @@ from myworkflow.models import Artifact, Binding, Catalog, Pipeline, Role, Trigge
 from myworkflow.pipeline_declarations import Action, Operation, PipelineDeclaration, compile_pipeline
 from myworkflow.program import Program
 from myworkflow.state_graph import State, StateGraph, Transition
+from myworkflow.value_objects import ValueObject, validate_definitions
 
 
 @dataclass(frozen=True)
@@ -97,7 +98,8 @@ def workflow(*, id: str, name: str) -> Callable[[type[T]], type[T]]:
 
 
 def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
-                      pipelines: tuple[Pipeline | PipelineDeclaration, ...] = (), roles: tuple[Role, ...] = ()) -> CompiledWorkflows:
+                      pipelines: tuple[Pipeline | PipelineDeclaration, ...] = (), roles: tuple[Role, ...] = (),
+                      value_objects: tuple[ValueObject, ...] = ()) -> CompiledWorkflows:
     """Compile all explicitly selected classes in definition order.
 
     No methods, properties, generators or handlers are invoked to discover nodes.
@@ -112,6 +114,16 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
             fail(where, f'expected a tuple of {typ.__name__}')
 
     sequence(artifacts, Artifact, 'artifacts')
+    validate_definitions(value_objects)
+    definitions = {d.id: d for d in value_objects}
+    for artifact in artifacts:
+        if artifact.value_object is not None:
+            definition = artifact.value_object
+            if not isinstance(definition, ValueObject):
+                fail(artifact.id, 'value_object must reference ValueObject')
+            if definition.id in definitions and definitions[definition.id] is not definition:
+                fail(definition.id, 'different objects share a value object ID')
+            definitions[definition.id] = definition
     if len({id(a) for a in artifacts}) != len(artifacts):
         fail('artifacts', 'duplicate declaration')
     if not declarations:
@@ -230,7 +242,7 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
                 if isinstance(step, Action) and isinstance(step.compensate, Operation):
                     collect(operations, step.compensate, Operation, step.id)
         lowered[identity] = compile_pipeline(pipeline, artifacts) if isinstance(pipeline, PipelineDeclaration) else pipeline
-    catalog = Catalog(artifacts, tuple(lowered.values()), tuple(workflows), tuple(roles.values()))
+    catalog = Catalog(artifacts, tuple(lowered.values()), tuple(workflows), tuple(roles.values()), tuple(definitions.values()))
     program = Program.from_catalog(catalog)
     graph_ids = set()
     for graph in graphs:

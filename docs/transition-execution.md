@@ -30,6 +30,8 @@ ctx.changes.update(
 
 `subject` は検証対象の申請を読み込んだRecordである。`record.value` は読込み時の値のコピー、`record.version` はそのバージョン。`ctx.changes.read(key)` で他の既存JSONレコードを読み、`update(record, **fields)` でそれらの項目も変更できる。同じキーは同じ読込み結果を返し、変更予定を公開したり最新値へ更新したりしない。変更内容は内部にコピーし、別のChangesで読んだRecordの更新や、実行終了後の更新は拒否する。
 
+[ValueObject](value-objects.md)を `TransitionRuntime(..., value_object=definition)` へ結び付けると、対象レコードを読込時と確定前に検証する。他のレコードも `ctx.changes.read(key, value_object=definition)` で型を指定できる。型検証後の状態をトランジションと照合する。
+
 新規レコード作成・削除・blobのステージはこの高水準APIの対象外である。既存の低水準Coordinator APIは引き続き使用できるが、低水準APIを直接呼ぶ書込みにこの検証が自動適用されるわけではない。
 
 ## 宣言する条件

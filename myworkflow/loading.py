@@ -3,7 +3,7 @@ from myworkflow.models import Artifact, Binding, Catalog, Lock, Pipeline, Role, 
 from myworkflow.errors import ContractError
 
 
-def load_catalog(spec):
+def load_catalog(spec, *, value_objects=()):
     location = 'contract'
     try:
         def items(container, key):
@@ -18,7 +18,13 @@ def load_catalog(spec):
                 raise ContractError(f'{location}.{key}: expected unique string references')
             return result
 
-        artifacts = tuple(Artifact(a['id'], a['name'], a['key'], a['type']) for a in items(spec, 'artifacts'))
+        from myworkflow.value_objects import validate_definitions
+        validate_definitions(value_objects)
+        definitions = {d.id: d for d in value_objects}
+        if spec.get('value_objects', []) != [d.definition() for d in value_objects]:
+            raise ContractError('Value object definitions require matching explicit Python declarations; no dynamic imports')
+        artifacts = tuple(Artifact(a['id'], a['name'], a['key'], a['type'],
+                                   definitions[a['value_object']] if 'value_object' in a else None) for a in items(spec, 'artifacts'))
         roles = tuple(Role(r['id'], r['name'], r['display_name']) for r in items(spec, 'roles'))
         pipelines = []
         for p in items(spec, 'pipelines'):
@@ -66,7 +72,7 @@ def load_catalog(spec):
                     primary.after, primary.wait, b.get('next_workflow'), tuple(triggers[1:]), primary.actor_role_id,
                     tuple((key, value) for key, value in b.get('role_mapping', {'system': 'role.system'}).items()), primary.id))
             workflows.append(Workflow(w['id'], w['name'], tuple(bindings)))
-        model = Catalog(artifacts, tuple(pipelines), tuple(workflows), roles)
+        model = Catalog(artifacts, tuple(pipelines), tuple(workflows), roles, value_objects)
         entities = [*artifacts, *roles, *pipelines, *workflows]
         entities += [s for p in pipelines for s in p.steps]
         entities += [b for w in workflows for b in w.bindings]

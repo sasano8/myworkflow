@@ -1,6 +1,6 @@
 # myworkflow
 
-Python 3.14向けの、業務契約から型・実装の骨格・業務概要を生成し、同じ契約でパイプラインを実行するPoCです。標準機能は外部依存なし、Temporal接続は任意です。
+Python 3.14向けの、業務契約から型・実装の骨格・業務概要を生成し、同じ契約でパイプラインを実行するPoCです。データ契約にはPydanticを使用し、Temporal接続は任意です。
 
 ## プロダクトの考え方と比較
 
@@ -134,4 +134,12 @@ python -m myworkflow.quality --case examples/purchase/quality/case.json --output
 
 ```sh
 python -m examples.guarded_approval
+```
+
+### バリューオブジェクトと別ファイルのデータ定義
+
+Pydanticモデルを固定ID付きの `ValueObject` として宣言し、入力と型を結び付けた更新を検証します。業務概要とは別に[データ定義](examples/approval-values/data-definitions.md)を生成します。[定義方法と保証範囲](docs/value-objects.md)を参照してください。
+
+```sh
+python -m myworkflow build --config examples.approval_values_build --target temporal --output dist/approval-values
 ```

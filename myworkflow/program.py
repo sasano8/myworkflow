@@ -2,13 +2,13 @@ from myworkflow.errors import ContractError
 from myworkflow.identity import definition_id
 from myworkflow.codegen import class_name
 
-TYPES = {"str": str, "int": int, "bool": bool, "float": float}
+from myworkflow.value_objects import PRIMITIVES as TYPES
 
 class Program:
-    def __init__(self, spec):
+    def __init__(self, spec, *, value_objects=()):
         import json
         from myworkflow.loading import load_catalog
-        self.model = load_catalog(spec)
+        self.model = load_catalog(spec, value_objects=value_objects)
         try:
             self._source_json = json.dumps(spec, ensure_ascii=False)
         except (TypeError, ValueError) as exc:
@@ -31,6 +31,10 @@ class Program:
             elif isinstance(value, tuple):
                 for index, item in enumerate(value):
                     immutable(item, f'{path}[{index}]')
+            elif isinstance(value, type):
+                from pydantic import BaseModel
+                if not issubclass(value, BaseModel):
+                    raise ContractError(f'{path}: only Pydantic model classes are accepted')
             elif type(value) not in (str, int, float, bool, type(None)):
                 raise ContractError(f'{path}: typed declarations must contain immutable values')
         immutable(catalog, 'catalog')
@@ -97,12 +101,17 @@ class Program:
         return self.binding(target_binding_id)
 
     def values(self, ids, values, where):
-        expected = {self.artifacts[i]["key"]: TYPES[self.artifacts[i]["type"]] for i in ids}
-        if set(values) != set(expected):
-            raise ContractError(f"{where}: expected fields {sorted(expected)}, got {sorted(values)}")
-        for key, typ in expected.items():
-            if type(values[key]) is not typ:
+        declarations = {self.artifacts[i].key: self.artifacts[i] for i in ids}
+        if set(values) != set(declarations):
+            raise ContractError(f"{where}: expected fields {sorted(declarations)}, got {sorted(values)}")
+        normalized = {}
+        for key, artifact in declarations.items():
+            value = artifact.value_object.normalize(values[key]) if artifact.value_object else values[key]
+            typ = TYPES[artifact.type]
+            if type(value) is not typ:
                 raise ContractError(f"{where}: {key} must be {typ.__name__}")
+            normalized[key] = value
+        return normalized
 
     def check(self, registry):
         for s in self.steps.values():

@@ -26,7 +26,7 @@ flowchart TD
 
 ## 実行
 
-Python 3.14、外部依存なしでリポジトリ直下から実行できる。
+Python 3.14とプロジェクトの標準依存（Pydantic）をインストールし、リポジトリ直下から実行できる。
 
 ```sh
 python -m myworkflow.quality \

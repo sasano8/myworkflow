@@ -146,3 +146,5 @@ PostgreSQLのセッション／トランザクション単位のアドバイザ�
 [ビルドと残課題](build.md)では、Pythonの正本から中間表現と実行基盤向け出力を生成する境界を定義する。SPECは互換用の生成物であり、購買の実行・受入設定は同じ `contract.program` を参照する。
 
 [トランジション実行](transition-execution.md)は `runtime/changes.py` の項目更新と `runtime/transitions.py` の契約検証をEngineへ接続する。状態グラフからのTemporal/Kestra構築や外部副作用の一括確定は行わない。
+
+[データ定義](value-objects.md)は `value_objects.py` がPydanticモデルから生成する。Artifactの型参照と保存レコードの明示的な型接続を使い、入力・宣言された出力・確定前の検証を行う。Contextと保存値はJSONデータで、モデルの利用を全実装へ強制しない。

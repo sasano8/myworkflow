@@ -2,6 +2,7 @@
 from collections.abc import Mapping
 from dataclasses import dataclass, fields
 from types import MappingProxyType
+from myworkflow.value_objects import ValueObject
 
 
 class Record(Mapping):
@@ -37,6 +38,7 @@ class Artifact(Record):
     name: str
     key: str = ""
     type: str = "str"
+    value_object: ValueObject | None = None
 
 
 @dataclass(frozen=True)
@@ -141,6 +143,7 @@ class Catalog:
     pipelines: tuple[Pipeline, ...]
     workflows: tuple[Workflow, ...]
     roles: tuple[Role, ...] = ()
+    value_objects: tuple[ValueObject, ...] = ()
 
     def validate(self) -> None:
         from myworkflow.validation import validate_catalog

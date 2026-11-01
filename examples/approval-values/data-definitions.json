@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "value_objects": [
+    {
+      "id": "vo.application_id",
+      "name": "購買申請ID",
+      "description": "",
+      "python_type": "examples.approval_values:ApplicationId",
+      "rules": [],
+      "validators": [],
+      "schema": {
+        "description": "申請を識別する英数字・ハイフン・アンダースコア。",
+        "examples": [
+          "purchase_001"
+        ],
+        "pattern": "^[A-Za-z0-9_-]{1,64}$",
+        "title": "ApplicationId",
+        "type": "string"
+      }
+    },
+    {
+      "id": "vo.purchase_amount",
+      "name": "購買申請金額",
+      "description": "税込・円単位の金額。0円と負の金額、小数や文字列は受け付けない。",
+      "python_type": "examples.approval_values:PurchaseAmount",
+      "rules": [],
+      "validators": [],
+      "schema": {
+        "description": "税込の購買申請金額。単位は円。",
+        "examples": [
+          10000
+        ],
+        "exclusiveMinimum": 0,
+        "title": "PurchaseAmount",
+        "type": "integer"
+      }
+    },
+    {
+      "id": "vo.approval_application",
+      "name": "承認対象の購買申請",
+      "description": "同一レコードに業務項目と状態を保存する。操作可否はトランジションで検証する。",
+      "python_type": "examples.approval_values:ApprovalApplication",
+      "rules": [],
+      "validators": [],
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "owner": {
+            "description": "申請者の利用者ID。",
+            "examples": [
+              "alice"
+            ],
+            "minLength": 1,
+            "title": "Owner",
+            "type": "string"
+          },
+          "amount": {
+            "description": "税込の購買申請金額。単位は円。",
+            "examples": [
+              10000
+            ],
+            "exclusiveMinimum": 0,
+            "title": "Amount",
+            "type": "integer"
+          },
+          "status": {
+            "description": "状態宣言の固定ID。開始・終了状態はトランジションで照合する。",
+            "minLength": 1,
+            "title": "Status",
+            "type": "string"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "承認者の利用者ID。未承認ならnull。",
+            "title": "Approved By"
+          }
+        },
+        "required": [
+          "owner",
+          "amount",
+          "status"
+        ],
+        "title": "ApprovalApplication",
+        "type": "object"
+      }
+    },
+    {
+      "id": "vo.delivery_period",
+      "name": "納品受付期間",
+      "description": "",
+      "python_type": "examples.approval_values:DeliveryPeriod",
+      "rules": [
+        "終了日は開始日以降とする。同日も許可する。"
+      ],
+      "validators": [
+        {
+          "name": "dates_in_order",
+          "kind": "model_validators",
+          "fields": []
+        }
+      ],
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "starts_on": {
+            "description": "納品受付開始日。",
+            "examples": [
+              "2026-11-01"
+            ],
+            "format": "date",
+            "title": "Starts On",
+            "type": "string"
+          },
+          "ends_on": {
+            "description": "納品受付終了日。開始日を含め、終了日は開始日以降。",
+            "examples": [
+              "2026-11-30"
+            ],
+            "format": "date",
+            "title": "Ends On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "starts_on",
+          "ends_on"
+        ],
+        "title": "DeliveryPeriod",
+        "type": "object"
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "a.guarded_id",
+      "name": "申請ID",
+      "value_object": "vo.application_id"
+    }
+  ]
+}

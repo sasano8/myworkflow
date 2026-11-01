@@ -22,7 +22,7 @@ class TransitionRuntime:
     source, guard, unique selection, target and optimistic commit for that record.
     It does not orchestrate waits, authenticate users, or commit external services.
     """
-    def __init__(self, compiled, graph, coordinator, *, key: Callable[[dict], str], state_field='status'):
+    def __init__(self, compiled, graph, coordinator, *, key: Callable[[dict], str], state_field='status', value_object=None):
         if not any(graph is candidate for candidate in compiled.graphs):
             raise ContractError('Transition graph must belong to compiled declarations')
         graph.validate(compiled.catalog)
@@ -31,6 +31,9 @@ class TransitionRuntime:
         for transition in graph.transitions:
             if transition.condition and transition.guard is None:
                 raise ContractError(f'{transition.id}: documented condition requires an executable guard')
+        if value_object is not None and not any(value_object is d for d in compiled.catalog.value_objects):
+            raise ContractError('Transition record type must reference a declared ValueObject')
+        self.value_object = value_object
         self.catalog = compiled.catalog
         self.graph = graph
         self.coordinator = coordinator
@@ -46,8 +49,8 @@ class TransitionRuntime:
         key = self.key(dict(ctx.values))
         if not isinstance(key, str) or not key:
             raise ContractError('Transition subject key must be nonempty text')
-        changes = Changes(self.coordinator)
-        changes._subject = changes.read(key)
+        changes = Changes(self.coordinator, value_objects=self.catalog.value_objects)
+        changes._subject = changes.read(key, value_object=self.value_object)
         original = changes.subject.value
         candidates = []
         for transition in self.graph.transitions:

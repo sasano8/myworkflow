@@ -17,10 +17,13 @@ def export_business(program):
     model = program.model
     from copy import deepcopy
     result = {'schema_version': 2, 'completion': deepcopy(COMPLETION), **{name: {} for name in SECTIONS}}
+    if model.value_objects:
+        result['value_objects'] = {d.id: {k: v for k, v in d.definition().items() if k != 'id'} for d in model.value_objects}
     for role in model.roles:
         result['roles'][role.id] = {'name': role.name, 'display_name': role.display_name}
     for artifact in model.artifacts:
-        result['artifacts'][artifact.id] = {'name': artifact.name, 'key': artifact.key, 'type': artifact.type}
+        result['artifacts'][artifact.id] = {'name': artifact.name, 'key': artifact.key, 'type': artifact.type,
+            **({'value_object': artifact.value_object.id} if artifact.value_object else {})}
     for pipeline in model.pipelines:
         result['pipelines'][pipeline.id] = {'name': pipeline.name, 'inputs': list(pipeline.inputs),
             'produces': list(pipeline.outputs), 'reply': pipeline.reply,
@@ -50,8 +53,10 @@ def business_to_spec(document):
     """Convert the reviewed output format into the existing interface generator input."""
     if document.get('schema_version') != 2 or type(document.get('schema_version')) is not int:
         raise ValueError('Unsupported business document schema')
-    if set(document) != {'schema_version', 'completion', *SECTIONS} or any(not isinstance(document[k], dict) for k in SECTIONS):
+    if set(document) != {'schema_version', 'completion', *SECTIONS, *(['value_objects'] if 'value_objects' in document else [])} or any(not isinstance(document[k], dict) for k in SECTIONS):
         raise ValueError('Business document must contain exactly the supported sections')
+    if 'value_objects' in document and not isinstance(document['value_objects'], dict):
+        raise ValueError('value_objects must be an object')
     from myworkflow.quality.metrics import same
     if not same(document['completion'], COMPLETION):
         raise ValueError('Unsupported completion contract')
@@ -76,5 +81,6 @@ def business_to_spec(document):
     for section, used in [('steps', used_steps), ('bindings', used_bindings), ('triggers', used_triggers)]:
         if set(used) != set(document[section]) or len(used) != len(set(used)):
             raise ValueError(f'{section}: unreferenced or multiply owned definitions')
-    return {'roles': list(declarations('roles')), 'artifacts': list(declarations('artifacts')),
+    return {**({'value_objects': list(declarations('value_objects'))} if 'value_objects' in document else {}),
+            'roles': list(declarations('roles')), 'artifacts': list(declarations('artifacts')),
             'pipelines': pipelines, 'workflows': workflows}

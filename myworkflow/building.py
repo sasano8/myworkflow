@@ -93,7 +93,7 @@ def compile_outputs(config: BuildConfig, *, target: str, workflows: tuple[str, .
     if errors:
         raise BuildError('\n'.join(errors))
     used_pipelines = {b.pipeline_id for w in selected for b in w.bindings}
-    model = Catalog(original.artifacts, tuple(p for p in original.pipelines if p.id in used_pipelines), selected, original.roles)
+    model = Catalog(original.artifacts, tuple(p for p in original.pipelines if p.id in used_pipelines), selected, original.roles, original.value_objects)
     program = Program.from_catalog(model)
     program.check(config.registry)
     for graph in graphs:
@@ -107,6 +107,10 @@ def compile_outputs(config: BuildConfig, *, target: str, workflows: tuple[str, .
     for graph in graphs:
         documentation += '\n' + render_business_flow(graph, model) + '\n' + render_state_graph(graph, model)
     outputs = {'ir.json': _json(ir), 'requirements.md': documentation, 'interfaces.py': interfaces_source(program)}
+    if model.value_objects:
+        from myworkflow.value_objects import data_definitions_source, render_data_definitions
+        outputs['data-definitions.json'] = data_definitions_source(model)
+        outputs['data-definitions.md'] = render_data_definitions(model)
     if target == 'kestra':
         manifest = {'format': 'myworkflow.kestra.preview/v1', 'target': 'kestra', 'deployable': False,
                     'execution_model': 'application-supplied-python-pipeline', 'ir': 'ir.json', 'workflows': []}
@@ -131,7 +135,8 @@ def build(config: BuildConfig, directory, *, target: str, workflows=(), check=Fa
     directory = Path(directory)
     if target == 'temporal' and (directory / 'manifest.yaml').exists():
         raise BuildError('Output contains a Kestra manifest; use a separate output directory for Temporal')
+    value_sources = [inspect.getsourcefile(d.model) for d in config.compiled.catalog.value_objects]
     implementation_sources = [inspect.getsourcefile(fn) for fn in config.registry.handlers.values()]
     write_outputs({directory / name: text for name, text in outputs.items()}, check=check,
-                  protected=(*protected, *(path for path in implementation_sources if path)))
+                  protected=(*protected, *(path for path in (*implementation_sources, *value_sources) if path)))
     return outputs
