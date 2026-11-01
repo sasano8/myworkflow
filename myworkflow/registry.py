@@ -3,6 +3,7 @@ import inspect
 from types import MappingProxyType
 from typing import get_type_hints
 from myworkflow.errors import ContractError
+from myworkflow.identity import definition_id
 from myworkflow.runtime.context import Context
 
 
@@ -23,6 +24,7 @@ class Registry:
             raise ContractError(f'{identity}: expected (ctx: Context) -> None')
 
     def implements(self, identity):
+        identity = definition_id(identity)
         def register(fn):
             if identity in self._handlers:
                 raise ContractError(f'{identity}: duplicate implementation')
@@ -32,12 +34,14 @@ class Registry:
         return register
 
     def replace(self, identity, fn):
+        identity = definition_id(identity)
         if identity not in self._handlers:
             raise ContractError(f'{identity}: missing implementation')
         self._validate(identity, fn)
         self._handlers[identity] = fn
 
     def remove(self, identity):
+        identity = definition_id(identity)
         del self._handlers[identity]
 
     def fork(self):

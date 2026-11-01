@@ -1,0 +1,22 @@
+# Generated preview. This is not a deployable Kestra Flow.
+"format": "myworkflow.kestra.preview/v1"
+"target": "kestra"
+"deployable": false
+"execution_model": "application-supplied-python-pipeline"
+"ir": "ir.json"
+"workflows":
+  -
+    "id": "w.attach"
+    "name": "購買申請への見積書添付"
+    "entrypoints":
+      -
+        "binding": "b.upload"
+        "trigger": "t.upload"
+        "actor_role": "role.requester"
+        "input_mapping":
+          "a.id": "id"
+          "a.quote-a": "file_a"
+          "a.quote-b": "file_b"
+        "invoke":
+          "pipeline": "p.upload"
+          "completion": "PipelineResult"

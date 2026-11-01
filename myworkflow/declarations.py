@@ -8,6 +8,7 @@ from typing import TypeVar
 
 from myworkflow.errors import ContractError
 from myworkflow.models import Artifact, Binding, Catalog, Pipeline, Role, Trigger, Workflow
+from myworkflow.pipeline_declarations import Action, Operation, PipelineDeclaration, compile_pipeline
 from myworkflow.program import Program
 from myworkflow.state_graph import State, StateGraph, Transition
 
@@ -30,7 +31,7 @@ class TriggerDeclaration:
 @dataclass(frozen=True)
 class Placement:
     id: str
-    pipeline: Pipeline
+    pipeline: Pipeline | PipelineDeclaration
     triggers: tuple[TriggerDeclaration, ...]
     roles: tuple[tuple[str, Role], ...]
     next_workflow: type | None = None
@@ -57,6 +58,13 @@ class WorkflowOptions:
 class CompiledWorkflows:
     program: Program
     graphs: tuple[StateGraph, ...]
+    declarations: tuple[type, ...] = ()
+
+    def workflow(self, declaration: type) -> Workflow:
+        for index, selected in enumerate(self.declarations):
+            if selected is declaration:
+                return self.program.model.workflows[index]
+        raise ContractError("Workflow class is not included in this compilation")
 
     @property
     def catalog(self):
@@ -87,12 +95,13 @@ def workflow(*, id: str, name: str) -> Callable[[type[T]], type[T]]:
     return decorate
 
 
-def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = ()) -> CompiledWorkflows:
+def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
+                      pipelines: tuple[Pipeline | PipelineDeclaration, ...] = (), roles: tuple[Role, ...] = ()) -> CompiledWorkflows:
     """Compile all explicitly selected classes in definition order.
 
     No methods, properties, generators or handlers are invoked to discover nodes.
-    Pipelines and roles are collected from placements; artifacts are explicit because
-    the existing Pipeline model still stores artifact references as IDs.
+    Pipelines and roles are collected from placements, or explicitly ordered.
+    Symbolic pipeline references are lowered into the same immutable model as legacy inputs.
     """
     def fail(where, message):
         raise ContractError(f'{where}: {message}')
@@ -123,16 +132,26 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = ())
             fail(options.id, 'declaration aliases are not supported')
         members[cls] = tuple(value for _, value in named)
 
+    declared_pipelines, declared_roles = pipelines, roles
+    if not isinstance(declared_pipelines, tuple) or not isinstance(declared_roles, tuple):
+        fail('catalog', 'pipelines and roles must be tuples')
+    if len({id(p) for p in declared_pipelines}) != len(declared_pipelines) or len({id(r) for r in declared_roles}) != len(declared_roles):
+        fail('catalog', 'duplicate explicit pipeline or role declaration')
     pipelines, roles = {}, {}
+    lowered = {}
     artifact_objects = {id(a) for a in artifacts}
 
     def collect(target, obj, typ, where):
         if not isinstance(obj, typ):
-            fail(where, f'expected {typ.__name__} reference')
+            fail(where, f'expected {"Pipeline" if isinstance(typ, tuple) else typ.__name__} reference')
         if obj.id in target and target[obj.id] is not obj:
             fail(where, f'{obj.id}: different objects share a stable ID')
         target[obj.id] = obj
 
+    for pipeline in declared_pipelines:
+        collect(pipelines, pipeline, (Pipeline, PipelineDeclaration), 'pipelines')
+    for role in declared_roles:
+        collect(roles, role, Role, 'roles')
     workflows, graphs = [], []
     for cls in declarations:
         options = metadata[cls]
@@ -143,13 +162,13 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = ())
         if any(type(s.initial) is not bool for s in states):
             fail(options.id, 'initial must be boolean')
         initial = [s for s in states if s.initial]
-        if len(initial) != 1:
+        if (states or transitions) and len(initial) != 1:
             fail(options.id, 'exactly one initial state is required')
         placement_objects = {id(p) for p in placements}
         bindings = {}
         compiled_triggers = {}
         for p in placements:
-            collect(pipelines, p.pipeline, Pipeline, p.id)
+            collect(pipelines, p.pipeline, (Pipeline, PipelineDeclaration), p.id)
             sequence(p.triggers, TriggerDeclaration, p.id + '.triggers')
             if not p.triggers or len({id(t) for t in p.triggers}) != len(p.triggers):
                 fail(p.id, 'at least one distinct trigger is required')
@@ -201,8 +220,16 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = ())
             compiled_transitions.append(Transition(t.id, t.name, t.source, t.target,
                 bindings[id(t.binding)], compiled_triggers[trigger_key], t.condition))
         workflows.append(compiled_workflow)
-        graphs.append(StateGraph(compiled_workflow, initial[0], states, tuple(compiled_transitions)))
-    catalog = Catalog(artifacts, tuple(pipelines.values()), tuple(workflows), tuple(roles.values()))
+        if states or transitions:
+            graphs.append(StateGraph(compiled_workflow, initial[0], states, tuple(compiled_transitions)))
+    operations = {}
+    for identity, pipeline in pipelines.items():
+        if isinstance(pipeline, PipelineDeclaration):
+            for step in pipeline.steps:
+                if isinstance(step, Action) and isinstance(step.compensate, Operation):
+                    collect(operations, step.compensate, Operation, step.id)
+        lowered[identity] = compile_pipeline(pipeline, artifacts) if isinstance(pipeline, PipelineDeclaration) else pipeline
+    catalog = Catalog(artifacts, tuple(lowered.values()), tuple(workflows), tuple(roles.values()))
     program = Program.from_catalog(catalog)
     graph_ids = set()
     for graph in graphs:
@@ -211,4 +238,4 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = ())
             if entity.id in graph_ids:
                 fail(entity.id, 'graph IDs must be globally unique')
             graph_ids.add(entity.id)
-    return CompiledWorkflows(program, tuple(graphs))
+    return CompiledWorkflows(program, tuple(graphs), declarations)

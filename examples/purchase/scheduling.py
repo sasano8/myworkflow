@@ -2,6 +2,7 @@
 from datetime import datetime
 
 from myworkflow.executable import Principal
+from examples.purchase import contract as c
 from myworkflow.identity import execution_id
 
 
@@ -25,13 +26,13 @@ class ScheduledPurchase:
 
     def approve(self, decision, principal):
         # Authorization is checked even for a duplicate event.
-        role = self.engine.program.trigger('b.approve', 't.approve').actor_role_id
+        role = self.engine.program.trigger(c.PurchaseApproval.approve, c.PurchaseApproval.approval_received).actor_role_id
         if role not in principal.roles:
             raise PermissionError('Approval role is required')
         if self.decision is not None:
             return
         self.sequence += 1
-        self.engine.invoke_or_raise('b.approve', 't.approve', self.engine.program.payload('b.approve', 't.approve', {'application_id': self.application_id, 'decision': decision}),
+        self.engine.invoke_or_raise(c.PurchaseApproval.approve, c.PurchaseApproval.approval_received, self.engine.program.payload(c.PurchaseApproval.approve, c.PurchaseApproval.approval_received, {'application_id': self.application_id, 'decision': decision}),
                            principal, run_id=execution_id(self.run_id, 'decision', self.sequence))
         self.decision = decision
         self.tick()
@@ -39,9 +40,9 @@ class ScheduledPurchase:
     def tick(self):
         if self.completed or self.decision is not True or aware_time(self.clock.now()) < self.due_at:
             return
-        system = Principal('scheduler', frozenset({'role.system'}))
-        self.engine.invoke_or_raise('b.dispatch', 't.timer', self.engine.program.payload('b.dispatch', 't.timer', {'application_id': self.application_id}), system, run_id=execution_id(self.run_id, 'dispatch'))
-        target = self.engine.program.next_binding('b.dispatch', 'b.confirm')
-        payload = self.engine.program.payload(target.id, 't.confirm', {'application_id': self.application_id})
-        self.engine.invoke_or_raise(target.id, 't.confirm', payload, system, run_id=execution_id(self.run_id, 'confirm'))
+        system = Principal('scheduler', frozenset({c.system.id}))
+        self.engine.invoke_or_raise(c.PurchaseApproval.dispatch, c.PurchaseApproval.scheduled, self.engine.program.payload(c.PurchaseApproval.dispatch, c.PurchaseApproval.scheduled, {'application_id': self.application_id}), system, run_id=execution_id(self.run_id, 'dispatch'))
+        target = self.engine.program.next_binding(c.PurchaseApproval.dispatch, c.PurchaseExecution.confirm)
+        payload = self.engine.program.payload(target.id, c.PurchaseExecution.confirmation_requested, {'application_id': self.application_id})
+        self.engine.invoke_or_raise(target.id, c.PurchaseExecution.confirmation_requested, payload, system, run_id=execution_id(self.run_id, 'confirm'))
         self.completed = True

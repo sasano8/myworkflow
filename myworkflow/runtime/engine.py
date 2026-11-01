@@ -7,6 +7,7 @@ from myworkflow.runtime.context import Context
 from myworkflow.codegen import class_name
 from myworkflow.runtime.compensation import CompensationStack
 from myworkflow.results import PipelineResult
+from myworkflow.identity import definition_id
 from myworkflow.ports import ExecutionStore, LockProvider, RunStatus
 
 TYPES = {"str": str, "int": int, "bool": bool, "float": float}
@@ -47,6 +48,7 @@ class Engine:
 
     def invoke_or_raise(self, binding_id, trigger_id, payload, principal, *, run_id) -> PipelineResult:
         b = self.program.binding(binding_id)
+        trigger_id = definition_id(trigger_id)
         t = next((t for t in b["triggers"] if t["id"] == trigger_id), None)
         if t is None:
             raise ContractError(f"{binding_id}: unknown trigger {trigger_id}")
@@ -64,6 +66,7 @@ class Engine:
             return PipelineResult.from_exception(exc)
 
     def run_or_raise(self, pipeline_id, request, *, actor, run_id) -> PipelineResult:
+        pipeline_id = definition_id(pipeline_id)
         p = self.program.plans[pipeline_id]
         values = asdict(request) if is_dataclass(request) else dict(request)
         self.program.values(p["inputs"], values, pipeline_id)

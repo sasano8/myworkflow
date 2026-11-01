@@ -3,7 +3,7 @@ import asyncio
 from pathlib import Path
 
 from examples.purchase import interfaces
-from examples.purchase.contract import SPEC
+from examples.purchase import contract as c
 from examples.purchase.handlers import registry
 from examples.purchase.scheduling import ScheduledPurchase, aware_time
 from examples.purchase.services import Services
@@ -28,16 +28,16 @@ class ManualClock:
 class World:
     def __init__(self, directory):
         self.services = Services(Path(directory) / 'purchase.sqlite')
-        self.program = Program(SPEC)
+        self.program = c.program
         self.registry = registry.fork()
         self.engine = Engine(self.program, self.registry, self.services, interfaces)
         self.application_id = 'purchase-001'
         self.run_id = 'purchase-acceptance'
         self.clock = ManualClock()
         self.flow = ScheduledPurchase(self.engine, self.clock, '2030-04-01T10:00:00+09:00', application_id=self.application_id, run_id=self.run_id)
-        self.applicant = Principal('alice', frozenset({'role.requester'}))
-        self.approver = Principal('bob', frozenset({'role.approver'}))
-        self.system = Principal('scheduler', frozenset({'role.system'}))
+        self.applicant = Principal('alice', frozenset({c.requester.id}))
+        self.approver = Principal('bob', frozenset({c.approver.id}))
+        self.system = Principal('scheduler', frozenset({c.system.id}))
         self.sequence = 0
         self.error = None
         self.result = None
@@ -59,12 +59,12 @@ class World:
             self.error = exc
 
     def prepare(self, quotes):
-        self.invoke('b.submit', 't.submit', {'id': 'purchase-001', 'vendor': 'サンプル商事', 'amount': 10000}, self.applicant)
+        self.invoke(c.PurchaseApproval.submit, c.PurchaseApproval.submission, {'id': 'purchase-001', 'vendor': 'サンプル商事', 'amount': 10000}, self.applicant)
         if quotes:
             self.upload()
 
     def upload(self):
-        return self.invoke('b.upload', 't.upload', {'id': 'purchase-001', 'file_a': '見積書A', 'file_b': '見積書B'}, self.applicant, 'upload')
+        return self.invoke(c.PurchaseAttachment.upload, c.PurchaseAttachment.attachment_received, {'id': 'purchase-001', 'file_a': '見積書A', 'file_b': '見積書B'}, self.applicant, 'upload')
 
     def decide(self, decision, principal=None):
         if self.driver:
@@ -159,7 +159,7 @@ class TemporalDriver:
         async def send():
             async with asyncio.timeout(20):
                 await self.handle.signal(ApprovePurchase.decide,
-                                         {'approved': decision, 'actor': 'bob', 'roles': ['role.approver']})
+                                         {'approved': decision, 'actor': 'bob', 'roles': [c.approver.id]})
         self.runner.run(send())
 
     def finish(self):

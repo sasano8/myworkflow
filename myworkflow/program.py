@@ -1,4 +1,5 @@
 from myworkflow.errors import ContractError
+from myworkflow.identity import definition_id
 from myworkflow.codegen import class_name
 
 TYPES = {"str": str, "int": int, "bool": bool, "float": float}
@@ -67,12 +68,14 @@ class Program:
         return self.model
 
     def binding(self, identity):
+        identity = definition_id(identity)
         try:
             return self.bindings[identity]
         except KeyError as exc:
             raise ContractError(f'{identity}: unknown binding') from exc
 
     def trigger(self, binding_id, trigger_id):
+        trigger_id = definition_id(trigger_id)
         return next((t for t in self.binding(binding_id).triggers if t.id == trigger_id), None) or self._missing(trigger_id)
 
     def _missing(self, identity):
@@ -86,6 +89,7 @@ class Program:
         return {source: values[self.artifacts[artifact].key] for artifact, source in trigger.input_mapping}
 
     def next_binding(self, binding_id, target_binding_id):
+        target_binding_id = definition_id(target_binding_id)
         workflow_id = self.binding(binding_id).next_workflow_id
         workflow = next((w for w in self.model.workflows if w.id == workflow_id), None)
         if workflow is None or target_binding_id not in {b.id for b in workflow.bindings}:

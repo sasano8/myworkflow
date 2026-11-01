@@ -36,7 +36,7 @@ def main():
         initialize(json.loads(Path(args.reviewed_requirements).read_text(encoding='utf-8')), args.directory)
     else:
         module = importlib.import_module(args.contract_module)
-        program = Program(module.SPEC)
+        program = module.program if hasattr(module, 'program') else Program(module.SPEC)
         source = Path(module.__file__)
         write_outputs({Path(args.output): interfaces_source(program)}, protected=(source, source.with_name('handlers.py')))
 

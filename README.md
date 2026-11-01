@@ -6,6 +6,17 @@ Python 3.14向けの、業務契約から型・実装の骨格・業務概要を
 
 [プロダクトの概念](docs/product-concept.md)に、業務契約、正本と生成物、要件定義から開発への流れ、現在の保証範囲を整理しています。[既存製品との比較](docs/product-comparison.md)では、n8n・Power Automate・Camunda・Windmill・SpiffWorkflow・Temporal・Prefectとの違い、強みと弱み、継続する価値を検証する条件をまとめています。
 
+## ビルド
+
+購買の正本はPythonのクラス宣言です。型付きモデルから業務概要・型・中間表現を生成し、Kestra向けには説明用YAMLを出力します。未対応の待機・遷移等はビルド失敗になります。[使い方と対応範囲](docs/build.md)を参照してください。
+
+```sh
+python -m myworkflow build --config examples.purchase.build --target temporal --output dist/temporal
+python -m myworkflow build --config examples.purchase.build --target kestra --workflow w.attach --output dist/kestra
+```
+
+Kestra出力は `deployable: false` のプレビューです。実機へ配備するFlow生成・実行アダプターは残課題です。
+
 ## 工程と次のタスク
 
 [要件定義から開発までの工程図](docs/development-process.md)と、[受入テストのタスク](docs/acceptance-plan.md)を整理しています。顧客フローを繰り返しコードへ反映して概要で合意し、開発移行後はコードと受入シナリオを正本として生成資料で確認します。購買サンプルでは、同じGherkinからシナリオ文書生成とpytest-bddによる実行を行えます。

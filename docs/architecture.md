@@ -31,6 +31,8 @@ flowchart TD
 | 場所 | 責務 |
 | --- | --- |
 | myworkflow/models.py | 共通の不変宣言モデル |
+| pipeline_declarations.py | Artifact・条件・補償をオブジェクト参照するパイプライン宣言のコンパイル |
+| building.py / build.py / cli.py | 共通IR・概要・型とKestraプレビューの生成、未対応宣言の拒否、差分検査 |
 | declarations.py / state_graph.py | 実験用クラス宣言のコンパイル、状態・遷移の静的検査と概要出力。遷移の実行は未実装 |
 | flowchart.py | 同じ状態宣言から閲覧用のMermaid業務フロー図を生成 |
 | serialization.py | 型付き契約から互換用の辞書スナップショットを生成 |
@@ -54,7 +56,7 @@ flowchart TD
 
 ## 契約と実装
 
-`Program(SPEC)` が同じCatalog系の型へ変換する。実験用クラス宣言は `compile_workflows(...)` でコンパイルし、`Program.from_catalog(...)` が型付きの同じオブジェクトを直接利用する。[構文と境界](state-graph.md)を参照。読み込んだSPECや `program.spec` のスナップショットを書き換えても、検証済みモデルには影響しない。`program.catalog()` と実行索引は同じ不変のオブジェクトを参照する。
+`Program(SPEC)` が同じCatalog系の型へ変換する。購買の正本であるクラス宣言は `compile_workflows(...)` でコンパイルし、`Program.from_catalog(...)` が型付きの同じオブジェクトを直接利用する。[構文と境界](state-graph.md)を参照。読み込んだSPECや `program.spec` のスナップショットを書き換えても、検証済みモデルには影響しない。`program.catalog()` と実行索引は同じ不変のオブジェクトを参照する。
 
 SPECの形は維持している。モデルの索引値は型付きレコードで、初期APIの `record['id']` や `get()` も受け付ける。利用側は属性参照を推奨する。
 
@@ -140,3 +142,5 @@ PostgreSQLのセッション／トランザクション単位のアドバイザ�
 ## アーティファクトの確定境界
 
 [ジョブ管理と準備・確定](artifact-jobs.md)を追加した。中間サーバーへのインターフェースを先に定義し、現在は一時領域のSQLiteで実装する。既存の業務DBと別DBのまま原子性を拡張するものではなく、独立した承認例で検証する。
+
+[ビルドと残課題](build.md)では、Pythonの正本から中間表現と実行基盤向け出力を生成する境界を定義する。SPECは互換用の生成物であり、購買の実行・受入設定は同じ `contract.program` を参照する。
