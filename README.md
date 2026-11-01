@@ -2,6 +2,10 @@
 
 Python 3.14向けの、業務契約から型・実装の骨格・業務概要を生成し、同じ契約でパイプラインを実行するPoCです。標準機能は外部依存なし、Temporal接続は任意です。
 
+## プロダクトの考え方と比較
+
+[プロダクトの概念](docs/product-concept.md)に、業務契約、正本と生成物、要件定義から開発への流れ、現在の保証範囲を整理しています。[既存製品との比較](docs/product-comparison.md)では、n8n・Power Automate・Camunda・Windmill・SpiffWorkflow・Temporal・Prefectとの違い、強みと弱み、継続する価値を検証する条件をまとめています。
+
 ## 工程と次のタスク
 
 [要件定義から開発までの工程図](docs/development-process.md)と、[受入テストのタスク](docs/acceptance-plan.md)を整理しています。顧客フローを繰り返しコードへ反映して概要で合意し、開発移行後はコードと受入シナリオを正本として生成資料で確認します。購買サンプルでは、同じGherkinからシナリオ文書生成とpytest-bddによる実行を行えます。

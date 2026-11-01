@@ -6,8 +6,12 @@
 
 ```mermaid
 flowchart TD
-    source[契約コード SPEC] --> loader[loading / validation]
-    loader --> model[不変のCatalogモデル]
+    source[従来の契約コード SPEC] --> loader[loading / validation]
+    declarations[実験用の名前付きクラス宣言] --> compiler[declarations / compile_workflows]
+    compiler --> typed[Program.from_catalog]
+    typed --> model[不変のCatalogモデル]
+    compiler --> graph[状態グラフの検査・概要出力]
+    loader --> model
     model --> runtime[Engine]
     model --> codegen[型・骨格生成]
     model --> docs[業務概要生成]
@@ -27,6 +31,8 @@ flowchart TD
 | 場所 | 責務 |
 | --- | --- |
 | myworkflow/models.py | 共通の不変宣言モデル |
+| declarations.py / state_graph.py | 実験用クラス宣言のコンパイル、状態・遷移の静的検査と概要出力。遷移の実行は未実装 |
+| serialization.py | 型付き契約から互換用の辞書スナップショットを生成 |
 | loading.py / validation.py | 外部の辞書形式の解釈、構造・名前・参照・型・データフロー検証 |
 | program.py | 検証済みモデルの索引、配置・トリガー・入力変換・引継ぎ先の解決 |
 | registry.py | 関数の登録、検索、明示的な差替え |
@@ -44,11 +50,11 @@ flowchart TD
 
 ## 契約と実装
 
-`Program(SPEC)` が同じCatalog系の型へ変換する。読み込んだSPECや `program.spec` のスナップショットを書き換えても、検証済みモデルには影響しない。`program.catalog()` と実行索引は同じ不変のオブジェクトを参照する。
+`Program(SPEC)` が同じCatalog系の型へ変換する。実験用クラス宣言は `compile_workflows(...)` でコンパイルし、`Program.from_catalog(...)` が型付きの同じオブジェクトを直接利用する。[構文と境界](state-graph.md)を参照。読み込んだSPECや `program.spec` のスナップショットを書き換えても、検証済みモデルには影響しない。`program.catalog()` と実行索引は同じ不変のオブジェクトを参照する。
 
 SPECの形は維持している。モデルの索引値は型付きレコードで、初期APIの `record['id']` や `get()` も受け付ける。利用側は属性参照を推奨する。
 
-bool分岐は引き続き線形の条件付きステップで表す。分岐に使った判定値の再代入は静的検証の前提を壊すため拒否する。一般的な循環グラフや任意の条件式を実装したものではない。
+bool分岐は引き続き線形の条件付きステップで表す。分岐に使った判定値の再代入は静的検証の前提を壊すため拒否する。パイプラインの実行機構は一般的な循環グラフや任意の条件式を実装したものではない。別の状態グラフでは循環を宣言・検査できるが、その遷移の実行は未実装である。
 
 レジストリの `handlers` は読取り専用。差替えは `fork()` でコピーした上で `replace(id, function)`、削除は `remove(id)` を使う。差替え時も `(ctx: Context) -> None` の契約を検査する。テスト用の変更が元のレジストリへ漏れない。
 
