@@ -6,13 +6,42 @@ TYPES = {"str": str, "int": int, "bool": bool, "float": float}
 class Program:
     def __init__(self, spec):
         import json
-        from types import MappingProxyType
         from myworkflow.loading import load_catalog
         self.model = load_catalog(spec)
         try:
             self._source_json = json.dumps(spec, ensure_ascii=False)
         except (TypeError, ValueError) as exc:
             raise ContractError(f'contract: only serializable declarations are accepted ({exc})') from exc
+        self._index()
+
+    @classmethod
+    def from_catalog(cls, catalog):
+        """Use typed declarations directly, retaining object identity for graph references."""
+        import json
+        from myworkflow.models import Catalog
+        from myworkflow.serialization import catalog_to_spec
+        if not isinstance(catalog, Catalog):
+            raise ContractError('contract: expected Catalog')
+        from dataclasses import fields, is_dataclass
+        def immutable(value, path):
+            if is_dataclass(value) and not isinstance(value, type):
+                for field in fields(value):
+                    immutable(getattr(value, field.name), path + '.' + field.name)
+            elif isinstance(value, tuple):
+                for index, item in enumerate(value):
+                    immutable(item, f'{path}[{index}]')
+            elif type(value) not in (str, int, float, bool, type(None)):
+                raise ContractError(f'{path}: typed declarations must contain immutable values')
+        immutable(catalog, 'catalog')
+        result = cls.__new__(cls)
+        result.model = catalog
+        # Validate before export so invalid duplicate references cannot disappear in dicts.
+        result._index()
+        result._source_json = json.dumps(catalog_to_spec(catalog), ensure_ascii=False)
+        return result
+
+    def _index(self):
+        from types import MappingProxyType
         self.artifacts = MappingProxyType({a.id: a for a in self.model.artifacts})
         self.plans = MappingProxyType({p.id: p for p in self.model.pipelines})
         self.bindings = MappingProxyType({b.id: b for w in self.model.workflows for b in w.bindings})

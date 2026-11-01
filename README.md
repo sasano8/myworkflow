@@ -8,6 +8,10 @@ Python 3.14向けの、業務契約から型・実装の骨格・業務概要を
 
 [現在の構成と移行方法](docs/architecture.md)に、共通モデル、実行基盤のProtocol、ロック、保存、受入プラグインの境界をまとめています。
 
+## 名前付きクラス宣言の実験
+
+[クラス宣言例](examples/declarative_review.py)から、既存の型付き契約と状態グラフをコンパイルできます。[生成結果](examples/declarative_review.md)には承認・差戻し・再申請・却下を出力します。`python -m examples.declarative_review` で再生成できます。構文・対応範囲・残タスクは[状態遷移モデル](docs/state-graph.md)を参照してください。状態遷移の実行・永続化は未実装です。
+
 ## 動く購買申請サンプル
 
 リポジトリ直下で実行します。

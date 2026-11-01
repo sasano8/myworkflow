@@ -1,6 +1,48 @@
 # 状態・遷移の宣言モデル
 
-## 今回の実装
+## クラス宣言からのコンパイル
+
+実験用APIを `myworkflow.declarations` に追加した。承認・差戻し・再申請・却下を含む[宣言例](../examples/declarative_review.py)と、その[生成結果](../examples/declarative_review.md)を参照できる。
+
+```python
+from myworkflow.declarations import workflow, state, trigger, bind, transition, compile_workflows
+
+# reviewer / system は Role、review_pipeline は既存の Pipeline オブジェクト。
+# 以下は入力を持たないパイプラインを配置する場合の例。
+@workflow(id="w.review", name="申請審査")
+class Review:
+    pending = state("state.pending", "承認待ち", initial=True)
+    approved = state("state.approved", "承認済み")
+    approval = trigger("t.approval", "承認操作", reviewer)
+    review = bind("b.review", review_pipeline, (approval,), (("system", system),))
+    approve = transition("tr.approve", "承認", pending, approved, review, approval)
+
+compiled = compile_workflows(Review, artifacts=())
+program = compiled.program
+catalog = compiled.catalog
+state_graph = compiled.graphs[0]
+```
+
+`@workflow` はクラスを保つ。`Review.pending` や `Review.review` は通常のPython属性として参照できる。宣言はfrozen dataclassで、参照にはオブジェクトを渡す。初期状態は `initial=True` を一つだけ指定する。名前の変更に固定IDの変更は不要である。
+
+`compile_workflows` は選択したクラスの属性を定義順に列挙し、`Program.from_catalog` に既存の型付きモデルを直接渡す。メソッド、プロパティ、業務ハンドラを呼び出して定義を発見することはない。ただし、通常のPythonなのでモジュールのimportやクラス本体の評価は実行される。任意のPythonソースを実行せず解析するツールではない。
+
+トリガーの入力対応は `((artifact_object, "入力元の項目名"), ...)`、配置のロール対応は `(("抽象ロール枠", role_object), ...)` とする。ロール枠・入力元は外部との契約名である。配置の `next_workflow` は同時にコンパイルする別の宣言クラス、トリガーの `after` は同じワークフロー内の先行配置を参照する。複数トリガーと別配置でのパイプライン流用を維持する。
+
+現段階では継承と、一つの状態・配置・遷移に複数のクラス属性名を付ける別名定義を拒否する。初期状態・所属・参照の曖昧さを避けるための暫定制約である。コンパイル後は宣言クラスを変更しても結果に追従せず、変更を反映するには再コンパイルする。
+
+既存の `Pipeline`・`Step` は引き続き使用し、その内部ではアーティファクトや補償処理をIDで参照する。今回、ワークフローの接続・配置・トリガーの参照をオブジェクトにした。パイプライン関数のデコレータや、ステップ内部まで含む宣言構文の刷新、購買契約の移行は未実施である。アーティファクト一覧は `artifacts=(...)` で明示し、入力対応で同じIDを持つ別オブジェクトを渡した場合は拒否する。
+
+既存の文書生成、`interfaces_source`、`skeleton_source`、`Engine` はコンパイル済み `Program` を使用できる。`program.spec` は互換用の辞書スナップショットであり、クラス宣言の正本ではない。ロックの範囲・操作ロールを含む互換出力の読込みも検証する。
+
+このサンプルは契約の宣言例であり、審査の永続化を実装したアプリケーションではない。テストでは一時的なハンドラを接続し、生成した型付きインターフェースとパイプライン呼出し・起動ロール検査の接続を確認する。自然言語の条件の意味や状態更新は検証しない。
+
+```sh
+python -m examples.declarative_review
+python -m pytest tests/test_declarations.py tests/test_state_graph.py -q
+```
+
+## 中間モデルの実装
 
 `myworkflow.state_graph` は、最終的なクラス宣言構文から独立した実験用の中間モデルである。既存の `Catalog` や購買契約を置き換えてはいない。
 
@@ -23,7 +65,7 @@
 
 ## 次の実装順序と完了条件
 
-1. 名前付きクラス宣言をこのモデルと既存の `Catalog` へコンパイルする。関数実行による定義の発見を避け、文字列の参照をオブジェクト参照へ移す。IDEで名前を変更しても接続と固定IDが維持されることを検証する。
+1. **ワークフロー層は実装済み**：名前付きクラス宣言をこのモデルと既存の `Catalog` へコンパイルする。Pythonの識別子だけを変更する試験で、接続・固定ID・出力が維持されることを検証した。パイプライン・ステップ内部の参照と購買の正本移行は後続作業とする。
 2. 遷移の条件を実装関数へ対応付け、同一イベントの複数候補をどう選ぶか定義する。不一致・複数一致を試験する。
 3. 失敗時の扱いを、開始前の拒否・処理失敗・補償成功・補償失敗・結果不明に分けて決める。単に元の状態へ戻すと、外部副作用の残存を隠すため、既定の動作にはしない。
 4. 保存境界を定義する。同じDBの業務更新と状態更新は同一トランザクションとし、外部I/Oは実行ID・冪等性・復旧記録を含む方式を設計する。成功保存後の応答消失と、並行遷移の競合を試験する。現段階で共通の状態更新処理を追加しない。

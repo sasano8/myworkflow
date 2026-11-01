@@ -33,7 +33,7 @@ def load_catalog(spec):
                         raise ContractError(f'{location}.conflict: policy must match the configured timeout')
                     if s.get('writes') or s.get('when'):
                         raise ContractError(f'{location}: lock cannot be conditional or write artifacts')
-                    steps.append(Lock(s['id'], s['name'], strings(s, 'reads'), conflict=s.get('conflict', '待機' if s.get('timeout', 0) else '拒否'), namespace=s.get('namespace', 'business'), timeout=s.get('timeout', 0)))
+                    steps.append(Lock(s['id'], s['name'], strings(s, 'reads'), conflict=s.get('conflict', '待機' if s.get('timeout', 0) else '拒否'), namespace=s.get('namespace', 'business'), timeout=s.get('timeout', 0), scope=s.get('scope', 'パイプライン終了まで（異常終了を含む）'), actor=s.get('actor', 'system')))
                 elif kind == 'action':
                     condition = s.get('when')
                     if condition is not None and (not isinstance(condition, (list, tuple)) or len(condition) != 2 or not isinstance(condition[0], str) or type(condition[1]) is not bool):
