@@ -27,4 +27,3 @@ def test_generator_recovers_stale_interfaces_and_does_not_rewrite_oracles(tmp_pa
     stale = run('--check')
     assert stale.returncode == 1
     assert data.read_text() == 'manual drift\n'
-
