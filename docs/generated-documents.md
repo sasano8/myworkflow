@@ -4,11 +4,13 @@
 
 ## 有効化
 
+初回の環境構築は[開発環境の構築手順](../README.md#開発環境の構築)に従う。pre-commit hookのインストールも、その手順に含める。
+
 Python 3.14の仮想環境にプロジェクトと受入文書生成の依存を入れ、このcloneで一度hookを設定する。
 
 ```sh
 python3.14 -m venv .venv
-.venv/bin/python -m pip install '.[test,acceptance]'
+.venv/bin/python -m pip install -e '.[test,acceptance]'
 sh scripts/install-hooks.sh
 ```
 

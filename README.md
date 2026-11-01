@@ -8,6 +8,20 @@ Python 3.14向けの、業務契約から型・実装の骨格・業務概要を
 
 [プロダクトの概念](docs/product-concept.md)に、業務契約、正本と生成物、要件定義から開発への流れ、現在の保証範囲を整理しています。[既存製品との比較](docs/product-comparison.md)では、n8n・Power Automate・Camunda・Windmill・SpiffWorkflow・Temporal・Prefectとの違い、強みと弱み、継続する価値を検証する条件をまとめています。
 
+## 開発環境の構築
+
+Python 3.14を用意し、リポジトリ直下で実行します。依存関係の導入に続けて、pre-commit hookもインストールします。
+
+```sh
+python3.14 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e '.[test,acceptance]'
+sh scripts/install-hooks.sh
+python -m scripts.generate_docs --check
+```
+
+`install-hooks.sh` がGitのpre-commit hookを有効にします。新しいcloneごとに実行してください。既存hookとの接続方法やPython環境の指定は[hookの設定手順](docs/generated-documents.md#有効化)を参照してください。
+
 ## コミット時の自動生成
 
 `sh scripts/install-hooks.sh` でpre-commit hookを有効にすると、宣言から文書・型を再生成し、生成物を自動でコミットへ含めます。Python 3.14の `.venv` と `.[test,acceptance]` が必要です。[設定・対象・部分コミットの扱い](docs/generated-documents.md)を参照してください。
@@ -40,7 +54,7 @@ Kestra出力は `deployable: false` のプレビューです。実機へ配備�
 
 ## 動く購買申請サンプル
 
-リポジトリ直下で実行します。テスト用依存は `python3.14 -m pip install -e '.[test,acceptance]'` で導入します。
+上記の開発環境を構築した後、仮想環境を有効にしてリポジトリ直下で実行します。
 
 ```sh
 python3.14 -m examples.purchase
