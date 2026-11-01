@@ -14,7 +14,7 @@ Python 3.14向けの、業務契約から型・実装の骨格・業務概要を
 
 ## 名前付きクラス宣言の実験
 
-[クラス宣言例](examples/declarative_review.py)から、既存の型付き契約と状態グラフをコンパイルできます。[生成結果](examples/declarative_review.md)には承認・差戻し・再申請・却下を出力します。`python -m examples.declarative_review` で再生成できます。構文・対応範囲・残タスクは[状態遷移モデル](docs/state-graph.md)を参照してください。状態遷移の実行・永続化は未実装です。
+[クラス宣言例](examples/declarative_review.py)から、既存の型付き契約と状態グラフをコンパイルできます。[生成結果](examples/declarative_review.md)には承認・差戻し・再申請・却下を出力します。[業務フロー図](examples/declarative_review-flow.md)も同じ宣言からMermaid形式で生成し、GitHubで表示できます。`python -m examples.declarative_review --flowchart` で図だけ出力できます。`python -m examples.declarative_review` で再生成できます。構文・対応範囲・残タスクは[状態遷移モデル](docs/state-graph.md)を参照してください。状態遷移の実行・永続化は未実装です。
 
 ## 動く購買申請サンプル
 

@@ -10,7 +10,7 @@ flowchart TD
     declarations[実験用の名前付きクラス宣言] --> compiler[declarations / compile_workflows]
     compiler --> typed[Program.from_catalog]
     typed --> model[不変のCatalogモデル]
-    compiler --> graph[状態グラフの検査・概要出力]
+    compiler --> graph[状態グラフの検査・表・Mermaid図]
     loader --> model
     model --> runtime[Engine]
     model --> codegen[型・骨格生成]
@@ -32,6 +32,7 @@ flowchart TD
 | --- | --- |
 | myworkflow/models.py | 共通の不変宣言モデル |
 | declarations.py / state_graph.py | 実験用クラス宣言のコンパイル、状態・遷移の静的検査と概要出力。遷移の実行は未実装 |
+| flowchart.py | 同じ状態宣言から閲覧用のMermaid業務フロー図を生成 |
 | serialization.py | 型付き契約から互換用の辞書スナップショットを生成 |
 | loading.py / validation.py | 外部の辞書形式の解釈、構造・名前・参照・型・データフロー検証 |
 | program.py | 検証済みモデルの索引、配置・トリガー・入力変換・引継ぎ先の解決 |

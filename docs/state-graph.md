@@ -42,6 +42,22 @@ python -m examples.declarative_review
 python -m pytest tests/test_declarations.py tests/test_state_graph.py -q
 ```
 
+## 業務フロー図の生成
+
+`myworkflow.flowchart.render_business_flow(graph, catalog)` は、同じ状態・遷移の宣言からMermaidのフローチャートを含むMarkdownを生成する。GitHubで閲覧できる[図の出力例](../examples/declarative_review-flow.md)を用意した。通常の[概要出力](../examples/declarative_review.md)にも図を含む。
+
+```sh
+python -m examples.declarative_review --flowchart
+```
+
+状態と操作を別のノードとし、操作に実行者とトリガーを記載する。「現在の状態 → 操作 → 成功後の状態」の接続を宣言から生成するため、差戻し・再申請の循環も表現できる。操作番号は状態遷移表の連番に対応する。
+
+標準表示は概要とし、条件と対応パイプラインは隣接する表で確認する。`render_business_flow(graph, catalog, details=True)` では、図にも条件の説明とパイプライン名を表示できる。入出力・アーティファクト操作・ステップ内部の詳細は既存のパイプライン表に残す。
+
+図は業務宣言上の成功経路を表す。未定義の失敗経路や終端状態を推測して補わない。状態グラフを持たない既存の購買契約を、実行履歴や説明文から推測して図に変換する機能ではない。遷移の実行・保存が未実装であるという境界も変わらない。
+
+生成するノード名は内部の連番とし、業務名や固定IDを構文として挿入しない。ラベルの引用符、改行、Markdownコードフェンス等をエスケープする。固定出力との一致・循環・参照不正・ラベルを検査し、CIでも図の保存済み出力との一致を確認する。
+
 ## 中間モデルの実装
 
 `myworkflow.state_graph` は、最終的なクラス宣言構文から独立した実験用の中間モデルである。既存の `Catalog` や購買契約を置き換えてはいない。

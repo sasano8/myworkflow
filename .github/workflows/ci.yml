@@ -54,6 +54,8 @@ jobs:
         run: python -W error::ResourceWarning -m pytest -q --acceptance-report artifacts/acceptance.json
       - name: Verify generated samples
         run: |
+          python -m examples.declarative_review --flowchart > /tmp/declarative-review-flow.md
+          diff -u examples/declarative_review-flow.md /tmp/declarative-review-flow.md
           python -m examples.declarative_review > /tmp/declarative-review.md
           diff -u examples/declarative_review.md /tmp/declarative-review.md
           python -m examples.purchase --docs > /tmp/purchase.md

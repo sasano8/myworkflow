@@ -72,3 +72,56 @@ def test_self_transition_and_renaming_preserve_connection_ids():
     assert before['transitions'][-1]['source'] == before['transitions'][-1]['target']
     for original, renamed in zip(before['transitions'], after['transitions'], strict=True):
         assert {k: v for k, v in original.items() if k != 'name'} == {k: v for k, v in renamed.items() if k != 'name'}
+
+
+def test_flowchart_contains_cycles_and_declared_actors():
+    from myworkflow.flowchart import render_business_flow
+    catalog, graph = example()
+    diagram = render_business_flow(graph, catalog)
+    assert diagram == render_business_flow(graph, catalog)
+    assert '実行者：承認者<br/>トリガー：承認操作' in diagram
+    assert 'state_0 --> action_2\n    action_2 -->|成功| state_1' in diagram
+    assert 'state_1 --> action_3\n    action_3 -->|成功| state_0' in diagram
+    assert diagram.count(' -->|成功| ') == len(graph.transitions)
+    assert '承認権限あり' not in diagram
+    detailed = render_business_flow(graph, catalog, details=True)
+    assert '条件：承認権限あり' in detailed
+    assert 'パイプライン：判断を保存' in detailed
+
+
+def test_flowchart_matches_frozen_sample():
+    from pathlib import Path
+    from examples.declarative_review import compiled
+    from myworkflow.flowchart import render_business_flow
+    expected = Path(__file__).resolve().parents[1] / 'examples/declarative_review-flow.md'
+    assert render_business_flow(compiled.graphs[0], compiled.catalog) == expected.read_text()
+
+
+def test_flowchart_labels_cannot_become_mermaid_or_markdown_syntax():
+    from myworkflow.flowchart import render_business_flow
+    catalog, graph = example()
+    unsafe = '承認" ] --> injected["<script>|`#&\n```\nend'
+    replacement = replace(graph.states[0], name=unsafe)
+    altered = replace(graph, initial=replacement, states=(replacement, *graph.states[1:]),
+                      transitions=tuple(replace(t, source=replacement if t.source is graph.states[0] else t.source,
+                                                target=replacement if t.target is graph.states[0] else t.target)
+                                        for t in graph.transitions))
+    diagram = render_business_flow(altered, catalog)
+    assert diagram.count('```') == 2
+    assert 'injected[' not in diagram
+    assert '<script>' not in diagram
+    assert '#34;' in diagram
+    assert '#96;#96;#96;<br/>end' in diagram
+    assert 'state_0["承認#34;' in diagram
+
+
+def test_flowchart_rejects_invalid_graph_and_does_not_infer_completion():
+    from myworkflow.flowchart import render_business_flow
+    catalog, graph = example()
+    with pytest.raises(ContractError, match='initial state'):
+        render_business_flow(replace(graph, initial=State('unknown', '不明')), catalog)
+    isolated = replace(graph, states=(graph.initial,), transitions=())
+    diagram = render_business_flow(isolated, catalog)
+    assert 'start --> state_0' in diagram
+    assert '成功|' not in diagram
+    assert '完了' not in diagram
