@@ -2,11 +2,11 @@
 from dataclasses import replace
 import pytest
 
-from myworkflow import Artifact, Binding, Catalog, Lock, Pipeline, Role, Step, Trigger, Use, Workflow, render
+from myworkflow import Artifact, Binding, ContractCatalog, Lock, Pipeline, Role, Step, Trigger, Use, Workflow, render
 
 
 def small_catalog():
-    return Catalog(
+    return ContractCatalog(
         artifacts=(Artifact('a.input', '入力値'), Artifact('a.output', '処理結果')),
         pipelines=(Pipeline('p.convert', '変換', ('a.input',), ('a.output',), (
             Lock('s.lock', '排他制御', ('a.input',)),

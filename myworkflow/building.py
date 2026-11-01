@@ -9,7 +9,7 @@ from myworkflow.codegen import interfaces_source
 from myworkflow.declarations import CompiledWorkflows
 from myworkflow.errors import ContractError
 from myworkflow.generation import write_outputs
-from myworkflow.models import Catalog
+from myworkflow.models import ContractCatalog
 from myworkflow.program import Program
 from myworkflow.quality.business import export_business
 from myworkflow.registry import Registry
@@ -93,7 +93,7 @@ def compile_outputs(config: BuildConfig, *, target: str, workflows: tuple[str, .
     if errors:
         raise BuildError('\n'.join(errors))
     used_pipelines = {b.pipeline_id for w in selected for b in w.bindings}
-    model = Catalog(original.artifacts, tuple(p for p in original.pipelines if p.id in used_pipelines), selected, original.roles, original.value_objects)
+    model = ContractCatalog(original.artifacts, tuple(p for p in original.pipelines if p.id in used_pipelines), selected, original.roles, original.value_objects)
     program = Program.from_catalog(model)
     program.check(config.registry)
     for graph in graphs:

@@ -169,14 +169,14 @@ def test_extra_typed_records_use_their_contract_and_cannot_change_type(tmp_path)
 
 
 def typed_pipeline_program():
-    from myworkflow import Catalog, Pipeline, Role, Step, Binding, Workflow
+    from myworkflow import ContractCatalog, Pipeline, Role, Step, Binding, Workflow
     data = Artifact('a.data', '購買申請', 'data', 'dict', value_object=approval_application)
     step = Step('s.process', '処理', '内容を確認する', reads=(data.id,))
     pipeline = Pipeline('p.process', '処理', (data.id,), (), (step,))
     role = Role('role.user', '利用者', '利用者')
     binding = Binding('b.process', pipeline.id, '入力', ((data.id, 'data'),), actor_role_id=role.id,
                       role_mapping=(('system', role.id),), trigger_id='t.process')
-    catalog = Catalog((data,), (pipeline,), (Workflow('w.process', '処理', (binding,)),), (role,), (approval_application,))
+    catalog = ContractCatalog((data,), (pipeline,), (Workflow('w.process', '処理', (binding,)),), (role,), (approval_application,))
     return Program.from_catalog(catalog)
 
 

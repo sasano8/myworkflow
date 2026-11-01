@@ -3,7 +3,7 @@ from dataclasses import replace
 
 import pytest
 
-from myworkflow import Binding, Catalog, Pipeline, Role, Workflow
+from myworkflow import Binding, ContractCatalog, Pipeline, Role, Workflow
 from myworkflow.errors import ContractError
 from myworkflow.state_graph import State, StateGraph, Transition, render_state_graph
 
@@ -12,7 +12,7 @@ def example():
     pipeline = Pipeline('p.save', '判断を保存', (), (), ())
     binding = Binding('b.review', pipeline.id, '承認操作', (), actor_role_id='role.reviewer', role_mapping=(('system', 'role.reviewer'),))
     workflow = Workflow('w.review', '申請審査', (binding,))
-    catalog = Catalog((), (pipeline,), (workflow,), (Role('role.reviewer', '審査担当者', '承認者'),))
+    catalog = ContractCatalog((), (pipeline,), (workflow,), (Role('role.reviewer', '審査担当者', '承認者'),))
     pending = State('state.pending', '承認待ち')
     revision = State('state.revision', '修正待ち')
     approved = State('state.approved', '承認済み')

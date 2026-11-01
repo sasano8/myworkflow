@@ -58,7 +58,7 @@ flowchart TD
     target --> kestra[Kestra: 説明用YAML]
 ```
 
-内部では型付きCatalogとStateGraphを使う。`ir.json` はそれを出力した生成物であり、開発者が直接編集するDSLではない。形式は `schema_version=1`、中に業務要件形式v2、宣言された状態グラフ、固定IDと実装関数の対応を含む。
+内部では型付きContractCatalogとStateGraphを使う。`ir.json` はそれを出力した生成物であり、開発者が直接編集するDSLではない。形式は `schema_version=1`、中に業務要件形式v2、宣言された状態グラフ、固定IDと実装関数の対応を含む。
 
 | 生成物 | 内容 |
 | --- | --- |

@@ -138,7 +138,8 @@ class Workflow(Record):
 
 
 @dataclass(frozen=True)
-class Catalog:
+class ContractCatalog:
+    """業務契約カタログ: shared business declarations and value definitions."""
     artifacts: tuple[Artifact, ...]
     pipelines: tuple[Pipeline, ...]
     workflows: tuple[Workflow, ...]
@@ -148,3 +149,7 @@ class Catalog:
     def validate(self) -> None:
         from myworkflow.validation import validate_catalog
         validate_catalog(self)
+
+
+# Backward-compatible import; new code uses the explicit business contract name.
+Catalog = ContractCatalog

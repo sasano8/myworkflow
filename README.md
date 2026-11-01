@@ -2,6 +2,8 @@
 
 Python 3.14向けの、業務契約から型・実装の骨格・業務概要を生成し、同じ契約でパイプラインを実行するPoCです。データ契約にはPydanticを使用し、Temporal接続は任意です。
 
+定義は業務契約カタログ（`ContractCatalog`）にまとめます。状態・トランジションは状態グラフとして合わせて管理します。[構成と名称](docs/architecture.md#業務契約カタログ)を参照してください。
+
 ## プロダクトの考え方と比較
 
 [プロダクトの概念](docs/product-concept.md)に、業務契約、正本と生成物、要件定義から開発への流れ、現在の保証範囲を整理しています。[既存製品との比較](docs/product-comparison.md)では、n8n・Power Automate・Camunda・Windmill・SpiffWorkflow・Temporal・Prefectとの違い、強みと弱み、継続する価値を検証する条件をまとめています。

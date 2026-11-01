@@ -1,8 +1,8 @@
 """Compatibility dictionary export for an already compiled catalog."""
-from myworkflow.models import Catalog, Lock
+from myworkflow.models import ContractCatalog, Lock
 
 
-def catalog_to_spec(catalog: Catalog) -> dict:
+def catalog_to_spec(catalog: ContractCatalog) -> dict:
     """Serialize references; this export is never the typed declarations' source."""
     return {
         **({'value_objects': [d.definition() for d in catalog.value_objects]} if catalog.value_objects else {}),

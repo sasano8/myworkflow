@@ -1,8 +1,8 @@
 from myworkflow.markdown import escape
 """Deterministic business documentation."""
-from myworkflow.models import Catalog, Lock, Trigger
+from myworkflow.models import ContractCatalog, Lock, Trigger
 
-def render(catalog: Catalog) -> str:
+def render(catalog: ContractCatalog) -> str:
     """Generate deterministic Markdown; order is explicit declaration order."""
     catalog.validate()
     artifacts = {a.id: a.name for a in catalog.artifacts}

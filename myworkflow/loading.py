@@ -1,5 +1,5 @@
 """Parse the external dictionary once into immutable domain declarations."""
-from myworkflow.models import Artifact, Binding, Catalog, Lock, Pipeline, Role, Step, Trigger, Use, Workflow
+from myworkflow.models import Artifact, Binding, ContractCatalog, Lock, Pipeline, Role, Step, Trigger, Use, Workflow
 from myworkflow.errors import ContractError
 
 
@@ -72,7 +72,7 @@ def load_catalog(spec, *, value_objects=()):
                     primary.after, primary.wait, b.get('next_workflow'), tuple(triggers[1:]), primary.actor_role_id,
                     tuple((key, value) for key, value in b.get('role_mapping', {'system': 'role.system'}).items()), primary.id))
             workflows.append(Workflow(w['id'], w['name'], tuple(bindings)))
-        model = Catalog(artifacts, tuple(pipelines), tuple(workflows), roles, value_objects)
+        model = ContractCatalog(artifacts, tuple(pipelines), tuple(workflows), roles, value_objects)
         entities = [*artifacts, *roles, *pipelines, *workflows]
         entities += [s for p in pipelines for s in p.steps]
         entities += [b for w in workflows for b in w.bindings]

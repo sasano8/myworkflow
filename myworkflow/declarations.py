@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TypeVar
 
 from myworkflow.errors import ContractError
-from myworkflow.models import Artifact, Binding, Catalog, Pipeline, Role, Trigger, Workflow
+from myworkflow.models import Artifact, Binding, ContractCatalog, Pipeline, Role, Trigger, Workflow
 from myworkflow.pipeline_declarations import Action, Operation, PipelineDeclaration, compile_pipeline
 from myworkflow.program import Program
 from myworkflow.state_graph import State, StateGraph, Transition
@@ -69,7 +69,7 @@ class CompiledWorkflows:
         raise ContractError("Workflow class is not included in this compilation")
 
     @property
-    def catalog(self):
+    def catalog(self) -> ContractCatalog:
         return self.program.model
 
 
@@ -242,7 +242,7 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
                 if isinstance(step, Action) and isinstance(step.compensate, Operation):
                     collect(operations, step.compensate, Operation, step.id)
         lowered[identity] = compile_pipeline(pipeline, artifacts) if isinstance(pipeline, PipelineDeclaration) else pipeline
-    catalog = Catalog(artifacts, tuple(lowered.values()), tuple(workflows), tuple(roles.values()), tuple(definitions.values()))
+    catalog = ContractCatalog(artifacts, tuple(lowered.values()), tuple(workflows), tuple(roles.values()), tuple(definitions.values()))
     program = Program.from_catalog(catalog)
     graph_ids = set()
     for graph in graphs:

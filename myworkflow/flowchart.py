@@ -2,7 +2,7 @@
 import string
 
 from myworkflow.markdown import escape
-from myworkflow.models import Catalog
+from myworkflow.models import ContractCatalog
 from myworkflow.state_graph import StateGraph
 
 
@@ -13,7 +13,7 @@ def _label(value: str) -> str:
                        for line in value.split('\n'))
 
 
-def render_business_flow(graph: StateGraph, catalog: Catalog, *, details: bool = False) -> str:
+def render_business_flow(graph: StateGraph, catalog: ContractCatalog, *, details: bool = False) -> str:
     """Generate Markdown with Mermaid; show declared success paths, not execution history.
 
     The compact view shows states, actions, actors and triggers. The detailed view

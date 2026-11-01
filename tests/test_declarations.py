@@ -6,7 +6,7 @@ from types import ModuleType
 import pytest
 
 from examples import declarative_review as sample
-from myworkflow import Artifact, Catalog, Lock, Pipeline, Role, Step
+from myworkflow import Artifact, ContractCatalog, Lock, Pipeline, Role, Step
 from myworkflow.codegen import interfaces_source
 from myworkflow.declarations import bind, compile_workflows, state, transition, trigger, workflow
 from myworkflow.errors import ContractError
@@ -171,7 +171,7 @@ def test_typed_catalog_export_preserves_lock_metadata_and_compensation():
     ))
     binding = Binding('b.locked', pipeline.id, '操作', ((artifact.id, 'id'),),
                       actor_role_id=role.id, role_mapping=(('system', role.id),), trigger_id='t.locked')
-    catalog = Catalog((artifact,), (pipeline,), (Workflow('w.locked', '排他業務', (binding,)),), (role,))
+    catalog = ContractCatalog((artifact,), (pipeline,), (Workflow('w.locked', '排他業務', (binding,)),), (role,))
     typed = Program.from_catalog(catalog)
     assert typed.model is catalog
     assert typed.plans[pipeline.id] is pipeline

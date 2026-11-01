@@ -9,7 +9,7 @@ flowchart TD
     source[従来の契約コード SPEC] --> loader[loading / validation]
     declarations[実験用の名前付きクラス宣言] --> compiler[declarations / compile_workflows]
     compiler --> typed[Program.from_catalog]
-    typed --> model[不変のCatalogモデル]
+    typed --> model[不変のContractCatalogモデル]
     compiler --> graph[状態グラフの検査・表・Mermaid図]
     loader --> model
     model --> runtime[Engine]
@@ -25,6 +25,18 @@ flowchart TD
     plugin --> runtime
     plugin --> reports[バージョン付き実行結果]
 ```
+
+## 業務契約カタログ
+
+型の正式名称は `ContractCatalog`（業務契約カタログ）とする。ワークフロー・パイプライン・ステップ、ロール・トリガー、アーティファクト・バリューオブジェクトの宣言をまとめ、検証・文書生成・実行で共有する。
+
+```python
+from myworkflow import ContractCatalog
+
+catalog: ContractCatalog = compiled.catalog
+```
+
+状態・トランジションは `compiled.graphs` のStateGraphとして保持し、`CompiledWorkflows` が業務契約カタログとともに束ねる。今回の名称変更で保存形式や実行時の保証範囲は変更しない。従来の `Catalog` は `ContractCatalog` と同じクラスを指す互換名として残す。新しいコードと型注釈では `ContractCatalog` を使う。
 
 ## モジュール
 
@@ -56,7 +68,7 @@ flowchart TD
 
 ## 契約と実装
 
-`Program(SPEC)` が同じCatalog系の型へ変換する。購買の正本であるクラス宣言は `compile_workflows(...)` でコンパイルし、`Program.from_catalog(...)` が型付きの同じオブジェクトを直接利用する。[構文と境界](state-graph.md)を参照。読み込んだSPECや `program.spec` のスナップショットを書き換えても、検証済みモデルには影響しない。`program.catalog()` と実行索引は同じ不変のオブジェクトを参照する。
+`Program(SPEC)` が同じContractCatalog系の型へ変換する。購買の正本であるクラス宣言は `compile_workflows(...)` でコンパイルし、`Program.from_catalog(...)` が型付きの同じオブジェクトを直接利用する。[構文と境界](state-graph.md)を参照。読み込んだSPECや `program.spec` のスナップショットを書き換えても、検証済みモデルには影響しない。`program.catalog()` と実行索引は同じ不変のオブジェクトを参照する。
 
 SPECの形は維持している。モデルの索引値は型付きレコードで、初期APIの `record['id']` や `get()` も受け付ける。利用側は属性参照を推奨する。
 

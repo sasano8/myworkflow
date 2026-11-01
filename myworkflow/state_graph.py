@@ -5,7 +5,7 @@ from inspect import isfunction
 
 from myworkflow.errors import ContractError
 from myworkflow.markdown import escape
-from myworkflow.models import Binding, Catalog, Trigger, Workflow
+from myworkflow.models import Binding, ContractCatalog, Trigger, Workflow
 
 
 @dataclass(frozen=True)
@@ -38,7 +38,7 @@ class StateGraph:
     states: tuple[State, ...]
     transitions: tuple[Transition, ...]
 
-    def validate(self, catalog: Catalog) -> None:
+    def validate(self, catalog: ContractCatalog) -> None:
         catalog.validate()
         if not any(w is self.workflow for w in catalog.workflows):
             raise ContractError(f'{self.workflow.id}: workflow must belong to catalog')
@@ -80,7 +80,7 @@ class StateGraph:
         if missing:
             raise ContractError(f'{self.workflow.id}: unreachable states: {missing}')
 
-    def to_dict(self, catalog: Catalog) -> dict:
+    def to_dict(self, catalog: ContractCatalog) -> dict:
         """Normalized comparison/export form; symbolic references become stable IDs."""
         self.validate(catalog)
         return {
@@ -98,7 +98,7 @@ class StateGraph:
         }
 
 
-def render_state_graph(graph: StateGraph, catalog: Catalog) -> str:
+def render_state_graph(graph: StateGraph, catalog: ContractCatalog) -> str:
     """Render declarations, not a runtime state/history report."""
     graph.validate(catalog)
     roles = {r.id: r.display_name for r in catalog.roles}

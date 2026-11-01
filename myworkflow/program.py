@@ -19,10 +19,10 @@ class Program:
     def from_catalog(cls, catalog):
         """Use typed declarations directly, retaining object identity for graph references."""
         import json
-        from myworkflow.models import Catalog
+        from myworkflow.models import ContractCatalog
         from myworkflow.serialization import catalog_to_spec
-        if not isinstance(catalog, Catalog):
-            raise ContractError('contract: expected Catalog')
+        if not isinstance(catalog, ContractCatalog):
+            raise ContractError('contract: expected ContractCatalog')
         from dataclasses import fields, is_dataclass
         def immutable(value, path):
             if is_dataclass(value) and not isinstance(value, type):
