@@ -41,7 +41,7 @@
 
 | 固定ID | 実装 |
 | --- | --- |
-| s.guarded_approve | examples.guarded_approval.approve |
+| s.guarded_approve | examples.approval_values.application.approve |
 
 ロックはEngine → LockProvider、受付認可はEngine → Principal.rolesで実行。
 

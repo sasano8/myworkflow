@@ -39,14 +39,15 @@ hookが `python -m scripts.generate_docs --hook` を呼び、生成物を更新�
 
 ## 出力対象
 
-このリポジトリに登録したサンプルを対象にする。別のアプリを追加する場合は `scripts/generate_docs.py` の対象へ明示する。生成ドキュメントはカタログごとのdocsディレクトリへ置き、受入仕様も同じ場所にまとめる。featureファイルとPythonコードは元の場所に保つ。
+このリポジトリに登録したサンプルを対象にする。別のアプリを追加する場合は `scripts/generate_docs.py` の対象へ明示する。生成ドキュメントはカタログごとのdocsディレクトリへ置き、受入仕様も同じ場所にまとめる。featureファイルとPythonコードは各カタログのコード側へ置く。コードとdocsだけの別ディレクトリを並立させない。
 
 | 範囲 | 自動生成するもの |
 | --- | --- |
 | `examples/purchase/docs/` | 業務要件、データ定義、受入仕様、Kestraプレビュー、一覧README |
 | `examples/purchase/interfaces.py` | 実装から利用する生成Request型 |
-| `examples/approval-values/docs/` | 業務要件、データ定義、一覧README |
+| `examples/approval_values/docs/` | 業務要件、データ定義、一覧README |
 | `examples/declarative_review/docs/` | 業務概要・状態表・業務フロー図、一覧README |
+| `examples/prepared_approval/docs/` | 準備・確定サンプルの業務要件・図・一覧README |
 | `examples/tickets/docs/` | 業務要件と受入条件、受入仕様、一覧README |
 | 原文・qualityの採点用入力／期待値・テストの条件 | 自動更新しない |
 | リポジトリのREADME・設計文書 | 自動更新しない |

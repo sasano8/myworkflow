@@ -5,7 +5,7 @@
       "id": "vo.application_id",
       "name": "購買申請ID",
       "description": "",
-      "python_type": "examples.approval_values:ApplicationId",
+      "python_type": "examples.approval_values.value_objects:ApplicationId",
       "rules": [],
       "validators": [],
       "schema": {
@@ -22,7 +22,7 @@
       "id": "vo.purchase_amount",
       "name": "購買申請金額",
       "description": "税込・円単位の金額。0円と負の金額、小数や文字列は受け付けない。",
-      "python_type": "examples.approval_values:PurchaseAmount",
+      "python_type": "examples.approval_values.value_objects:PurchaseAmount",
       "rules": [],
       "validators": [],
       "schema": {
@@ -39,7 +39,7 @@
       "id": "vo.approval_application",
       "name": "承認対象の購買申請",
       "description": "同一レコードに業務項目と状態を保存する。操作可否はトランジションで検証する。",
-      "python_type": "examples.approval_values:ApprovalApplication",
+      "python_type": "examples.approval_values.value_objects:ApprovalApplication",
       "rules": [],
       "validators": [],
       "schema": {
@@ -97,7 +97,7 @@
       "id": "vo.delivery_period",
       "name": "納品受付期間",
       "description": "",
-      "python_type": "examples.approval_values:DeliveryPeriod",
+      "python_type": "examples.approval_values.value_objects:DeliveryPeriod",
       "rules": [
         "終了日は開始日以降とする。同日も許可する。"
       ],

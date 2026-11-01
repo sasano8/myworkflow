@@ -2,7 +2,7 @@
 
 ## クラス宣言からのコンパイル
 
-実験用APIを `myworkflow.declarations` に追加した。承認・差戻し・再申請・却下を含む[宣言例](../examples/declarative_review.py)と、その[生成結果](../examples/declarative_review/docs/requirements.md)を参照できる。
+実験用APIを `myworkflow.declarations` に追加した。承認・差戻し・再申請・却下を含む[宣言例](../examples/declarative_review/contract.py)と、その[生成結果](../examples/declarative_review/docs/requirements.md)を参照できる。
 
 ```python
 from myworkflow.declarations import workflow, state, trigger, bind, transition, compile_workflows

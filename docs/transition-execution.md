@@ -2,7 +2,7 @@
 
 ## 使い方
 
-[承認サンプル](../examples/guarded_approval.py)では、クラス宣言の状態・遷移と `TransitionRuntime` を同じEngineへ接続する。
+[承認サンプル](../examples/approval_values/application.py)では、クラス宣言の状態・遷移と `TransitionRuntime` を同じEngineへ接続する。
 
 ```python
 from myworkflow.runtime.transitions import TransitionRuntime
@@ -85,6 +85,6 @@ prepareの応答消失でも準備が残っている可能性があるため、�
 ローカルProviderでは同じSQLite内の一括確定を保証する。外部DB・S3・メール等とまたがる原子性、複数グラフの連携、失敗状態への自動遷移、フロー全体の再開、TemporalやKestraへの自動接続は残課題。既存の購買サンプルと旧準備・確定サンプルを、この方式へ暗黙に移行してはいない。保持期限・GCの残課題も維持する。
 
 ```sh
-python -m examples.guarded_approval
+python -m examples.approval_values
 python -m pytest tests/test_transition_runtime.py -q
 ```

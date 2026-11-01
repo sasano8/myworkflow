@@ -1,17 +1,16 @@
 """A declared transition enforces plain status updates and optimistic final commit."""
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from myworkflow import Artifact, Role
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.artifact_jobs import ArtifactWrite
 from myworkflow.declarations import bind, compile_workflows, state, transition, trigger, workflow
-from myworkflow.executable import Context, Engine, Principal, Registry
+from myworkflow.executable import Context, Engine, Registry
 from myworkflow.pipeline_declarations import Action, PipelineDeclaration
 from myworkflow.runtime.transitions import GuardContext, TransitionRuntime
 
-from examples.approval_values import application_identifier, approval_application, purchase_amount, delivery_period
+from examples.approval_values.value_objects import application_identifier, approval_application, purchase_amount, delivery_period
 
 application_id = Artifact('a.guarded_id', '申請ID', 'application_id', 'str', value_object=application_identifier)
 reviewer = Role('role.guarded_reviewer', '審査責任者', '承認者')
@@ -61,13 +60,3 @@ def engine(coordinator, journal_path: Path, *, handlers=None):
                                     value_object=approval_application)
     return Engine(compiled.program, handlers or registry, None,
                   store=SQLiteExecutionStore(SQLiteDatabase(journal_path)), transitions=transitions)
-
-
-if __name__ == '__main__':
-    with TemporaryDirectory() as temporary:
-        coordinator = TemporaryArtifactCoordinator(temporary, namespace='guarded-approval')
-        seed(coordinator)
-        runner = engine(coordinator, Path(temporary) / 'runs.sqlite')
-        print(runner.invoke(Approval.execute, Approval.requested, {'id': 'example'},
-                            Principal('bob', frozenset({reviewer.id})), run_id='approval-job'))
-        print(coordinator.read('application:example'))

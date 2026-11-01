@@ -55,11 +55,11 @@ jobs:
       - name: Verify generated samples
         run: |
           python -m scripts.generate_docs --check
-          python -m myworkflow build --config examples.approval_values_build --target temporal --output /tmp/build-values
-          python -m myworkflow build --config examples.approval_values_build --target temporal --output /tmp/build-values --check
-          diff -u examples/approval-values/docs/data-definitions.md /tmp/build-values/data-definitions.md
-          diff -u examples/approval-values/docs/data-definitions.json /tmp/build-values/data-definitions.json
-          diff -u examples/approval-values/docs/requirements.md /tmp/build-values/requirements.md
+          python -m myworkflow build --config examples.approval_values.build --target temporal --output /tmp/build-values
+          python -m myworkflow build --config examples.approval_values.build --target temporal --output /tmp/build-values --check
+          diff -u examples/approval_values/docs/data-definitions.md /tmp/build-values/data-definitions.md
+          diff -u examples/approval_values/docs/data-definitions.json /tmp/build-values/data-definitions.json
+          diff -u examples/approval_values/docs/requirements.md /tmp/build-values/requirements.md
           python -m myworkflow build --config examples.purchase.build --target temporal --output /tmp/build-temporal
           python -m myworkflow build --config examples.purchase.build --target temporal --output /tmp/build-temporal --check
           python -m myworkflow build --config examples.purchase.build --target kestra --workflow w.attach --output /tmp/build-kestra
@@ -78,7 +78,7 @@ jobs:
         run: |
           python -m examples.purchase
           python -m examples.prepared_approval
-          python -m examples.guarded_approval
+          python -m examples.approval_values
       - name: Render acceptance results
         if: always()
         run: |

@@ -140,7 +140,7 @@ commit前にファイルの存在・サイズ・SHA256を検証する。大き�
 
 ## パイプラインからの利用
 
-[承認サンプル](../examples/prepared_approval.py)は、既存Engineとクラス宣言を使って次を実行する。
+[承認サンプル](../examples/prepared_approval/application.py)は、既存Engineとクラス宣言を使って次を実行する。
 
 1. 申請と状態を読み、承認待ち・自己承認禁止を確認する。
 2. 変更予定の申請データと状態を、読込み時のバージョンを付けてprepareする。

@@ -35,8 +35,8 @@ def test_generated_documents_are_grouped_by_catalog_and_local_links_resolve():
     from scripts.generate_docs import outputs
     generated = outputs()
     directories = {str(Path(name).parent) for name in generated if name != 'examples/purchase/interfaces.py'}
-    assert directories == {'examples/purchase/docs', 'examples/approval-values/docs',
-                           'examples/declarative_review/docs', 'examples/tickets/docs'}
+    assert directories == {'examples/purchase/docs', 'examples/approval_values/docs',
+                           'examples/declarative_review/docs', 'examples/tickets/docs', 'examples/prepared_approval/docs'}
     for directory in directories:
         assert directory + '/README.md' in generated
     for name, content in generated.items():
@@ -52,3 +52,13 @@ def test_generated_documents_are_grouped_by_catalog_and_local_links_resolve():
                 assert f'id="{parsed.fragment}"' in target.read_text()
     assert not (ROOT / 'examples/purchase/requirements.md').exists()
     assert not (ROOT / 'examples/purchase/acceptance/business.md').exists()
+
+
+
+def test_examples_root_has_no_stray_catalog_modules():
+    assert {path.name for path in (ROOT / 'examples').glob('*.py')} == {'__init__.py'}
+    assert not (ROOT / 'examples/approval-values').exists()
+    for name in ('approval_values', 'declarative_review', 'prepared_approval', 'purchase', 'tickets'):
+        directory = ROOT / 'examples' / name
+        assert (directory / '__init__.py').exists()
+        assert (directory / 'docs/README.md').exists()

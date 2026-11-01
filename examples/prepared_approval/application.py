@@ -2,14 +2,13 @@
 from dataclasses import dataclass
 import json
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from myworkflow import Artifact, BusinessError, Pipeline, Role, Step
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.artifact_jobs import ArtifactCoordinator, ArtifactWrite
 from myworkflow.declarations import bind, compile_workflows, state, transition, trigger, workflow
-from myworkflow.executable import Context, Engine, Principal, Registry
+from myworkflow.executable import Context, Engine, Registry
 
 application_id = Artifact('a.staged_id', '申請ID', 'application_id', 'str')
 application_version = Artifact('a.staged_version', '申請バージョン', 'application_version', 'int')
@@ -86,14 +85,3 @@ def seed(coordinator: ArtifactCoordinator, identity='example'):
 def engine(coordinator: ArtifactCoordinator, journal_path: Path):
     return Engine(compiled.program, registry, ApprovalServices(coordinator),
                   store=SQLiteExecutionStore(SQLiteDatabase(journal_path)))
-
-
-if __name__ == '__main__':
-    with TemporaryDirectory() as temporary:
-        coordinator = TemporaryArtifactCoordinator(temporary, namespace='approval-example')
-        seed(coordinator)
-        runner = engine(coordinator, Path(temporary) / 'runs.sqlite')
-        print(runner.invoke('b.staged_approve', 't.staged_approve', {'id': 'example'},
-                            Principal('bob', frozenset({reviewer.id})), run_id='approval-job'))
-        print(coordinator.status('approval-job'))
-        print(coordinator.read('state:example'))

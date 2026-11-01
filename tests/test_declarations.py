@@ -5,7 +5,7 @@ from types import ModuleType
 
 import pytest
 
-from examples import declarative_review as sample
+from examples.declarative_review import contract as sample
 from myworkflow import Artifact, ContractCatalog, Lock, Pipeline, Role, Step
 from myworkflow.codegen import interfaces_source
 from myworkflow.declarations import bind, compile_workflows, state, transition, trigger, workflow
@@ -31,7 +31,7 @@ def test_sample_matches_reviewable_output_and_existing_program():
 
 
 def test_identifier_rename_keeps_export_connections_and_ids():
-    source = (ROOT / 'examples/declarative_review.py').read_text()
+    source = (ROOT / 'examples/declarative_review/contract.py').read_text()
     # Change Python symbols only. Stable IDs deliberately keep the old spelling.
     import io
     import tokenize

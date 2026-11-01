@@ -158,7 +158,7 @@ def test_unknown_jobs_and_invalid_ids_are_explicit(coordinator):
 
 
 def test_pipeline_stages_then_commits_data_and_business_state(coordinator, tmp_path):
-    from examples.prepared_approval import engine, reviewer, seed
+    from examples.prepared_approval.application import engine, reviewer, seed
     from myworkflow.executable import Principal
     seed(coordinator)
     result = engine(coordinator, tmp_path / 'runs.db').invoke('b.staged_approve', 't.staged_approve',
@@ -170,7 +170,7 @@ def test_pipeline_stages_then_commits_data_and_business_state(coordinator, tmp_p
 
 
 def test_pipeline_stop_before_commit_keeps_preparation_for_explicit_recovery(coordinator, tmp_path):
-    from examples.prepared_approval import engine, reviewer, seed
+    from examples.prepared_approval.application import engine, reviewer, seed
     from myworkflow.executable import Principal
     seed(coordinator)
     class StopBeforeCommit:
@@ -190,7 +190,7 @@ def test_pipeline_stop_before_commit_keeps_preparation_for_explicit_recovery(coo
 
 
 def test_pipeline_rejection_does_not_prepare_or_change_artifacts(coordinator, tmp_path):
-    from examples.prepared_approval import engine, reviewer, seed
+    from examples.prepared_approval.application import engine, reviewer, seed
     from myworkflow.executable import Principal
     seed(coordinator)
     result = engine(coordinator, tmp_path / 'runs.db').invoke('b.staged_approve', 't.staged_approve',

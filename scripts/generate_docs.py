@@ -12,8 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 def outputs():
     from examples.purchase import contract, handlers
     from examples.purchase.build import BUILD as PURCHASE
-    from examples.approval_values_build import BUILD as VALUES
-    from examples.declarative_review import compiled, documentation
+    from examples.approval_values.build import BUILD as VALUES
+    from examples.prepared_approval.build import BUILD as PREPARED
+    from examples.declarative_review.contract import compiled, documentation
     from examples.purchase.acceptance.catalog import CONFIG as purchase_acceptance
     from examples.tickets.acceptance.catalog import CONFIG as ticket_acceptance
     from myworkflow.acceptance.rendering import render_business, render_cases
@@ -28,9 +29,10 @@ def outputs():
         'examples/purchase/docs/data-definitions.md': purchase['data-definitions.md'],
         'examples/purchase/docs/data-definitions.json': purchase['data-definitions.json'],
         'examples/purchase/docs/kestra-attachment.yaml': preview['manifest.yaml'],
-        'examples/approval-values/docs/requirements.md': values['requirements.md'],
-        'examples/approval-values/docs/data-definitions.md': values['data-definitions.md'],
-        'examples/approval-values/docs/data-definitions.json': values['data-definitions.json'],
+        'examples/approval_values/docs/requirements.md': values['requirements.md'],
+        'examples/approval_values/docs/data-definitions.md': values['data-definitions.md'],
+        'examples/approval_values/docs/data-definitions.json': values['data-definitions.json'],
+        'examples/prepared_approval/docs/requirements.md': compile_outputs(PREPARED, target='temporal')['requirements.md'],
         'examples/declarative_review/docs/requirements.md': documentation(),
         'examples/declarative_review/docs/flow.md': render_business_flow(compiled.graphs[0], compiled.catalog),
     }
@@ -50,14 +52,18 @@ def outputs():
     }
     catalogs = {
         'examples/purchase/docs': '購買',
-        'examples/approval-values/docs': '承認・バリューオブジェクト例',
+        'examples/approval_values/docs': '承認・バリューオブジェクト例',
         'examples/declarative_review/docs': '申請審査',
+        'examples/prepared_approval/docs': 'アーティファクトの準備・確定',
         'examples/tickets/docs': 'チケット発行',
     }
+    source_files = {'purchase': 'contract.py', 'tickets': 'contract.py', 'declarative_review': 'contract.py',
+                    'approval_values': 'application.py', 'prepared_approval': 'application.py'}
     for directory, name in catalogs.items():
         files = sorted(Path(file).name for file in result if str(Path(file).parent) == directory)
         lines = [f'# {name}の業務契約カタログ', '',
                  'このディレクトリは宣言コードから自動生成する。変更は元のコード・受入シナリオへ反映する。', '',
+                 f'宣言コード：[{source_files[Path(directory).parent.name]}](../{source_files[Path(directory).parent.name]})', '',
                  '| ドキュメント | 内容 |', '| --- | --- |']
         lines.extend(f'| [{file}]({file}) | {labels[file]} |' for file in files)
         result[directory + '/README.md'] = '\n'.join(lines) + '\n'

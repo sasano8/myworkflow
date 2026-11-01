@@ -3,7 +3,7 @@ from dataclasses import replace
 
 import pytest
 
-from examples import guarded_approval as sample
+from examples.approval_values import application as sample
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.artifact_jobs import ArtifactConflict, ArtifactWrite, JobState
 from myworkflow.errors import ContractError, ExecutionFailed
@@ -240,7 +240,7 @@ def test_journal_failure_after_commit_does_not_compensate_business_data(coordina
 
 def test_saved_graph_keeps_guard_function_reference():
     model = sample.compiled.graphs[0].to_dict(sample.compiled.catalog)
-    assert model['transitions'][0]['guard'] == 'examples.guarded_approval:may_approve'
+    assert model['transitions'][0]['guard'] == 'examples.approval_values.application:may_approve'
     assert sample.compiled.graphs[0].transitions[0].guard is sample.may_approve
     from myworkflow.build import BuildConfig, compile_outputs
     import json

@@ -27,11 +27,12 @@ python -m scripts.generate_docs --check
 | 業務契約カタログ | 出力先 |
 | --- | --- |
 | 購買 | [examples/purchase/docs](examples/purchase/docs/README.md) |
-| 承認・バリューオブジェクト例 | [examples/approval-values/docs](examples/approval-values/docs/README.md) |
+| 承認・バリューオブジェクト例 | [examples/approval_values/docs](examples/approval_values/docs/README.md) |
 | 申請審査 | [examples/declarative_review/docs](examples/declarative_review/docs/README.md) |
+| アーティファクトの準備・確定 | [examples/prepared_approval/docs](examples/prepared_approval/docs/README.md) |
 | チケット発行 | [examples/tickets/docs](examples/tickets/docs/README.md) |
 
-業務要件・データ定義・受入仕様・図はカタログごとの `docs/` へまとめます。生成するPythonの型定義はコード側に置きます。
+各カタログは `examples/<カタログ名>/` にコードと `docs/` をまとめます。業務要件・データ定義・受入仕様・図はその `docs/` に置き、一覧ページから宣言コードも参照できます。生成するPythonの型定義はコード側に置きます。
 
 ## コミット時の自動生成
 
@@ -61,7 +62,7 @@ Kestra出力は `deployable: false` のプレビューです。実機へ配備�
 
 ## 名前付きクラス宣言の実験
 
-[クラス宣言例](examples/declarative_review.py)から、既存の型付き契約と状態グラフをコンパイルできます。[生成結果](examples/declarative_review/docs/requirements.md)には承認・差戻し・再申請・却下を出力します。[業務フロー図](examples/declarative_review/docs/flow.md)も同じ宣言からMermaid形式で生成し、GitHubで表示できます。`python -m examples.declarative_review --flowchart` で図だけ出力できます。`python -m examples.declarative_review` で再生成できます。構文・対応範囲・残タスクは[状態遷移モデル](docs/state-graph.md)を参照してください。ローカルでの遷移検証・確定は[TransitionRuntime](docs/transition-execution.md)を明示的に接続して行えます。この宣言例自体は審査を保存するアプリケーションではありません。
+[クラス宣言例](examples/declarative_review/contract.py)から、既存の型付き契約と状態グラフをコンパイルできます。[生成結果](examples/declarative_review/docs/requirements.md)には承認・差戻し・再申請・却下を出力します。[業務フロー図](examples/declarative_review/docs/flow.md)も同じ宣言からMermaid形式で生成し、GitHubで表示できます。`python -m examples.declarative_review --flowchart` で図だけ出力できます。`python -m examples.declarative_review` で再生成できます。構文・対応範囲・残タスクは[状態遷移モデル](docs/state-graph.md)を参照してください。ローカルでの遷移検証・確定は[TransitionRuntime](docs/transition-execution.md)を明示的に接続して行えます。この宣言例自体は審査を保存するアプリケーションではありません。
 
 ## 動く購買申請サンプル
 
@@ -104,7 +105,7 @@ python3.14 -m pytest -q
 
 ## アーティファクトの準備と一括確定
 
-[共通インターフェースと一時領域Provider](docs/artifact-jobs.md)を追加しました。ジョブIDで準備・確定・照会・破棄を管理し、同じSQLite内の業務データ・状態・ファイル参照をまとめて確定します。blob本体はジョブ別のファイルとして保存し、DBへ格納しません。`python -m examples.prepared_approval` で[承認例](examples/prepared_approval.py)を実行できます。外部DB等を含む一括確定は保証範囲外です。
+[共通インターフェースと一時領域Provider](docs/artifact-jobs.md)を追加しました。ジョブIDで準備・確定・照会・破棄を管理し、同じSQLite内の業務データ・状態・ファイル参照をまとめて確定します。blob本体はジョブ別のファイルとして保存し、DBへ格納しません。`python -m examples.prepared_approval` で[承認例](examples/prepared_approval/application.py)を実行できます。外部DB等を含む一括確定は保証範囲外です。
 
 ## モデル
 
@@ -166,10 +167,10 @@ python -m myworkflow.quality --case examples/purchase/quality/case.json --output
 
 ### トランジション契約付きの更新
 
-[実行サンプル](examples/guarded_approval.py)では `ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.id)` を、開始状態・ロール・ガード・成功後の状態と照合し、最後に楽観ロック付きで一括確定する。[使い方と保存範囲](docs/transition-execution.md)を参照。
+[実行サンプル](examples/approval_values/application.py)では `ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.id)` を、開始状態・ロール・ガード・成功後の状態と照合し、最後に楽観ロック付きで一括確定する。[使い方と保存範囲](docs/transition-execution.md)を参照。
 
 ```sh
-python -m examples.guarded_approval
+python -m examples.approval_values
 ```
 
 ### バリューオブジェクトと別ファイルのデータ定義

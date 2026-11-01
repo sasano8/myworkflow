@@ -9,10 +9,10 @@ from typing import get_type_hints
 import pytest
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from examples import guarded_approval as sample
-from examples.approval_values import (ApplicationId, ApprovalApplication, DeliveryPeriod, PurchaseAmount,
+from examples.approval_values import application as sample
+from examples.approval_values.value_objects import (ApplicationId, ApprovalApplication, DeliveryPeriod, PurchaseAmount,
                                      application_identifier, approval_application, delivery_period, purchase_amount)
-from examples.approval_values_build import BUILD
+from examples.approval_values.build import BUILD
 from myworkflow import Artifact, ValueModel, ValueObject
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.artifact_jobs import ArtifactWrite
@@ -62,15 +62,15 @@ def test_cross_field_rule_runs_but_is_not_claimed_as_json_schema_constraint():
 def test_independent_data_documents_match_reviewed_samples_and_business_links():
     catalog = sample.compiled.catalog
     markdown = render_data_definitions(catalog)
-    assert markdown == (ROOT / 'examples/approval-values/docs/data-definitions.md').read_text()
-    assert data_definitions_source(catalog) == (ROOT / 'examples/approval-values/docs/data-definitions.json').read_text()
+    assert markdown == (ROOT / 'examples/approval_values/docs/data-definitions.md').read_text()
+    assert data_definitions_source(catalog) == (ROOT / 'examples/approval_values/docs/data-definitions.json').read_text()
     assert 'JSON Schemaだけでは全条件を表せない' in markdown
     assert '0より大きい' in markdown
     assert '```' not in markdown
     assert 'exclusiveMinimum' in data_definitions_source(catalog)
     assert 'data-definitions.md#vo.application_id' in sample.compiled.program.documentation()
     assert 'exclusiveMinimum' not in sample.compiled.program.documentation()
-    assert compile_outputs(BUILD, target='temporal')['requirements.md'] == (ROOT / 'examples/approval-values/docs/requirements.md').read_text()
+    assert compile_outputs(BUILD, target='temporal')['requirements.md'] == (ROOT / 'examples/approval_values/docs/requirements.md').read_text()
 
 
 def test_build_includes_separate_data_files_and_detects_constraint_drift(tmp_path):
