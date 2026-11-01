@@ -9,10 +9,10 @@ from typing import get_type_hints
 import pytest
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from examples.approval_values import application as sample
-from examples.approval_values.value_objects import (ApplicationId, ApprovalApplication, DeliveryPeriod, PurchaseAmount,
+from examples.feature_demos.approval_values import application as sample
+from examples.feature_demos.approval_values.value_objects import (ApplicationId, ApprovalApplication, DeliveryPeriod, PurchaseAmount,
                                      application_identifier, approval_application, delivery_period, purchase_amount)
-from examples.approval_values.build import BUILD
+from examples.feature_demos.approval_values.build import BUILD
 from myworkflow import Artifact, ValueModel, ValueObject
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.artifact_jobs import ArtifactWrite
@@ -62,15 +62,15 @@ def test_cross_field_rule_runs_but_is_not_claimed_as_json_schema_constraint():
 def test_independent_data_documents_match_reviewed_samples_and_business_links():
     catalog = sample.compiled.catalog
     markdown = render_data_definitions(catalog)
-    assert markdown == (ROOT / 'examples/approval_values/docs/data-definitions.md').read_text()
-    assert data_definitions_source(catalog) == (ROOT / 'examples/approval_values/docs/data-definitions.json').read_text()
+    assert markdown == (ROOT / 'examples/feature_demos/approval_values/docs/data-definitions.md').read_text()
+    assert data_definitions_source(catalog) == (ROOT / 'examples/feature_demos/approval_values/docs/data-definitions.json').read_text()
     assert 'JSON Schemaだけでは全条件を表せない' in markdown
     assert '0より大きい' in markdown
     assert '```' not in markdown
     assert 'exclusiveMinimum' in data_definitions_source(catalog)
     assert 'data-definitions.md#vo.application_id' in sample.compiled.program.documentation()
     assert 'exclusiveMinimum' not in sample.compiled.program.documentation()
-    assert compile_outputs(BUILD, target='temporal')['requirements.md'] == (ROOT / 'examples/approval_values/docs/requirements.md').read_text()
+    assert compile_outputs(BUILD, target='temporal')['requirements.md'] == (ROOT / 'examples/feature_demos/approval_values/docs/requirements.md').read_text()
 
 
 def test_build_includes_separate_data_files_and_detects_constraint_drift(tmp_path):
@@ -251,14 +251,14 @@ def test_interface_inspection_detects_schema_drift_even_with_same_python_name():
 
 
 def test_purchase_owns_value_definitions_and_builds_frozen_documents():
-    from examples.purchase import contract, value_objects
-    from examples.purchase.build import BUILD as purchase_build
+    from examples.apps.purchase import contract, value_objects
+    from examples.apps.purchase.build import BUILD as purchase_build
     assert contract.amount.value_object is value_objects.amount_type
     assert contract.vendor.value_object is value_objects.vendor_type
     assert contract.application_id.value_object is value_objects.application_id_type
     outputs = compile_outputs(purchase_build, target='temporal')
     for name in ('data-definitions.md', 'data-definitions.json'):
-        assert outputs[name] == (ROOT / 'examples/purchase/docs' / name).read_text()
+        assert outputs[name] == (ROOT / 'examples/apps/purchase/docs' / name).read_text()
     assert 'data-definitions.md#vo.purchase.amount' in contract.program.documentation()
     from myworkflow.acceptance.rendering import DocumentOptions, render_business
     options = DocumentOptions(data_definitions_link='../data-definitions.md')
@@ -267,9 +267,9 @@ def test_purchase_owns_value_definitions_and_builds_frozen_documents():
 
 @pytest.mark.parametrize('vendor, amount', [('V', 0), ('V', -1), ('', 1), ('   ', 1)])
 def test_purchase_value_constraints_reject_before_storage(tmp_path, vendor, amount):
-    from examples.purchase import contract, interfaces
-    from examples.purchase.handlers import registry
-    from examples.purchase.services import Services
+    from examples.apps.purchase import contract, interfaces
+    from examples.apps.purchase.handlers import registry
+    from examples.apps.purchase.services import Services
     services = Services(tmp_path / 'purchase.db')
     runner = Engine(contract.program, registry, services, interfaces)
     result = runner.invoke(contract.PurchaseApproval.submit, contract.PurchaseApproval.submission,

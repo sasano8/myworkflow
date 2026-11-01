@@ -181,7 +181,7 @@ def test_old_json_artifacts_are_preserved_when_storage_column_is_added(tmp_path)
 
 
 def test_purchase_sample_stores_bodies_in_files_and_compensation_removes_them(tmp_path):
-    from examples.purchase.services import Services
+    from examples.apps.purchase.services import Services
     services = Services(tmp_path / 'purchase.db')
     services.begin('upload')
     key = services.put('upload', 'A', '本文はファイルだけに保存')
@@ -197,7 +197,7 @@ def test_purchase_sample_stores_bodies_in_files_and_compensation_removes_them(tm
 
 
 def test_purchase_sample_refuses_to_remove_files_with_changed_owner(tmp_path):
-    from examples.purchase.services import Services
+    from examples.apps.purchase.services import Services
     services = Services(tmp_path / 'purchase.db')
     services.begin('upload')
     key = services.put('upload', 'A', 'original')
@@ -211,7 +211,7 @@ def test_purchase_sample_refuses_to_remove_files_with_changed_owner(tmp_path):
 
 
 def test_legacy_purchase_body_is_never_silently_deleted(tmp_path):
-    from examples.purchase.services import Services
+    from examples.apps.purchase.services import Services
     path = tmp_path / 'old.db'
     with closing(sqlite3.connect(path)) as db, db:
         db.execute('CREATE TABLE objects(key TEXT PRIMARY KEY,owner TEXT,version TEXT,body TEXT)')

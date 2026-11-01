@@ -91,9 +91,9 @@ def test_flowchart_contains_cycles_and_declared_actors():
 
 def test_flowchart_matches_frozen_sample():
     from pathlib import Path
-    from examples.declarative_review.contract import compiled
+    from examples.feature_demos.declarative_review.contract import compiled
     from myworkflow.flowchart import render_business_flow
-    expected = Path(__file__).resolve().parents[1] / 'examples/declarative_review/docs/flow.md'
+    expected = Path(__file__).resolve().parents[1] / 'examples/feature_demos/declarative_review/docs/flow.md'
     assert render_business_flow(compiled.graphs[0], compiled.catalog) == expected.read_text()
 
 

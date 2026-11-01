@@ -2,7 +2,7 @@
 
 ## 正本はPython
 
-購買の正本は `examples/purchase/contract.py` のPython宣言である。ワークフローは `@workflow` のクラス、パイプラインは `PipelineDeclaration`、処理は `Action`、排他は `Mutex`、補償処理の識別は `Operation` で表す。
+購買の正本は `examples/apps/purchase/contract.py` のPython宣言である。ワークフローは `@workflow` のクラス、パイプラインは `PipelineDeclaration`、処理は `Action`、排他は `Mutex`、補償処理の識別は `Operation` で表す。
 
 入力・成果物・ステップの参照／更新・条件・補償はオブジェクト参照で接続する。ハンドラーは `@registry.implements(c.save_quote_a)` のように宣言を参照し、コンテキストの項目も `c.quote_a.key` のように参照する。実行APIは配置・トリガー・パイプラインの宣言参照を受け取り、境界で固定IDへ変換する。
 
@@ -18,15 +18,15 @@
 
 ```sh
 # Temporal固有のコード・マニフェストは生成せず、共通出力と接続検査を行う
-python -m myworkflow build --config examples.purchase.build \
+python -m myworkflow build --config examples.apps.purchase.build \
   --target temporal --output dist/temporal
 
 # 現在対応する部分を明示してKestra向けの説明用YAMLを生成する
-python -m myworkflow build --config examples.purchase.build \
+python -m myworkflow build --config examples.apps.purchase.build \
   --target kestra --workflow w.attach --output dist/kestra
 
 # 生成物の差分があれば失敗。書込みはしない
-python -m myworkflow build --config examples.purchase.build \
+python -m myworkflow build --config examples.apps.purchase.build \
   --target kestra --workflow w.attach --output dist/kestra --check
 ```
 
@@ -36,8 +36,8 @@ python -m myworkflow build --config examples.purchase.build \
 
 ```python
 from myworkflow.build import BuildConfig
-from examples.purchase.contract import compiled
-from examples.purchase.handlers import registry
+from examples.apps.purchase.contract import compiled
+from examples.apps.purchase.handlers import registry
 
 BUILD = BuildConfig(compiled, registry)
 ```
@@ -75,7 +75,7 @@ flowchart TD
 
 ## Kestraの対応範囲
 
-今回の合意に合わせ、[プレビューの例](../examples/purchase/docs/kestra-attachment.yaml)は説明・レビュー用の独自YAMLとした。実際のKestra Flow定義ではなく、そのまま配備・実行できない。`deployable: false`、形式名、CLIの出力でこの境界を明示する。
+今回の合意に合わせ、[プレビューの例](../examples/apps/purchase/docs/kestra-attachment.yaml)は説明・レビュー用の独自YAMLとした。実際のKestra Flow定義ではなく、そのまま配備・実行できない。`deployable: false`、形式名、CLIの出力でこの境界を明示する。
 
 配置・トリガーごとに、操作ロール、入力対応、Pythonパイプラインの呼出し先を列挙する。`ir.json` から処理・補償・実装関数を確認できる。ステップ内の条件分岐・再試行・補償は既存Python Engineの責務であり、Kestraのネイティブタスクへ変換したものではない。
 

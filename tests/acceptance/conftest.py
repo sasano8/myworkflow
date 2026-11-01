@@ -1,6 +1,6 @@
 import pytest
 
-from examples.purchase.acceptance.world import World
+from examples.apps.purchase.acceptance.world import World
 
 
 @pytest.fixture

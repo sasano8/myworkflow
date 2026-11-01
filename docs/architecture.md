@@ -61,8 +61,8 @@ catalog: ContractCatalog = compiled.catalog
 | rendering.py / codegen.py / generation.py | 文書・型・骨格の生成と、比較・書込み |
 | acceptance/ | 受入モデル、Gherkin検証、文書、レポート、CLI、pytest-bddとの接続境界 |
 | pytest_plugin.py | 利用側の設定に基づくケース選択・結果収集 |
-| examples/purchase/ | 購買の業務定義、処理、保存、補償、オーケストレーション |
-| examples/tickets/ | 購買に依存しない第二の業務例 |
+| examples/apps/purchase/ | 購買の業務定義、処理、保存、補償、オーケストレーション |
+| examples/apps/tickets/ | 購買に依存しない第二の業務例 |
 
 `myworkflow` の宣言クラスと `myworkflow.executable` のimportは互換窓口として残す。内部ファイルを分けたことを理由に、固定ID・業務の実行順序・受入条件は変更しない。
 
@@ -117,8 +117,8 @@ Contextは値・業務用の依存・実行情報を分けて保持し、`ctx.ex
 アプリケーション側で `AcceptanceConfig` を公開する。契約、操作・検証定義、featureの場所、生成先、文書タイトル・リンク、ハッシュ対象、任意基盤の有効化条件を指定する。
 
 ```sh
-python -m myworkflow.acceptance --config examples.purchase.acceptance.catalog docs --check
-python -m myworkflow.acceptance --config examples.tickets.acceptance.catalog docs --check
+python -m myworkflow.acceptance --config examples.apps.purchase.acceptance.catalog docs --check
+python -m myworkflow.acceptance --config examples.apps.tickets.acceptance.catalog docs --check
 python -m pytest tests/acceptance -q
 python -m pytest tests/tickets -q
 ```
@@ -149,7 +149,7 @@ PostgreSQLのセッション／トランザクション単位のアドバイザ�
 
 購買のfeatureと固定IDは変更せず、4種類の誤実装を検出する試験も残している。新たに契約の不変性、複数申請、Provider共有、補償の値の保持、履歴・解放の二次障害、生成の復元、レポートの準備・後片付け・収集中断、第二の業務を確認した。GitHub上のCI結果と顧客レビューは未確認で、ローカルの成功と区別する。
 
-購買サンプルの整理後は、定義を `examples/purchase/contract.py` に一本化した。旧サンプルは削除し、宣言APIはテスト内の小さな専用データで検証する。模擬Temporal実験も統合し、実際の購買フローに対する結合試験は4件となった。
+購買サンプルの整理後は、定義を `examples/apps/purchase/contract.py` に一本化した。旧サンプルは削除し、宣言APIはテスト内の小さな専用データで検証する。模擬Temporal実験も統合し、実際の購買フローに対する結合試験は4件となった。
 
 ## アーティファクトの確定境界
 

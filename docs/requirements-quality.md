@@ -30,23 +30,23 @@ Python 3.14とプロジェクトの標準依存（Pydantic）をインストー�
 
 ```sh
 python -m myworkflow.quality \
-  --case examples/purchase/quality/case.json \
+  --case examples/apps/purchase/quality/case.json \
   --output artifacts/requirement-roundtrip
 ```
 
 出力はquality.json、quality.md、変換前後・再出力の業務要件JSON、再出力Markdown、生成したcontract.py・interfaces.py・handlers.py。基準に達しなければ、失敗レポートを保存して終了コード1を返す。生成や読込みが失敗した段階はfailed、続きはnot-runとし、未実行の一致率を100%にしない。
 
-[現在のレポート例](../examples/purchase/quality/quality-example.md)を用意している。
+[現在のレポート例](../examples/apps/purchase/quality/quality-example.md)を用意している。
 
 ## 入力と正解を固定する
 
 | ファイル | 役割 |
 | --- | --- |
 | docs/requirements/purchase-completion.md | 共通終了結果への変更を明示した回帰入力 |
-| examples/purchase/quality/business-input.json | レビュー済みの、期待する業務要件出力形式 |
-| examples/purchase/quality/business-expected.md | 顧客向けの表示形式の期待値 |
-| examples/purchase/quality/coverage.json | 原文の引用、要件ID、表現箇所・値、既知の未表現 |
-| examples/purchase/quality/case.json | 対象ファイルと合格基準 |
+| examples/apps/purchase/quality/business-input.json | レビュー済みの、期待する業務要件出力形式 |
+| examples/apps/purchase/quality/business-expected.md | 顧客向けの表示形式の期待値 |
+| examples/apps/purchase/quality/coverage.json | 原文の引用、要件ID、表現箇所・値、既知の未表現 |
+| examples/apps/purchase/quality/case.json | 対象ファイルと合格基準 |
 
 期待値はテスト中に生成し直さない。JSONのサンプルは既存のレビュー済み初期要件を元に一度準備したもので、検査対象のexporterから都度作るものではない。初期要件の記録は現行業務の別の正本として更新するのではなく、回帰用の固定コーパスとして残す。
 
@@ -112,4 +112,6 @@ CIには独立したrequirementsジョブを追加し、通常のテストが失
 
 この検査は表層の契約・表現力の検査であり、処理の実行結果を保証するものではない。正数判定、認可、待機、SQL・S3の副作用などは、既存の業務受入テストと併用する。人が決めた要件の分割や対応表自体が妥当かのレビューも引き続き必要である。
 
-終了結果の変更前の原文は `requirements/purchase.md`、評価資料は `examples/purchase/quality/legacy-v1/` に保持する。形式v1は暗黙に読み替えず拒否する。分母が変わるため旧指標との単純な精度比較はしない。[変更の境界](pipeline-results.md)を参照。
+終了結果の変更前の原文は `requirements/purchase.md`、評価資料は `examples/apps/purchase/quality/legacy-v1/` に保持する。形式v1は暗黙に読み替えず拒否する。分母が変わるため旧指標との単純な精度比較はしない。[変更の境界](pipeline-results.md)を参照。
+
+固定した原文には当時の配置名が残る。現行の購買アプリの正本は `examples/apps/purchase/contract.py` にあり、配置変更だけを理由に回帰入力の原文や採点用期待値は書き換えない。

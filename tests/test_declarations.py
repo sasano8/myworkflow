@@ -5,7 +5,7 @@ from types import ModuleType
 
 import pytest
 
-from examples.declarative_review import contract as sample
+from examples.feature_demos.declarative_review import contract as sample
 from myworkflow import Artifact, ContractCatalog, Lock, Pipeline, Role, Step
 from myworkflow.codegen import interfaces_source
 from myworkflow.declarations import bind, compile_workflows, state, transition, trigger, workflow
@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_sample_matches_reviewable_output_and_existing_program():
     compiled = sample.compiled
-    assert sample.documentation() == (ROOT / 'examples/declarative_review/docs/requirements.md').read_text()
+    assert sample.documentation() == (ROOT / 'examples/feature_demos/declarative_review/docs/requirements.md').read_text()
     assert compiled.catalog.workflows[0] is compiled.graphs[0].workflow
     assert compiled.catalog.pipelines == (sample.submit_application, sample.record_review)
     assert len(compiled.graphs[0].transitions) == 5
@@ -31,7 +31,7 @@ def test_sample_matches_reviewable_output_and_existing_program():
 
 
 def test_identifier_rename_keeps_export_connections_and_ids():
-    source = (ROOT / 'examples/declarative_review/contract.py').read_text()
+    source = (ROOT / 'examples/feature_demos/declarative_review/contract.py').read_text()
     # Change Python symbols only. Stable IDs deliberately keep the old spelling.
     import io
     import tokenize

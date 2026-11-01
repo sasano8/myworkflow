@@ -14,7 +14,7 @@ from myworkflow.quality.rendering import render_quality
 from myworkflow.program import Program
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / 'examples/purchase/quality'
+FIXTURE = ROOT / 'examples/apps/purchase/quality'
 
 
 def test_full_pipeline_and_known_source_gaps_are_explicit():

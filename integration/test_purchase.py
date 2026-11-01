@@ -10,11 +10,11 @@ from temporalio.client import WorkflowFailureError
 from temporalio.testing import WorkflowEnvironment
 from temporalio.worker import Worker
 
-from examples.purchase import interfaces
-from examples.purchase.contract import program
-from examples.purchase.handlers import registry
-from examples.purchase.services import Services
-from examples.purchase.temporal_workflow import ApprovePurchase, ConfirmPurchase
+from examples.apps.purchase import interfaces
+from examples.apps.purchase.contract import program
+from examples.apps.purchase.handlers import registry
+from examples.apps.purchase.services import Services
+from examples.apps.purchase.temporal_workflow import ApprovePurchase, ConfirmPurchase
 from myworkflow.executable import Engine, Principal, Program
 from myworkflow.temporal import PipelineActivity
 

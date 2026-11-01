@@ -75,4 +75,4 @@ PoCの中核である表層の対応は、今回の対象では継続可能と�
 
 上記は初回PoCの記録。追加で、購買サンプルのGherkinから受入シナリオ文書とpytest-bddの実行を結び付けた。[追加評価](acceptance-evaluation.md)に現在の件数と保証範囲を記録している。
 
-初期の宣言専用サンプルと模擬Temporal実験はその後削除した。宣言APIは汎用のテスト内データで検証し、購買の定義・実行は `examples/purchase/contract.py` に一本化している。上記の件数は評価当時の記録である。
+初期の宣言専用サンプルと模擬Temporal実験はその後削除した。宣言APIは汎用のテスト内データで検証し、購買の定義・実行は `examples/apps/purchase/contract.py` に一本化している。上記の件数は評価当時の記録である。

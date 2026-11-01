@@ -3,10 +3,10 @@ import pytest
 from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
 
-from examples.purchase import interfaces
-from examples.purchase.contract import program
-from examples.purchase.handlers import registry
-from examples.purchase.services import Services
+from examples.apps.purchase import interfaces
+from examples.apps.purchase.contract import program
+from examples.apps.purchase.handlers import registry
+from examples.apps.purchase.services import Services
 from myworkflow.errors import BusinessError, ExecutionFailed
 from myworkflow.executable import Engine, Principal, Program
 from myworkflow.temporal import PipelineActivity

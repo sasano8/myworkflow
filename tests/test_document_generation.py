@@ -137,7 +137,7 @@ def test_recursive_schema_has_bounded_summary():
 
 
 def test_value_document_has_one_horizontal_row_per_item():
-    from examples.purchase.contract import program
+    from examples.apps.purchase.contract import program
     text = render_data_definitions(program.model)
     rows = [line for line in text.splitlines() if line.startswith('| ')]
     assert len(rows) == 5  # One header, one separator and three actual items.

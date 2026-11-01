@@ -20,7 +20,7 @@ jobs:
           python-version: '3.14'
       - run: python -m pip install .
       - name: Check requirement coverage and generated interfaces
-        run: python -m myworkflow.quality --case examples/purchase/quality/case.json --output artifacts/requirement-roundtrip
+        run: python -m myworkflow.quality --case examples/apps/purchase/quality/case.json --output artifacts/requirement-roundtrip
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -55,35 +55,35 @@ jobs:
       - name: Verify generated samples
         run: |
           python -m scripts.generate_docs --check
-          python -m myworkflow build --config examples.approval_values.build --target temporal --output /tmp/build-values
-          python -m myworkflow build --config examples.approval_values.build --target temporal --output /tmp/build-values --check
-          diff -u examples/approval_values/docs/data-definitions.md /tmp/build-values/data-definitions.md
-          diff -u examples/approval_values/docs/data-definitions.json /tmp/build-values/data-definitions.json
-          diff -u examples/approval_values/docs/requirements.md /tmp/build-values/requirements.md
-          python -m myworkflow build --config examples.purchase.build --target temporal --output /tmp/build-temporal
-          python -m myworkflow build --config examples.purchase.build --target temporal --output /tmp/build-temporal --check
-          python -m myworkflow build --config examples.purchase.build --target kestra --workflow w.attach --output /tmp/build-kestra
-          diff -u examples/purchase/docs/kestra-attachment.yaml /tmp/build-kestra/manifest.yaml
-          diff -u examples/purchase/docs/data-definitions.md /tmp/build-temporal/data-definitions.md
-          diff -u examples/purchase/docs/data-definitions.json /tmp/build-temporal/data-definitions.json
-          python -m examples.declarative_review --flowchart > /tmp/declarative-review-flow.md
-          diff -u examples/declarative_review/docs/flow.md /tmp/declarative-review-flow.md
-          python -m examples.declarative_review > /tmp/declarative-review.md
-          diff -u examples/declarative_review/docs/requirements.md /tmp/declarative-review.md
-          python -m examples.purchase --docs > /tmp/purchase.md
-          diff -u examples/purchase/docs/requirements.md /tmp/purchase.md
-          python -m examples.purchase.acceptance docs --check
-          python -m myworkflow.acceptance --config examples.tickets.acceptance.catalog docs --check
+          python -m myworkflow build --config examples.feature_demos.approval_values.build --target temporal --output /tmp/build-values
+          python -m myworkflow build --config examples.feature_demos.approval_values.build --target temporal --output /tmp/build-values --check
+          diff -u examples/feature_demos/approval_values/docs/data-definitions.md /tmp/build-values/data-definitions.md
+          diff -u examples/feature_demos/approval_values/docs/data-definitions.json /tmp/build-values/data-definitions.json
+          diff -u examples/feature_demos/approval_values/docs/requirements.md /tmp/build-values/requirements.md
+          python -m myworkflow build --config examples.apps.purchase.build --target temporal --output /tmp/build-temporal
+          python -m myworkflow build --config examples.apps.purchase.build --target temporal --output /tmp/build-temporal --check
+          python -m myworkflow build --config examples.apps.purchase.build --target kestra --workflow w.attach --output /tmp/build-kestra
+          diff -u examples/apps/purchase/docs/kestra-attachment.yaml /tmp/build-kestra/manifest.yaml
+          diff -u examples/apps/purchase/docs/data-definitions.md /tmp/build-temporal/data-definitions.md
+          diff -u examples/apps/purchase/docs/data-definitions.json /tmp/build-temporal/data-definitions.json
+          python -m examples.feature_demos.declarative_review --flowchart > /tmp/declarative-review-flow.md
+          diff -u examples/feature_demos/declarative_review/docs/flow.md /tmp/declarative-review-flow.md
+          python -m examples.feature_demos.declarative_review > /tmp/declarative-review.md
+          diff -u examples/feature_demos/declarative_review/docs/requirements.md /tmp/declarative-review.md
+          python -m examples.apps.purchase --docs > /tmp/purchase.md
+          diff -u examples/apps/purchase/docs/requirements.md /tmp/purchase.md
+          python -m examples.apps.purchase.acceptance docs --check
+          python -m myworkflow.acceptance --config examples.apps.tickets.acceptance.catalog docs --check
       - name: Run sample flows
         run: |
-          python -m examples.purchase
-          python -m examples.prepared_approval
-          python -m examples.approval_values
+          python -m examples.apps.purchase
+          python -m examples.feature_demos.prepared_approval
+          python -m examples.feature_demos.approval_values
       - name: Render acceptance results
         if: always()
         run: |
           if test -f artifacts/acceptance.json; then
-            python -m examples.purchase.acceptance report artifacts/acceptance.json > artifacts/acceptance.md
+            python -m examples.apps.purchase.acceptance report artifacts/acceptance.json > artifacts/acceptance.md
           fi
       - uses: actions/upload-artifact@v4
         if: always()
@@ -115,7 +115,7 @@ jobs:
         if: always()
         run: |
           if test -f artifacts/temporal-acceptance.json; then
-            python -m examples.purchase.acceptance report artifacts/temporal-acceptance.json > artifacts/temporal-acceptance.md
+            python -m examples.apps.purchase.acceptance report artifacts/temporal-acceptance.json > artifacts/temporal-acceptance.md
           fi
       - uses: actions/upload-artifact@v4
         if: always()

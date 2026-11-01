@@ -18,16 +18,16 @@ purchase_amount = ValueObject(
 amount = Artifact("a.amount", "申請金額", "amount", "dict", value_object=purchase_amount)
 ```
 
-`ValueModel` はfrozen・未知項目拒否・strict・既定値検証を設定したBaseModel。通常のBaseModelを使う場合も、frozen・validate_defaultとextra='forbid'を設定する。単一値にはfrozen・validate_defaultを設定したRootModelを使える。[サンプル](../examples/approval_values/value_objects.py)の金額は整数のRootModelである。frozenはモデルの属性代入を制限するもので、内部のlist等まで深く不変にする保証ではない。
+`ValueModel` はfrozen・未知項目拒否・strict・既定値検証を設定したBaseModel。通常のBaseModelを使う場合も、frozen・validate_defaultとextra='forbid'を設定する。単一値にはfrozen・validate_defaultを設定したRootModelを使える。[サンプル](../examples/feature_demos/approval_values/value_objects.py)の金額は整数のRootModelである。frozenはモデルの属性代入を制限するもので、内部のlist等まで深く不変にする保証ではない。
 
 `Artifact.type` は正規化後のJSONデータの基本型で、`str / int / bool / float / dict` を指定する。バリューオブジェクトのSchemaのルート型と一致しなければコンパイルを拒否する。複合的なフィールド・任意項目・ネスト・配列はdictのモデル内部で表現できる。ルートが配列や複数型のUnionであるモデルを、現在のArtifact基本型へ対応させる機能はない。排他キーは引き続きスカラーに限定する。
 
 アーティファクトから参照した定義は `compile_workflows` が収集する。保存レコード用や単独のデータ定義は `value_objects=(...)` に明示する。同じ固定IDで異なる定義オブジェクトを使うと拒否する。
 
 ```sh
-python -m myworkflow build --config examples.approval_values.build \
+python -m myworkflow build --config examples.feature_demos.approval_values.build \
   --target temporal --output dist/approval_values
-python -m myworkflow build --config examples.approval_values.build \
+python -m myworkflow build --config examples.feature_demos.approval_values.build \
   --target temporal --output dist/approval_values --check
 ```
 
@@ -39,7 +39,7 @@ python -m myworkflow build --config examples.approval_values.build \
 | `data-definitions.md` | 名称・意味・必須項目・制約・既定値・例・補足ルールを簡易表で表示 |
 | `data-definitions.json` | 同じ定義の機械可読形式、Python型、独自バリデーター、アーティファクト対応 |
 
-[生成したデータ定義](../examples/approval_values/docs/data-definitions.md)と[業務概要](../examples/approval_values/docs/requirements.md)を別ファイルとして保存し、テストとCIで固定出力との一致を確認する。JSON Schemaは検証用の形式で出力し、入力の別名がある場合は正規の項目名とは別に記録する。build.jsonのハッシュ対象にも含める。
+[生成したデータ定義](../examples/feature_demos/approval_values/docs/data-definitions.md)と[業務概要](../examples/feature_demos/approval_values/docs/requirements.md)を別ファイルとして保存し、テストとCIで固定出力との一致を確認する。JSON Schemaは検証用の形式で出力し、入力の別名がある場合は正規の項目名とは別に記録する。build.jsonのハッシュ対象にも含める。
 
 ## 検証する境界
 
@@ -84,13 +84,13 @@ ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.
 
 ## 購買サンプルの出力先
 
-購買の正本は [purchase/value_objects.py](../examples/purchase/value_objects.py) に置き、contract.pyの申請ID・取引先・金額のArtifactから参照する。購買自身のContractCatalogへ含め、入力検証・生成Request・業務概要・ビルドに同じ定義を使う。
+購買の正本は [purchase/value_objects.py](../examples/apps/purchase/value_objects.py) に置き、contract.pyの申請ID・取引先・金額のArtifactから参照する。購買自身のContractCatalogへ含め、入力検証・生成Request・業務概要・ビルドに同じ定義を使う。
 
-- [購買のデータ定義](../examples/purchase/docs/data-definitions.md)（[JSON](../examples/purchase/docs/data-definitions.json)）。
-- [購買の業務概要](../examples/purchase/docs/requirements.md)。
+- [購買のデータ定義](../examples/apps/purchase/docs/data-definitions.md)（[JSON](../examples/apps/purchase/docs/data-definitions.json)）。
+- [購買の業務概要](../examples/apps/purchase/docs/requirements.md)。
 
 ```sh
-python -m myworkflow build --config examples.purchase.build --target temporal --output dist/purchase
+python -m myworkflow build --config examples.apps.purchase.build --target temporal --output dist/purchase
 ```
 
 既存の検証と一致するよう、金額は正の整数、取引先は空文字・空白のみを拒否する。通貨・税区分、申請IDの書式等の未定義な制約を補ってはいない。申請ID等の未確定部分はデータ定義にも記載する。他の項目は基本型のままで、保存先Repositoryをchangesへ移行したものではない。

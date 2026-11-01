@@ -10,9 +10,9 @@ from types import ModuleType
 
 import pytest
 
-from examples.purchase import contract as purchase
-from examples.purchase.build import BUILD
-from examples.purchase.handlers import registry
+from examples.apps.purchase import contract as purchase
+from examples.apps.purchase.build import BUILD
+from examples.apps.purchase.handlers import registry
 from myworkflow import Artifact, Role
 from myworkflow.build import BuildConfig, BuildError, build, compile_outputs
 from myworkflow.declarations import bind, compile_workflows, state, transition, trigger, workflow
@@ -34,7 +34,7 @@ def test_temporal_build_validates_code_without_generating_another_runtime():
 
 def test_kestra_preview_matches_frozen_yaml_and_declared_ids():
     outputs = compile_outputs(BUILD, target='kestra', workflows=('w.attach',))
-    assert outputs['manifest.yaml'] == (ROOT / 'examples/purchase/docs/kestra-attachment.yaml').read_text()
+    assert outputs['manifest.yaml'] == (ROOT / 'examples/apps/purchase/docs/kestra-attachment.yaml').read_text()
     model = json.loads(outputs['ir.json'])
     assert list(model['business']['workflows']) == ['w.attach']
     assert list(model['business']['pipelines']) == ['p.upload']
@@ -91,7 +91,7 @@ def test_target_switch_cannot_leave_a_stale_manifest(tmp_path):
 
 
 def test_cli_build_check_and_unsupported_exit_codes(tmp_path):
-    base = [sys.executable, '-m', 'myworkflow', 'build', '--config', 'examples.purchase.build', '--target', 'kestra',
+    base = [sys.executable, '-m', 'myworkflow', 'build', '--config', 'examples.apps.purchase.build', '--target', 'kestra',
             '--output', str(tmp_path / 'valid')]
     success = subprocess.run([*base, '--workflow', 'w.attach'], cwd=ROOT, capture_output=True, text=True)
     assert success.returncode == 0, success.stderr
@@ -154,7 +154,7 @@ def test_symbolic_pipeline_requires_real_references(mutation):
 
 
 def test_purchase_identifier_rename_preserves_ir_and_compensation_connections():
-    source = (ROOT / 'examples/purchase/contract.py').read_text()
+    source = (ROOT / 'examples/apps/purchase/contract.py').read_text()
     replacements = {'application_id': 'purchase_identity', 'save_quote_a': 'persist_first_quote',
                     'delete_quote_a': 'undo_first_quote', 'PurchaseAttachment': 'QuotationAttachment'}
     tokens = [token._replace(string=replacements[token.string]) if token.type == tokenize.NAME and token.string in replacements else token
@@ -192,7 +192,7 @@ def test_copied_compensation_identity_is_rejected():
 def test_console_script_can_import_application_from_working_directory(tmp_path):
     script = tmp_path / 'console.py'
     script.write_text('from myworkflow.cli import main\nraise SystemExit(main())\n')
-    result = subprocess.run([sys.executable, str(script), 'build', '--config', 'examples.purchase.build',
+    result = subprocess.run([sys.executable, str(script), 'build', '--config', 'examples.apps.purchase.build',
         '--target', 'kestra', '--workflow', 'w.attach', '--output', str(tmp_path / 'output')],
         cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr

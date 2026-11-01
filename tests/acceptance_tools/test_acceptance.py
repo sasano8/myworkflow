@@ -10,8 +10,8 @@ import sys
 import pytest
 from pytest_bdd import parsers
 
-from examples.purchase.acceptance.catalog import DIRECTORY, DOCS, DOCUMENTS, cases, program, registry, steps
-from examples.purchase.acceptance.world import World
+from examples.apps.purchase.acceptance.catalog import DIRECTORY, DOCS, DOCUMENTS, cases, program, registry, steps
+from examples.apps.purchase.acceptance.world import World
 from myworkflow.acceptance import Definitions, load_cases, render_business, render_cases, render_report
 from myworkflow.executable import Program
 
@@ -112,7 +112,7 @@ def test_document_escapes_customer_text():
 def test_check_mode_does_not_rewrite_sources():
     sources = [*DIRECTORY.glob('features/*.feature'), DIRECTORY / 'steps.py']
     before = {p: p.read_bytes() for p in sources}
-    subprocess.run([sys.executable, '-m', 'examples.purchase.acceptance', 'docs', '--check'], cwd=ROOT, check=True)
+    subprocess.run([sys.executable, '-m', 'examples.apps.purchase.acceptance', 'docs', '--check'], cwd=ROOT, check=True)
     assert {p: p.read_bytes() for p in sources} == before
 
 
@@ -156,8 +156,8 @@ def test_business_acceptance_detects_wrong_implementation(tmp_path, mutation, id
 
 
 def test_clock_requires_timezone_and_cannot_move_backwards():
-    from examples.purchase.acceptance.world import ManualClock
-    from examples.purchase.scheduling import aware_time
+    from examples.apps.purchase.acceptance.world import ManualClock
+    from examples.apps.purchase.scheduling import aware_time
     with pytest.raises(ValueError, match='timezone'):
         aware_time('2030-04-01T10:00:00')
     clock = ManualClock()

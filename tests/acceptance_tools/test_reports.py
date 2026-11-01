@@ -31,7 +31,7 @@ def test_probe():
     probe.write_text('invalid syntax !' if mode == 'collection' else f'MODE={mode!r}\n' + body)
     report = tmp_path / 'result.json'
     args = [sys.executable, '-m', 'pytest', '-p', 'myworkflow.pytest_plugin', str(probe),
-            '--acceptance-config', 'examples.tickets.acceptance.catalog', '--acceptance-report', str(report), '-q']
+            '--acceptance-config', 'examples.apps.tickets.acceptance.catalog', '--acceptance-report', str(report), '-q']
     if mode == 'unselected': args += ['-k', 'absent']
     result = subprocess.run(args, cwd=ROOT, capture_output=True, text=True, timeout=30)
     assert result.returncode == exitcode, result.stdout + result.stderr

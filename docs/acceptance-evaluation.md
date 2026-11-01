@@ -10,10 +10,10 @@ Python宣言との最小比較は `tests/acceptance_tools/test_acceptance.py` �
 
 ## 生成物
 
-- [業務概要と受入条件へのリンク](../examples/purchase/docs/business.md)
-- [受入シナリオ文書](../examples/purchase/docs/acceptance.md)
-- [ローカルの正本](../examples/purchase/acceptance/features/purchase.feature)
-- [Temporalの正本](../examples/purchase/acceptance/features/temporal.feature)
+- [業務概要と受入条件へのリンク](../examples/apps/purchase/docs/business.md)
+- [受入シナリオ文書](../examples/apps/purchase/docs/acceptance.md)
+- [ローカルの正本](../examples/apps/purchase/acceptance/features/purchase.feature)
+- [Temporalの正本](../examples/apps/purchase/acceptance/features/temporal.feature)
 
 文書は仕様であり、テスト結果ではない。結果は別のJSON・Markdownへ出す。Scenario Outlineは6つの具体例へ展開し、例の並べ替えや表示名変更でも維持できるcase IDを持つ。業務の実行者と、時計・障害注入・検証基盤の操作主体を区別する。
 
@@ -23,9 +23,9 @@ Python 3.14の仮想環境を使い、リポジトリ直下で実行する。
 
 ```sh
 python -m pip install -e '.[acceptance]'
-python -m examples.purchase.acceptance docs --check
+python -m examples.apps.purchase.acceptance docs --check
 python -m pytest -q --acceptance-report artifacts/acceptance.json
-python -m examples.purchase.acceptance report artifacts/acceptance.json > artifacts/acceptance.md
+python -m examples.apps.purchase.acceptance report artifacts/acceptance.json > artifacts/acceptance.md
 ```
 
 文書を更新するときだけ `docs --check` ではなく `docs` を実行し、生成差分を確認する。featureや手書きの操作・検証関数は上書きしない。
@@ -52,7 +52,7 @@ RUN_TEMPORAL_ACCEPTANCE=1 TEMPORAL_CLI_PATH=/tmp/myworkflow-temporal/temporal \
 
 `scenario.*` タグがシナリオの固定ID、`req.*` タグが業務契約の参照である。Outlineにはcase列を必須とし、シナリオIDと連結してケースIDを作る。
 
-操作・検証の定義は `examples/purchase/acceptance/steps.py`、シナリオ専用コンテキストとアダプタは `world.py` にある。業務ステップのContextと受入テストのWorldは分離する。実際と同じEngine.invokeへ入力・Principalを渡し、期待結果は別のSQL照会で確認する。アプリケーションの出力をそのまま期待値にはしない。
+操作・検証の定義は `examples/apps/purchase/acceptance/steps.py`、シナリオ専用コンテキストとアダプタは `world.py` にある。業務ステップのContextと受入テストのWorldは分離する。実際と同じEngine.invokeへ入力・Principalを渡し、期待結果は別のSQL照会で確認する。アプリケーションの出力をそのまま期待値にはしない。
 
 各Thenの検証関数はTrueを返す必要があり、空の関数がNoneを返すと失敗する。ただし、意図的に常にTrueを返すような誤った検証まで自動で見破れるわけではない。検証関数の正しさはレビューと変異試験で補う。
 

@@ -5,11 +5,11 @@
 | 役割 | ファイル |
 | --- | --- |
 | 初期要件と解釈結果の記録 | requirements/purchase.md、purchase-initial.json |
-| 移行後の契約の正本 | examples/purchase/contract.py |
-| 再生成できる型 | examples/purchase/interfaces.py |
-| 手書きの実装 | examples/purchase/handlers.py、services.py |
-| コードから生成する概要・実装対応表 | examples/purchase/docs/requirements.md |
-| 詳細な待機・遷移の実装 | examples/purchase/temporal_workflow.py |
+| 移行後の契約の正本 | examples/apps/purchase/contract.py |
+| 再生成できる型 | examples/apps/purchase/interfaces.py |
+| 手書きの実装 | examples/apps/purchase/handlers.py、services.py |
+| コードから生成する概要・実装対応表 | examples/apps/purchase/docs/requirements.md |
+| 詳細な待機・遷移の実装 | examples/apps/purchase/temporal_workflow.py |
 
 型・順序・分岐・起動先は契約から取得します。実装の関数を固定IDで登録し、文書にはモジュールと関数名を出します。`Program.check` が未接続を検出します。生成関数のdocstringを別の正本にはしません。
 

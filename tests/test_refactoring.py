@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import pytest
 
-from examples.tickets.contract import SPEC
+from examples.apps.tickets.contract import SPEC
 from myworkflow.executable import Context, ContractError, Engine, ExecutionFailed, Principal, Program, Registry
 from myworkflow.generation import write_outputs
 from myworkflow.identity import execution_id
@@ -126,9 +126,9 @@ def test_shared_provider_and_typed_order_independent_keys():
 
 
 def test_two_applications_share_locks_but_not_execution_ids():
-    from examples.purchase.services import Services
-    from examples.purchase.contract import program as purchase_program
-    from examples.purchase.handlers import registry
+    from examples.apps.purchase.services import Services
+    from examples.apps.purchase.contract import program as purchase_program
+    from examples.apps.purchase.handlers import registry
     with tempfile.TemporaryDirectory() as directory:
         locks = InProcessLockProvider()
         services = Services(Path(directory) / 'purchase.db', locks=locks)
@@ -204,10 +204,10 @@ def test_stale_business_response_is_rejected_before_execution():
 def test_two_scheduled_purchases_share_services_without_colliding():
     from datetime import datetime
     from types import SimpleNamespace
-    from examples.purchase.services import Services
-    from examples.purchase.contract import program as purchase_program
-    from examples.purchase.handlers import registry
-    from examples.purchase.scheduling import ScheduledPurchase
+    from examples.apps.purchase.services import Services
+    from examples.apps.purchase.contract import program as purchase_program
+    from examples.apps.purchase.handlers import registry
+    from examples.apps.purchase.scheduling import ScheduledPurchase
     with tempfile.TemporaryDirectory() as directory:
         services = Services(Path(directory) / 'purchase.db')
         runner = Engine(purchase_program, registry, services)

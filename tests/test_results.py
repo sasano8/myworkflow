@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import pytest
 
-from examples.tickets.contract import SPEC
+from examples.apps.tickets.contract import SPEC
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.executable import Context, Engine, Principal, Program, Registry
 from myworkflow.errors import BusinessError, ExecutionFailed, PipelineError, RetryableError

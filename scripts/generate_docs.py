@@ -10,13 +10,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def outputs():
-    from examples.purchase import contract, handlers
-    from examples.purchase.build import BUILD as PURCHASE
-    from examples.approval_values.build import BUILD as VALUES
-    from examples.prepared_approval.build import BUILD as PREPARED
-    from examples.declarative_review.contract import compiled, documentation
-    from examples.purchase.acceptance.catalog import CONFIG as purchase_acceptance
-    from examples.tickets.acceptance.catalog import CONFIG as ticket_acceptance
+    from examples.apps.purchase import contract, handlers
+    from examples.apps.purchase.build import BUILD as PURCHASE
+    from examples.feature_demos.approval_values.build import BUILD as VALUES
+    from examples.feature_demos.prepared_approval.build import BUILD as PREPARED
+    from examples.feature_demos.declarative_review.contract import compiled, documentation
+    from examples.apps.purchase.acceptance.catalog import CONFIG as purchase_acceptance
+    from examples.apps.tickets.acceptance.catalog import CONFIG as ticket_acceptance
     from myworkflow.acceptance.rendering import render_business, render_cases
     from myworkflow.build import compile_outputs
     from myworkflow.flowchart import render_business_flow
@@ -24,17 +24,17 @@ def outputs():
     preview = compile_outputs(PURCHASE, target='kestra', workflows=('w.attach',))
     values = compile_outputs(VALUES, target='temporal')
     result = {
-        'examples/purchase/interfaces.py': purchase['interfaces.py'],
-        'examples/purchase/docs/requirements.md': contract.program.documentation(handlers.registry, details_link='../../../docs/execution-design.md'),
-        'examples/purchase/docs/data-definitions.md': purchase['data-definitions.md'],
-        'examples/purchase/docs/data-definitions.json': purchase['data-definitions.json'],
-        'examples/purchase/docs/kestra-attachment.yaml': preview['manifest.yaml'],
-        'examples/approval_values/docs/requirements.md': values['requirements.md'],
-        'examples/approval_values/docs/data-definitions.md': values['data-definitions.md'],
-        'examples/approval_values/docs/data-definitions.json': values['data-definitions.json'],
-        'examples/prepared_approval/docs/requirements.md': compile_outputs(PREPARED, target='temporal')['requirements.md'],
-        'examples/declarative_review/docs/requirements.md': documentation(),
-        'examples/declarative_review/docs/flow.md': render_business_flow(compiled.graphs[0], compiled.catalog),
+        'examples/apps/purchase/interfaces.py': purchase['interfaces.py'],
+        'examples/apps/purchase/docs/requirements.md': contract.program.documentation(handlers.registry, details_link='../../../../docs/execution-design.md'),
+        'examples/apps/purchase/docs/data-definitions.md': purchase['data-definitions.md'],
+        'examples/apps/purchase/docs/data-definitions.json': purchase['data-definitions.json'],
+        'examples/apps/purchase/docs/kestra-attachment.yaml': preview['manifest.yaml'],
+        'examples/feature_demos/approval_values/docs/requirements.md': values['requirements.md'],
+        'examples/feature_demos/approval_values/docs/data-definitions.md': values['data-definitions.md'],
+        'examples/feature_demos/approval_values/docs/data-definitions.json': values['data-definitions.json'],
+        'examples/feature_demos/prepared_approval/docs/requirements.md': compile_outputs(PREPARED, target='temporal')['requirements.md'],
+        'examples/feature_demos/declarative_review/docs/requirements.md': documentation(),
+        'examples/feature_demos/declarative_review/docs/flow.md': render_business_flow(compiled.graphs[0], compiled.catalog),
     }
     for config in (purchase_acceptance, ticket_acceptance):
         cases = config.cases()
@@ -51,17 +51,18 @@ def outputs():
         'kestra-attachment.yaml': 'Kestra説明用プレビュー（配備不可）',
     }
     catalogs = {
-        'examples/purchase/docs': '購買',
-        'examples/approval_values/docs': '承認・バリューオブジェクト例',
-        'examples/declarative_review/docs': '申請審査',
-        'examples/prepared_approval/docs': 'アーティファクトの準備・確定',
-        'examples/tickets/docs': 'チケット発行',
+        'examples/apps/purchase/docs': '購買',
+        'examples/feature_demos/approval_values/docs': '承認・バリューオブジェクト例',
+        'examples/feature_demos/declarative_review/docs': '申請審査',
+        'examples/feature_demos/prepared_approval/docs': 'アーティファクトの準備・確定',
+        'examples/apps/tickets/docs': 'チケット発行',
     }
     source_files = {'purchase': 'contract.py', 'tickets': 'contract.py', 'declarative_review': 'contract.py',
                     'approval_values': 'application.py', 'prepared_approval': 'application.py'}
     for directory, name in catalogs.items():
         files = sorted(Path(file).name for file in result if str(Path(file).parent) == directory)
-        lines = [f'# {name}の業務契約カタログ', '',
+        purpose = '業務アプリのサンプル' if directory.startswith('examples/apps/') else '機能単位の技術検証'
+        lines = [f'# {name}：{purpose}', '',
                  'このディレクトリは宣言コードから自動生成する。変更は元のコード・受入シナリオへ反映する。', '',
                  f'宣言コード：[{source_files[Path(directory).parent.name]}](../{source_files[Path(directory).parent.name]})', '',
                  '| ドキュメント | 内容 |', '| --- | --- |']
@@ -117,7 +118,7 @@ def main(argv=None):
     try:
         # Reject unstaged source before importing application code for generation.
         if args.hook:
-            pending = pending_inputs(ROOT, {'examples/purchase/interfaces.py'})
+            pending = pending_inputs(ROOT, {'examples/apps/purchase/interfaces.py'})
             if pending:
                 raise ValueError('Stage generation inputs first: ' + ', '.join(sorted(pending)))
         result = outputs()

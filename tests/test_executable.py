@@ -5,10 +5,10 @@ import sqlite3
 from types import SimpleNamespace
 import pytest
 
-from examples.purchase import interfaces
-from examples.purchase.contract import SPEC, compiled
-from examples.purchase.handlers import registry
-from examples.purchase.services import Services
+from examples.apps.purchase import interfaces
+from examples.apps.purchase.contract import SPEC, compiled
+from examples.apps.purchase.handlers import registry
+from examples.apps.purchase.services import Services
 from myworkflow.executable import (Context, ContractError, Engine, ExecutionFailed, Principal,
                                    Program, Registry, interfaces_source, skeleton_source)
 from myworkflow.scaffold import initialize
@@ -207,8 +207,8 @@ class TestExecutable:
         assert self.rows('objects') == []
 
     def test_source_snapshots_match(self):
-        assert interfaces_source(self.program) == (ROOT / 'examples/purchase/interfaces.py').read_text()
-        assert self.program.documentation(registry, details_link='../../../docs/execution-design.md') == (ROOT / 'examples/purchase/docs/requirements.md').read_text()
+        assert interfaces_source(self.program) == (ROOT / 'examples/apps/purchase/interfaces.py').read_text()
+        assert self.program.documentation(registry, details_link='../../../../docs/execution-design.md') == (ROOT / 'examples/apps/purchase/docs/requirements.md').read_text()
 
     def test_initial_generation_and_unimplemented_skeleton(self):
         initial = json.loads((ROOT / 'docs/requirements/purchase-initial.json').read_text())
@@ -235,7 +235,7 @@ class TestExecutable:
         implementation.write_text('# handwritten implementation must survive\n')
         before = implementation.read_bytes()
         subprocess.run([sys.executable, '-m', 'myworkflow.scaffold', 'interfaces',
-                        'examples.purchase.contract', str(target / 'interfaces.py')], cwd=ROOT, check=True)
+                        'examples.apps.purchase.contract', str(target / 'interfaces.py')], cwd=ROOT, check=True)
         assert implementation.read_bytes() == before
         assert (target / 'interfaces.py').read_text() == interfaces_source(self.program)
 
@@ -332,7 +332,7 @@ class TestExecutable:
     def test_recovery_after_abrupt_process_exit(self):
         import subprocess
         import sys
-        code = "from examples.purchase.services import Services; import os,sys; s=Services(sys.argv[1]); s.begin('crashed'); s.put('crashed','A','body'); os._exit(17)"
+        code = "from examples.apps.purchase.services import Services; import os,sys; s=Services(sys.argv[1]); s.begin('crashed'); s.put('crashed','A','body'); os._exit(17)"
         result = subprocess.run([sys.executable, '-c', code, self.services.database], cwd=ROOT, capture_output=True)
         assert result.returncode == 17, result.stderr.decode()
         assert len(self.rows('objects')) == 1
