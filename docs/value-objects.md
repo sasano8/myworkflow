@@ -97,4 +97,4 @@ python -m myworkflow build --config examples.purchase.build --target temporal --
 
 先行するapproval-valuesの例は、納品期間の独自検証や確定前検証を示す追加サンプルとして維持する。購買の固定原文・変換結果を使う往復評価は従来の独立した基準を維持し、今回のデータ定義全体を採点済みとは扱わない。
 
-バリューオブジェクトの生成Markdownはすべて簡易表に統一し、完全なJSON SchemaはJSONファイルだけに出力する。[pre-commitでの自動生成](generated-documents.md)は、この別ファイル出力も更新してコミットへ含める。
+バリューオブジェクトの生成Markdownは1項目1行の一覧表とし、定義ID・項目名・型・必須・説明・制約・既定値・例を横に並べる。完全なJSON SchemaはJSONファイルだけに出力する。[pre-commitでの自動生成](generated-documents.md)は、この別ファイル出力も更新してコミットへ含める。

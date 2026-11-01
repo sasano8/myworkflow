@@ -133,3 +133,19 @@ def test_recursive_schema_has_bounded_summary():
     assert 'child' in text
     assert len(text.splitlines()) < 50
     assert '```' not in text
+
+
+
+def test_value_document_has_one_horizontal_row_per_item():
+    from examples.purchase.contract import program
+    text = render_data_definitions(program.model)
+    rows = [line for line in text.splitlines() if line.startswith('| ')]
+    assert len(rows) == 5  # One header, one separator and three actual items.
+    assert '| 項目 | 内容 |' not in text
+    assert '\n## ' not in text
+    assert '| 購買申請ID | 文字列 | 必須 |' in rows[2]
+    assert '| 取引先名 | 文字列 | 必須 |' in rows[3]
+    assert '| 購買申請金額 | 整数 | 必須 |' in rows[4]
+    assert '空文字・空白だけの取引先名を拒否する' in rows[3]
+    assert '0より大きい' in rows[4]
+    assert '<a id="vo.purchase.amount"></a>' in rows[4]

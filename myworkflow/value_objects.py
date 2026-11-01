@@ -207,29 +207,34 @@ def _field_rows(schema):
 
 def render_data_definitions(catalog):
     document = data_definitions(catalog)
-    lines = ['# データ定義', '', '| 項目 | 内容 |', '| --- | --- |',
-             '| 用途 | バリューオブジェクトの意味・制約の概要 |',
-             '| 詳細 | [機械可読の定義・完全なJSON Schema](data-definitions.json) |',
-             '| 検証 | 入力と、型を結び付けた更新の確定時に検証。内部の全変数でのクラス利用や直接DB更新は保証しない |', '']
-    def row(cells):
-        return '| ' + ' | '.join(escape(c) for c in cells) + ' |'
+    lines = ['# データ定義', '',
+             '1項目につき1行で表示する。詳細な型・対応・完全なSchemaは[JSON定義](data-definitions.json)を参照。',
+             '独自検証はJSON Schemaだけでは全条件を表せないため、補足ルールと受入テストで確認する。', '',
+             '| 定義ID | 項目名 | 型 | 必須 | 説明 | 制約・補足 | 既定値 | 例 |',
+             '| --- | --- | --- | --- | --- | --- | --- | --- |']
     for definition in document['value_objects']:
-        validators = '、'.join(v.get('model', '') + ('.' if v.get('model') else '') + v['name']
-                              for v in definition['validators'])
-        lines.extend([f'<a id="{definition["id"]}"></a>', f'## {escape(definition["name"])}', '',
-                      '| 項目 | 内容 |', '| --- | --- |', row(('固定ID', definition['id'])),
-                      row(('Python型', definition['python_type'])),
-                      row(('説明', definition['description'] or '未記載')),
-                      row(('全体の制約', _constraints(definition['schema']))),
-                      row(('補足ルール', '\n'.join(definition['rules']) or '未記載')),
-                      row(('独自検証', (validators + '。意味は補足ルールと受入テストで確認。JSON Schemaだけでは全条件を表せない。')
-                           if validators else 'なし'))])
-        if definition.get('input_aliases'):
-            lines.append(row(('入力の別名', '／'.join(f'{name} ← {_display(alias)}' for name, alias in definition['input_aliases'].items()))))
-        lines.extend(['', '| 項目 | 型 | 必須 | 意味 | 制約 | 既定値 | 例 |', '| --- | --- | --- | --- | --- | --- | --- |'])
-        lines.extend(row(cells) for cells in _field_rows(definition['schema']))
-        lines.append('')
-    lines.extend(['## アーティファクトとの対応', '', '| 固定ID | 名前 | バリューオブジェクト |', '| --- | --- | --- |'])
-    for artifact in document['artifacts']:
-        lines.append(row(artifact[k] for k in ('id', 'name', 'value_object')))
-    return '\n'.join(lines).rstrip() + '\n'
+        for index, (path, typ, required, description, constraint, default, examples) in enumerate(_field_rows(definition['schema'])):
+            scalar = path == '(値全体)'
+            name = definition['name'] if scalar else definition['name'] + '.' + path
+            descriptions = [description] if description != '—' else []
+            constraints = [constraint] if constraint != '—' else []
+            if index == 0:
+                if definition['description'] and definition['description'] not in descriptions:
+                    prefix = '' if scalar else '定義全体：'
+                    descriptions.append(prefix + definition['description'])
+                if not scalar:
+                    overall = _constraints(definition['schema'])
+                    if overall != '—':
+                        constraints.append('定義全体：' + overall)
+                constraints.extend(definition['rules'])
+                if definition['validators']:
+                    constraints.append('独自検証あり（詳細はJSON参照）')
+            if path in definition.get('input_aliases', {}):
+                constraints.append('入力の別名：' + _display(definition['input_aliases'][path]))
+            cells = [definition['id'], name, typ, required,
+                     '／'.join(descriptions) or '—', '／'.join(dict.fromkeys(constraints)) or '—', default, examples]
+            escaped = [escape(cell) for cell in cells]
+            if index == 0:
+                escaped[0] = f'<a id="{definition["id"]}"></a>' + escaped[0]
+            lines.append('| ' + ' | '.join(escaped) + ' |')
+    return '\n'.join(lines) + '\n'
