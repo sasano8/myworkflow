@@ -18,6 +18,17 @@
 
 業務状態もアーティファクトとして保存する。例えば `application:123` に申請データ、`state:123` に状態IDを持たせ、同じジョブで確定する。Protocolを将来HTTP等で実装すれば、パイプラインを変えずに中間サーバーへ接続できる。現在は通信アダプターやサーバーを実装していない。
 
+## 利用側APIの方針
+
+変更をまとめる高水準APIを追加する場合は、`pending` ではなく `changes` と呼ぶ。承認待ち等の業務状態と混同しないためである。状態も通常の項目更新として表し、状態だけを更新する `set_state` は導入しない。
+
+```python
+# 将来のAPIの説明例。現在のContextにはchangesは実装していない。
+ctx.changes.update(application, approved_by=ctx.actor, status="approved")
+```
+
+この操作は変更予定の作成であり、DBへの確定ではない。最後にprepare・commitする保存境界は維持する。現在の低水準APIでは、変更後の値を `ArtifactWrite` で指定する。上記の表記は保存先の構成や、汎用の状態遷移実行・検証まで決めるものではない。
+
 ## デフォルトの一時領域
 
 ```python
