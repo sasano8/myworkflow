@@ -83,10 +83,10 @@ class Program:
 
     def trigger(self, binding_id, trigger_id):
         trigger_id = definition_id(trigger_id)
-        return next((t for t in self.binding(binding_id).triggers if t.id == trigger_id), None) or self._missing(trigger_id)
-
-    def _missing(self, identity):
-        raise ContractError(f'{identity}: unknown definition')
+        for trigger in self.binding(binding_id).triggers:
+            if trigger.id == trigger_id:
+                return trigger
+        raise ContractError(f'{binding_id}: unknown trigger {trigger_id}')
 
     def payload(self, binding_id, trigger_id, values):
         """Map context keys to an ingress payload using the declared trigger."""

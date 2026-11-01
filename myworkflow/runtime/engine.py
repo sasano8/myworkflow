@@ -34,16 +34,13 @@ class Engine:
             raise ContractError('Engine requires an ExecutionStore and a LockProvider for locking steps')
         if interfaces:
             for p in program.plans.values():
-                for direction, ids in (("Request", p.inputs), ("Response", ())):
-                    name = class_name(p.id) + direction
-                    cls = getattr(interfaces, name, None)
-                    if direction == 'Response':
-                        if cls is not PipelineResult:
-                            raise ContractError(f'{p.id}: stale or invalid Response interface')
-                        continue
-                    expected = {program.artifacts[i].key: (program.artifacts[i].value_object.model if program.artifacts[i].value_object else TYPES[program.artifacts[i].type]) for i in ids}
-                    if cls is None or not is_dataclass(cls) or get_type_hints(cls) != expected:
-                        raise ContractError(f'{p.id}: stale or invalid {direction} interface')
+                name = class_name(p.id)
+                request = getattr(interfaces, name + 'Request', None)
+                expected = {program.artifacts[i].key: (program.artifacts[i].value_object.model if program.artifacts[i].value_object else TYPES[program.artifacts[i].type]) for i in p.inputs}
+                if request is None or not is_dataclass(request) or get_type_hints(request) != expected:
+                    raise ContractError(f'{p.id}: stale or invalid Request interface')
+                if getattr(interfaces, name + 'Response', None) is not PipelineResult:
+                    raise ContractError(f'{p.id}: stale or invalid Response interface')
 
     def invoke(self, binding_id, trigger_id, payload, principal, *, run_id) -> PipelineResult:
         try:
@@ -53,16 +50,13 @@ class Engine:
 
     def invoke_or_raise(self, binding_id, trigger_id, payload, principal, *, run_id) -> PipelineResult:
         b = self.program.binding(binding_id)
-        trigger_id = definition_id(trigger_id)
-        t = next((t for t in b.triggers if t.id == trigger_id), None)
-        if t is None:
-            raise ContractError(f"{binding_id}: unknown trigger {trigger_id}")
+        t = self.program.trigger(b.id, trigger_id)
         if t.actor_role_id not in principal.roles:
-            raise PermissionError(f'{trigger_id}: {principal.id} lacks {t.actor_role_id}')
+            raise PermissionError(f'{t.id}: {principal.id} lacks {t.actor_role_id}')
         if set(payload) != set(t.mapping.values()):
-            raise ContractError(f"{trigger_id}: payload fields do not match mapping")
+            raise ContractError(f"{t.id}: payload fields do not match mapping")
         values = {self.program.artifacts[a].key: payload[source] for a, source in t.mapping.items()}
-        return self._run_or_raise(b.pipeline_id, values, actor=principal.id, run_id=run_id, binding_id=b.id, trigger_id=trigger_id)
+        return self._run_or_raise(b.pipeline_id, values, actor=principal.id, run_id=run_id, binding_id=b.id, trigger_id=t.id)
 
     def run(self, pipeline_id, request, *, actor, run_id) -> PipelineResult:
         try:
