@@ -22,6 +22,17 @@ python -m scripts.generate_docs --check
 
 `install-hooks.sh` がGitのpre-commit hookを有効にします。新しいcloneごとに実行してください。既存hookとの接続方法やPython環境の指定は[hookの設定手順](docs/generated-documents.md#有効化)を参照してください。
 
+## カタログ別の生成ドキュメント
+
+| 業務契約カタログ | 出力先 |
+| --- | --- |
+| 購買 | [examples/purchase/docs](examples/purchase/docs/README.md) |
+| 承認・バリューオブジェクト例 | [examples/approval-values/docs](examples/approval-values/docs/README.md) |
+| 申請審査 | [examples/declarative_review/docs](examples/declarative_review/docs/README.md) |
+| チケット発行 | [examples/tickets/docs](examples/tickets/docs/README.md) |
+
+業務要件・データ定義・受入仕様・図はカタログごとの `docs/` へまとめます。生成するPythonの型定義はコード側に置きます。
+
 ## コミット時の自動生成
 
 `sh scripts/install-hooks.sh` でpre-commit hookを有効にすると、宣言から文書・型を再生成し、生成物を自動でコミットへ含めます。Python 3.14の `.venv` と `.[test,acceptance]` が必要です。[設定・対象・部分コミットの扱い](docs/generated-documents.md)を参照してください。
@@ -50,7 +61,7 @@ Kestra出力は `deployable: false` のプレビューです。実機へ配備�
 
 ## 名前付きクラス宣言の実験
 
-[クラス宣言例](examples/declarative_review.py)から、既存の型付き契約と状態グラフをコンパイルできます。[生成結果](examples/declarative_review.md)には承認・差戻し・再申請・却下を出力します。[業務フロー図](examples/declarative_review-flow.md)も同じ宣言からMermaid形式で生成し、GitHubで表示できます。`python -m examples.declarative_review --flowchart` で図だけ出力できます。`python -m examples.declarative_review` で再生成できます。構文・対応範囲・残タスクは[状態遷移モデル](docs/state-graph.md)を参照してください。ローカルでの遷移検証・確定は[TransitionRuntime](docs/transition-execution.md)を明示的に接続して行えます。この宣言例自体は審査を保存するアプリケーションではありません。
+[クラス宣言例](examples/declarative_review.py)から、既存の型付き契約と状態グラフをコンパイルできます。[生成結果](examples/declarative_review/docs/requirements.md)には承認・差戻し・再申請・却下を出力します。[業務フロー図](examples/declarative_review/docs/flow.md)も同じ宣言からMermaid形式で生成し、GitHubで表示できます。`python -m examples.declarative_review --flowchart` で図だけ出力できます。`python -m examples.declarative_review` で再生成できます。構文・対応範囲・残タスクは[状態遷移モデル](docs/state-graph.md)を参照してください。ローカルでの遷移検証・確定は[TransitionRuntime](docs/transition-execution.md)を明示的に接続して行えます。この宣言例自体は審査を保存するアプリケーションではありません。
 
 ## 動く購買申請サンプル
 
@@ -60,10 +71,10 @@ Kestra出力は `deployable: false` のプレビューです。実機へ配備�
 python3.14 -m examples.purchase
 python3.14 -m pytest -q
 python3.14 -m examples.purchase --docs > /tmp/purchase.md
-diff -u examples/purchase/requirements.md /tmp/purchase.md
+diff -u examples/purchase/docs/requirements.md /tmp/purchase.md
 ```
 
-[生成した業務概要・型・実装対応表](examples/purchase/requirements.md)で、実行者、複数トリガー、入出力、分岐、補償、固定IDを確認できます。
+[生成した業務概要・型・実装対応表](examples/purchase/docs/requirements.md)で、実行者、複数トリガー、入出力、分岐、補償、固定IDを確認できます。
 
 申請 → 見積書2件登録 → 承認 → 発注確定をSQLiteで実行します。却下、権限不足、発注条件未達、途中失敗と補償もテストします。サンプル実行は一時DBを使用し、終了時に削除します。実S3や本番の認証・分散ロックは使いません。
 
@@ -81,7 +92,7 @@ python3.14 -m myworkflow.scaffold init docs/requirements/purchase-initial.json /
 
 ```sh
 python3.14 -m myworkflow.scaffold interfaces examples.purchase.contract examples/purchase/interfaces.py
-python3.14 -m examples.purchase --docs > examples/purchase/requirements.md
+python3.14 -m examples.purchase --docs > examples/purchase/docs/requirements.md
 python3.14 -m pytest -q
 ```
 
@@ -113,7 +124,7 @@ python3.14 -m pytest -q
 
 ## 購買フローの受入テスト
 
-[業務概要と受入条件](examples/purchase/acceptance/business.md)、[受入シナリオ文書](examples/purchase/acceptance/acceptance.md)、[実装・評価・実行手順](docs/acceptance-evaluation.md)を参照してください。対象はフレームワークそのものではなく、購買サンプルの業務フローです。
+[業務概要と受入条件](examples/purchase/docs/business.md)、[受入シナリオ文書](examples/purchase/docs/acceptance.md)、[実装・評価・実行手順](docs/acceptance-evaluation.md)を参照してください。対象はフレームワークそのものではなく、購買サンプルの業務フローです。
 
 ```sh
 python -m pip install -e '.[acceptance]'
@@ -132,7 +143,7 @@ featureを正本とし、操作・検証関数をPythonで実装します。概�
 
 ## 別の業務への適用例
 
-[チケット発行の業務概要](examples/tickets/acceptance/business.md)と[受入条件](examples/tickets/acceptance/acceptance.md)は購買の型・保存処理を使わない第二の例です。本体を業務名で分岐させず、同じ実行・生成・受入ツールを設定で利用します。
+[チケット発行の業務概要](examples/tickets/docs/business.md)と[受入条件](examples/tickets/docs/acceptance.md)は購買の型・保存処理を使わない第二の例です。本体を業務名で分岐させず、同じ実行・生成・受入ツールを設定で利用します。
 
 ```sh
 python -m myworkflow.acceptance --config examples.tickets.acceptance.catalog docs --check
@@ -163,7 +174,7 @@ python -m examples.guarded_approval
 
 ### バリューオブジェクトと別ファイルのデータ定義
 
-Pydanticモデルを固定ID付きの `ValueObject` として宣言し、入力と型を結び付けた更新を検証します。購買の[業務概要](examples/purchase/requirements.md)とは別に[データ定義](examples/purchase/data-definitions.md)を生成します。[定義コード](examples/purchase/value_objects.py)は購買自身の業務契約カタログへ接続しています。[定義方法と保証範囲](docs/value-objects.md)を参照してください。
+Pydanticモデルを固定ID付きの `ValueObject` として宣言し、入力と型を結び付けた更新を検証します。購買の[業務概要](examples/purchase/docs/requirements.md)とは別に[データ定義](examples/purchase/docs/data-definitions.md)を生成します。[定義コード](examples/purchase/value_objects.py)は購買自身の業務契約カタログへ接続しています。[定義方法と保証範囲](docs/value-objects.md)を参照してください。
 
 ```sh
 python -m myworkflow build --config examples.purchase.build --target temporal --output dist/purchase

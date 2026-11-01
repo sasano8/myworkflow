@@ -62,15 +62,15 @@ def test_cross_field_rule_runs_but_is_not_claimed_as_json_schema_constraint():
 def test_independent_data_documents_match_reviewed_samples_and_business_links():
     catalog = sample.compiled.catalog
     markdown = render_data_definitions(catalog)
-    assert markdown == (ROOT / 'examples/approval-values/data-definitions.md').read_text()
-    assert data_definitions_source(catalog) == (ROOT / 'examples/approval-values/data-definitions.json').read_text()
+    assert markdown == (ROOT / 'examples/approval-values/docs/data-definitions.md').read_text()
+    assert data_definitions_source(catalog) == (ROOT / 'examples/approval-values/docs/data-definitions.json').read_text()
     assert 'JSON Schemaだけでは全条件を表せない' in markdown
     assert '0より大きい' in markdown
     assert '```' not in markdown
     assert 'exclusiveMinimum' in data_definitions_source(catalog)
     assert 'data-definitions.md#vo.application_id' in sample.compiled.program.documentation()
     assert 'exclusiveMinimum' not in sample.compiled.program.documentation()
-    assert compile_outputs(BUILD, target='temporal')['requirements.md'] == (ROOT / 'examples/approval-values/requirements.md').read_text()
+    assert compile_outputs(BUILD, target='temporal')['requirements.md'] == (ROOT / 'examples/approval-values/docs/requirements.md').read_text()
 
 
 def test_build_includes_separate_data_files_and_detects_constraint_drift(tmp_path):
@@ -258,7 +258,7 @@ def test_purchase_owns_value_definitions_and_builds_frozen_documents():
     assert contract.application_id.value_object is value_objects.application_id_type
     outputs = compile_outputs(purchase_build, target='temporal')
     for name in ('data-definitions.md', 'data-definitions.json'):
-        assert outputs[name] == (ROOT / 'examples/purchase' / name).read_text()
+        assert outputs[name] == (ROOT / 'examples/purchase/docs' / name).read_text()
     assert 'data-definitions.md#vo.purchase.amount' in contract.program.documentation()
     from myworkflow.acceptance.rendering import DocumentOptions, render_business
     options = DocumentOptions(data_definitions_link='../data-definitions.md')

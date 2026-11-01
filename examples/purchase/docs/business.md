@@ -83,13 +83,13 @@
 
 ## データ定義への参照
 
-詳細な制約は別ファイルの[データ定義](../data-definitions.md)を参照。
+詳細な制約は別ファイルの[データ定義](data-definitions.md)を参照。
 
 | アーティファクト固定ID | データ定義固定ID |
 | --- | --- |
-| a.id | [vo.purchase.application_id](../data-definitions.md#vo.purchase.application_id) |
-| a.vendor | [vo.purchase.vendor](../data-definitions.md#vo.purchase.vendor) |
-| a.amount | [vo.purchase.amount](../data-definitions.md#vo.purchase.amount) |
+| a.id | [vo.purchase.application_id](data-definitions.md#vo.purchase.application_id) |
+| a.vendor | [vo.purchase.vendor](data-definitions.md#vo.purchase.vendor) |
+| a.amount | [vo.purchase.amount](data-definitions.md#vo.purchase.amount) |
 
 ## 起動定義の対応
 

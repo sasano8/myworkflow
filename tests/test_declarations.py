@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_sample_matches_reviewable_output_and_existing_program():
     compiled = sample.compiled
-    assert sample.documentation() == (ROOT / 'examples/declarative_review.md').read_text()
+    assert sample.documentation() == (ROOT / 'examples/declarative_review/docs/requirements.md').read_text()
     assert compiled.catalog.workflows[0] is compiled.graphs[0].workflow
     assert compiled.catalog.pipelines == (sample.submit_application, sample.record_review)
     assert len(compiled.graphs[0].transitions) == 5

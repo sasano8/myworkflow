@@ -34,7 +34,7 @@ def test_temporal_build_validates_code_without_generating_another_runtime():
 
 def test_kestra_preview_matches_frozen_yaml_and_declared_ids():
     outputs = compile_outputs(BUILD, target='kestra', workflows=('w.attach',))
-    assert outputs['manifest.yaml'] == (ROOT / 'examples/purchase/kestra-attachment.yaml').read_text()
+    assert outputs['manifest.yaml'] == (ROOT / 'examples/purchase/docs/kestra-attachment.yaml').read_text()
     model = json.loads(outputs['ir.json'])
     assert list(model['business']['workflows']) == ['w.attach']
     assert list(model['business']['pipelines']) == ['p.upload']

@@ -75,7 +75,7 @@ flowchart TD
 
 ## Kestraの対応範囲
 
-今回の合意に合わせ、[プレビューの例](../examples/purchase/kestra-attachment.yaml)は説明・レビュー用の独自YAMLとした。実際のKestra Flow定義ではなく、そのまま配備・実行できない。`deployable: false`、形式名、CLIの出力でこの境界を明示する。
+今回の合意に合わせ、[プレビューの例](../examples/purchase/docs/kestra-attachment.yaml)は説明・レビュー用の独自YAMLとした。実際のKestra Flow定義ではなく、そのまま配備・実行できない。`deployable: false`、形式名、CLIの出力でこの境界を明示する。
 
 配置・トリガーごとに、操作ロール、入力対応、Pythonパイプラインの呼出し先を列挙する。`ir.json` から処理・補償・実装関数を確認できる。ステップ内の条件分岐・再試行・補償は既存Python Engineの責務であり、Kestraのネイティブタスクへ変換したものではない。
 

@@ -9,7 +9,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[w.approval](business.md#w.approval)、[p.confirm](business.md#p.confirm)
 
-正本：[ purchase.feature:5 ](features/purchase.feature#L5)
+正本：[ purchase.feature:5 ](../acceptance/features/purchase.feature#L5)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.approve](business.md#p.approve)、[p.confirm](business.md#p.confirm)
 
-正本：[ purchase.feature:21 ](features/purchase.feature#L21)
+正本：[ purchase.feature:21 ](../acceptance/features/purchase.feature#L21)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -81,7 +81,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[b.approve](business.md#b.approve)
 
-正本：[ purchase.feature:29 ](features/purchase.feature#L29)
+正本：[ purchase.feature:29 ](../acceptance/features/purchase.feature#L29)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -109,7 +109,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.confirm](business.md#p.confirm)
 
-正本：[ purchase.feature:37 ](features/purchase.feature#L37)
+正本：[ purchase.feature:37 ](../acceptance/features/purchase.feature#L37)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -137,7 +137,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.upload](business.md#p.upload)、[c.delete-a](business.md#c.delete-a)、[c.delete-b](business.md#c.delete-b)
 
-正本：[ purchase.feature:56 ](features/purchase.feature#L56)
+正本：[ purchase.feature:56 ](../acceptance/features/purchase.feature#L56)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -169,7 +169,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.upload](business.md#p.upload)、[c.delete-a](business.md#c.delete-a)、[c.delete-b](business.md#c.delete-b)
 
-正本：[ purchase.feature:57 ](features/purchase.feature#L57)
+正本：[ purchase.feature:57 ](../acceptance/features/purchase.feature#L57)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -201,7 +201,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.upload](business.md#p.upload)、[c.delete-a](business.md#c.delete-a)、[c.delete-b](business.md#c.delete-b)
 
-正本：[ purchase.feature:58 ](features/purchase.feature#L58)
+正本：[ purchase.feature:58 ](../acceptance/features/purchase.feature#L58)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -233,7 +233,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.upload](business.md#p.upload)、[c.delete-a](business.md#c.delete-a)、[c.delete-b](business.md#c.delete-b)
 
-正本：[ purchase.feature:59 ](features/purchase.feature#L59)
+正本：[ purchase.feature:59 ](../acceptance/features/purchase.feature#L59)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -265,7 +265,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.upload](business.md#p.upload)、[c.delete-a](business.md#c.delete-a)、[c.delete-b](business.md#c.delete-b)
 
-正本：[ purchase.feature:60 ](features/purchase.feature#L60)
+正本：[ purchase.feature:60 ](../acceptance/features/purchase.feature#L60)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -297,7 +297,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.upload](business.md#p.upload)、[c.delete-a](business.md#c.delete-a)、[c.delete-b](business.md#c.delete-b)
 
-正本：[ purchase.feature:61 ](features/purchase.feature#L61)
+正本：[ purchase.feature:61 ](../acceptance/features/purchase.feature#L61)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -329,7 +329,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.upload](business.md#p.upload)、[c.delete-a](business.md#c.delete-a)
 
-正本：[ purchase.feature:64 ](features/purchase.feature#L64)
+正本：[ purchase.feature:64 ](../acceptance/features/purchase.feature#L64)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -367,7 +367,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[p.upload](business.md#p.upload)、[c.delete-a](business.md#c.delete-a)
 
-正本：[ purchase.feature:77 ](features/purchase.feature#L77)
+正本：[ purchase.feature:77 ](../acceptance/features/purchase.feature#L77)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -401,7 +401,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[w.approval](business.md#w.approval)、[w.execution](business.md#w.execution)
 
-正本：[ temporal.feature:6 ](features/temporal.feature#L6)
+正本：[ temporal.feature:6 ](../acceptance/features/temporal.feature#L6)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |
@@ -433,7 +433,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[w.approval](business.md#w.approval)、[p.approve](business.md#p.approve)
 
-正本：[ temporal.feature:16 ](features/temporal.feature#L16)
+正本：[ temporal.feature:16 ](../acceptance/features/temporal.feature#L16)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |

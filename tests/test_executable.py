@@ -208,7 +208,7 @@ class TestExecutable:
 
     def test_source_snapshots_match(self):
         assert interfaces_source(self.program) == (ROOT / 'examples/purchase/interfaces.py').read_text()
-        assert self.program.documentation(registry, details_link='../../docs/execution-design.md') == (ROOT / 'examples/purchase/requirements.md').read_text()
+        assert self.program.documentation(registry, details_link='../../../docs/execution-design.md') == (ROOT / 'examples/purchase/docs/requirements.md').read_text()
 
     def test_initial_generation_and_unimplemented_skeleton(self):
         initial = json.loads((ROOT / 'docs/requirements/purchase-initial.json').read_text())

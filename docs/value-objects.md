@@ -39,7 +39,7 @@ python -m myworkflow build --config examples.approval_values_build \
 | `data-definitions.md` | 名称・意味・必須項目・制約・既定値・例・補足ルールを簡易表で表示 |
 | `data-definitions.json` | 同じ定義の機械可読形式、Python型、独自バリデーター、アーティファクト対応 |
 
-[生成したデータ定義](../examples/approval-values/data-definitions.md)と[業務概要](../examples/approval-values/requirements.md)を別ファイルとして保存し、テストとCIで固定出力との一致を確認する。JSON Schemaは検証用の形式で出力し、入力の別名がある場合は正規の項目名とは別に記録する。build.jsonのハッシュ対象にも含める。
+[生成したデータ定義](../examples/approval-values/docs/data-definitions.md)と[業務概要](../examples/approval-values/docs/requirements.md)を別ファイルとして保存し、テストとCIで固定出力との一致を確認する。JSON Schemaは検証用の形式で出力し、入力の別名がある場合は正規の項目名とは別に記録する。build.jsonのハッシュ対象にも含める。
 
 ## 検証する境界
 
@@ -86,8 +86,8 @@ ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.
 
 購買の正本は [purchase/value_objects.py](../examples/purchase/value_objects.py) に置き、contract.pyの申請ID・取引先・金額のArtifactから参照する。購買自身のContractCatalogへ含め、入力検証・生成Request・業務概要・ビルドに同じ定義を使う。
 
-- [購買のデータ定義](../examples/purchase/data-definitions.md)（[JSON](../examples/purchase/data-definitions.json)）。
-- [購買の業務概要](../examples/purchase/requirements.md)。
+- [購買のデータ定義](../examples/purchase/docs/data-definitions.md)（[JSON](../examples/purchase/docs/data-definitions.json)）。
+- [購買の業務概要](../examples/purchase/docs/requirements.md)。
 
 ```sh
 python -m myworkflow build --config examples.purchase.build --target temporal --output dist/purchase

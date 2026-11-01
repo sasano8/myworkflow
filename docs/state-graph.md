@@ -2,7 +2,7 @@
 
 ## クラス宣言からのコンパイル
 
-実験用APIを `myworkflow.declarations` に追加した。承認・差戻し・再申請・却下を含む[宣言例](../examples/declarative_review.py)と、その[生成結果](../examples/declarative_review.md)を参照できる。
+実験用APIを `myworkflow.declarations` に追加した。承認・差戻し・再申請・却下を含む[宣言例](../examples/declarative_review.py)と、その[生成結果](../examples/declarative_review/docs/requirements.md)を参照できる。
 
 ```python
 from myworkflow.declarations import workflow, state, trigger, bind, transition, compile_workflows
@@ -46,7 +46,7 @@ python -m pytest tests/test_declarations.py tests/test_state_graph.py -q
 
 ## 業務フロー図の生成
 
-`myworkflow.flowchart.render_business_flow(graph, catalog)` は、同じ状態・遷移の宣言からMermaidのフローチャートを含むMarkdownを生成する。GitHubで閲覧できる[図の出力例](../examples/declarative_review-flow.md)を用意した。通常の[概要出力](../examples/declarative_review.md)にも図を含む。
+`myworkflow.flowchart.render_business_flow(graph, catalog)` は、同じ状態・遷移の宣言からMermaidのフローチャートを含むMarkdownを生成する。GitHubで閲覧できる[図の出力例](../examples/declarative_review/docs/flow.md)を用意した。通常の[概要出力](../examples/declarative_review/docs/requirements.md)にも図を含む。
 
 ```sh
 python -m examples.declarative_review --flowchart

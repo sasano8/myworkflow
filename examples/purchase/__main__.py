@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--docs', action='store_true')
     args = parser.parse_args()
     if args.docs:
-        print(program.documentation(registry, details_link="../../docs/execution-design.md"), end='')
+        print(program.documentation(registry, details_link="../../../docs/execution-design.md"), end='')
         return
     with TemporaryDirectory() as directory:
         services = Services(Path(directory) / 'purchase.db')

@@ -93,7 +93,7 @@ def test_flowchart_matches_frozen_sample():
     from pathlib import Path
     from examples.declarative_review import compiled
     from myworkflow.flowchart import render_business_flow
-    expected = Path(__file__).resolve().parents[1] / 'examples/declarative_review-flow.md'
+    expected = Path(__file__).resolve().parents[1] / 'examples/declarative_review/docs/flow.md'
     assert render_business_flow(compiled.graphs[0], compiled.catalog) == expected.read_text()
 
 

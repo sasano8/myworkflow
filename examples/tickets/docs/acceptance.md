@@ -9,7 +9,7 @@ featureファイルが正本です。この文書は仕様であり、テスト�
 
 対象：[ticket.issue](business.md#ticket.issue)
 
-正本：[ tickets.feature:5 ](features/tickets.feature#L5)
+正本：[ tickets.feature:5 ](../acceptance/features/tickets.feature#L5)
 
 | 区分 | 実行者・操作主体 | 条件・操作・期待結果 |
 | --- | --- | --- |

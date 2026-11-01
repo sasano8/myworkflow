@@ -8,7 +8,8 @@ from myworkflow.acceptance import DocumentOptions
 
 DIRECTORY = Path(__file__).resolve().parent
 ROOT = DIRECTORY.parents[2]
+DOCS = DIRECTORY.parent / 'docs'
 CONFIG = AcceptanceConfig(Program(SPEC), steps, tuple((DIRECTORY / 'features').glob('*.feature')), ROOT,
     (ROOT / 'myworkflow', ROOT / 'examples/tickets', ROOT / 'tests', ROOT / 'pyproject.toml'),
-    DocumentOptions(title='チケット発行の受入シナリオ', details_link='../../../docs/architecture.md'),
-    registry=registry, output_directory=DIRECTORY)
+    DocumentOptions(title='チケット発行の受入シナリオ', details_link='../../../docs/architecture.md', features_link='../acceptance/features'),
+    registry=registry, output_directory=DOCS)

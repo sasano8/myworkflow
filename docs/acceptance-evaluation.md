@@ -10,8 +10,8 @@ Python宣言との最小比較は `tests/acceptance_tools/test_acceptance.py` �
 
 ## 生成物
 
-- [業務概要と受入条件へのリンク](../examples/purchase/acceptance/business.md)
-- [受入シナリオ文書](../examples/purchase/acceptance/acceptance.md)
+- [業務概要と受入条件へのリンク](../examples/purchase/docs/business.md)
+- [受入シナリオ文書](../examples/purchase/docs/acceptance.md)
 - [ローカルの正本](../examples/purchase/acceptance/features/purchase.feature)
 - [Temporalの正本](../examples/purchase/acceptance/features/temporal.feature)
 

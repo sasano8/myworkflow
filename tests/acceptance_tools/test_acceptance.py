@@ -10,7 +10,7 @@ import sys
 import pytest
 from pytest_bdd import parsers
 
-from examples.purchase.acceptance.catalog import DIRECTORY, DOCUMENTS, cases, program, registry, steps
+from examples.purchase.acceptance.catalog import DIRECTORY, DOCS, DOCUMENTS, cases, program, registry, steps
 from examples.purchase.acceptance.world import World
 from myworkflow.acceptance import Definitions, load_cases, render_business, render_cases, render_report
 from myworkflow.executable import Program
@@ -28,8 +28,8 @@ def test_docs_match_canonical_features():
     catalog = cases()
     assert len(catalog) == 14
     assert len([c for c in catalog if c.scenario_id == 'scenario.purchase.upload']) == 6
-    assert render_cases(catalog, steps, options=DOCUMENTS) == (DIRECTORY / 'acceptance.md').read_text()
-    assert render_business(program, registry, catalog, options=DOCUMENTS) == (DIRECTORY / 'business.md').read_text()
+    assert render_cases(catalog, steps, options=DOCUMENTS) == (DOCS / 'acceptance.md').read_text()
+    assert render_business(program, registry, catalog, options=DOCUMENTS) == (DOCS / 'business.md').read_text()
 
 
 def test_python_declaration_and_gherkin_express_same_small_case(tmp_path):

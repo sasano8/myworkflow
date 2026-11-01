@@ -24,21 +24,43 @@ def outputs():
     values = compile_outputs(VALUES, target='temporal')
     result = {
         'examples/purchase/interfaces.py': purchase['interfaces.py'],
-        'examples/purchase/requirements.md': contract.program.documentation(handlers.registry, details_link='../../docs/execution-design.md'),
-        'examples/purchase/data-definitions.md': purchase['data-definitions.md'],
-        'examples/purchase/data-definitions.json': purchase['data-definitions.json'],
-        'examples/purchase/kestra-attachment.yaml': preview['manifest.yaml'],
-        'examples/approval-values/requirements.md': values['requirements.md'],
-        'examples/approval-values/data-definitions.md': values['data-definitions.md'],
-        'examples/approval-values/data-definitions.json': values['data-definitions.json'],
-        'examples/declarative_review.md': documentation(),
-        'examples/declarative_review-flow.md': render_business_flow(compiled.graphs[0], compiled.catalog),
+        'examples/purchase/docs/requirements.md': contract.program.documentation(handlers.registry, details_link='../../../docs/execution-design.md'),
+        'examples/purchase/docs/data-definitions.md': purchase['data-definitions.md'],
+        'examples/purchase/docs/data-definitions.json': purchase['data-definitions.json'],
+        'examples/purchase/docs/kestra-attachment.yaml': preview['manifest.yaml'],
+        'examples/approval-values/docs/requirements.md': values['requirements.md'],
+        'examples/approval-values/docs/data-definitions.md': values['data-definitions.md'],
+        'examples/approval-values/docs/data-definitions.json': values['data-definitions.json'],
+        'examples/declarative_review/docs/requirements.md': documentation(),
+        'examples/declarative_review/docs/flow.md': render_business_flow(compiled.graphs[0], compiled.catalog),
     }
     for config in (purchase_acceptance, ticket_acceptance):
         cases = config.cases()
         directory = config.output_directory.relative_to(ROOT)
         result[str(directory / 'business.md')] = render_business(config.program, config.registry, cases, options=config.documents)
         result[str(directory / 'acceptance.md')] = render_cases(cases, config.definitions, options=config.documents)
+    labels = {
+        'requirements.md': '業務要件・型・実装対応',
+        'business.md': '業務要件と受入条件の対応',
+        'acceptance.md': '受入シナリオ',
+        'data-definitions.md': 'データ定義（1項目1行）',
+        'data-definitions.json': '機械可読のデータ定義・JSON Schema',
+        'flow.md': '業務フロー図',
+        'kestra-attachment.yaml': 'Kestra説明用プレビュー（配備不可）',
+    }
+    catalogs = {
+        'examples/purchase/docs': '購買',
+        'examples/approval-values/docs': '承認・バリューオブジェクト例',
+        'examples/declarative_review/docs': '申請審査',
+        'examples/tickets/docs': 'チケット発行',
+    }
+    for directory, name in catalogs.items():
+        files = sorted(Path(file).name for file in result if str(Path(file).parent) == directory)
+        lines = [f'# {name}の業務契約カタログ', '',
+                 'このディレクトリは宣言コードから自動生成する。変更は元のコード・受入シナリオへ反映する。', '',
+                 '| ドキュメント | 内容 |', '| --- | --- |']
+        lines.extend(f'| [{file}]({file}) | {labels[file]} |' for file in files)
+        result[directory + '/README.md'] = '\n'.join(lines) + '\n'
     return result
 
 
