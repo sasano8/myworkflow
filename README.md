@@ -50,7 +50,7 @@ python -m myworkflow build --config examples.apps.purchase.build --target tempor
 | 実行・終了結果・確定 | [実行保証](docs/execution-design.md)・[終了結果](docs/pipeline-results.md)・[遷移実行](docs/transition-execution.md) |
 | 保存・楽観ロック・保持方針 | [アーティファクト](docs/artifact-jobs.md) |
 | 生成・ビルド | [pre-commit](docs/generated-documents.md)・[ビルド](docs/build.md) |
-| 継続品質・評価 | [往復品質](docs/requirements-quality.md)・[受入評価](docs/acceptance-evaluation.md)・[PoC評価](docs/poc-evaluation.md) |
+| 継続品質・評価 | [コード統計](docs/quality/README.md)・[往復品質](docs/requirements-quality.md)・[受入評価](docs/acceptance-evaluation.md)・[PoC評価](docs/poc-evaluation.md) |
 | 継続判断 | [ゴールと残課題](docs/poc-plan.md)・[製品比較](docs/product-comparison.md) |
 
 Kestra出力は説明用YAMLで、配備できません。本番認証・分散排他・外部副作用を含む一括確定は残課題です。
