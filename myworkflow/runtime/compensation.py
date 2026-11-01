@@ -7,16 +7,16 @@ class CompensationStack:
     def __init__(self):
         self.entries = []
 
-    def register(self, step_id, handler_id, ctx):
-        self.entries.append((step_id, handler_id, deepcopy(dict(ctx.values))))
+    def register(self, handler_id, ctx):
+        self.entries.append((handler_id, deepcopy(dict(ctx.values))))
 
     def capture(self, ctx):
-        step, handler, _ = self.entries[-1]
-        self.entries[-1] = (step, handler, deepcopy(dict(ctx.values)))
+        handler, _ = self.entries[-1]
+        self.entries[-1] = (handler, deepcopy(dict(ctx.values)))
 
     def unwind(self, registry, ctx):
         failures = []
-        for original, identity, snapshot in reversed(self.entries):
+        for identity, snapshot in reversed(self.entries):
             ctx.events.append((identity, 'compensating'))
             try:
                 # Compensation sees the registered inputs, shared services and durable run ID.

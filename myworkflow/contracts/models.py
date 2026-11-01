@@ -83,6 +83,7 @@ class Trigger:
     wait: str | None = None
     actor_role_id: str | None = None
 
+
 @dataclass(frozen=True)
 class Binding:
     id: str

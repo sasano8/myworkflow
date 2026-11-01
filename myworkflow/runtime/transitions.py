@@ -75,7 +75,6 @@ class TransitionSession:
         self.runtime, self.transition, self.changes = runtime, transition, changes
         # Once prepare is attempted, the durable outcome may require reconciliation.
         self.prepare_attempted = False
-        self.committed = False
 
     def finish(self, ctx):
         writes = self.changes._writes()
@@ -87,7 +86,6 @@ class TransitionSession:
         self.runtime.coordinator.prepare(ctx.run_id, writes)
         ctx.events.append((self.transition.id, 'prepared'))
         self.runtime.coordinator.commit(ctx.run_id)
-        self.committed = True
         ctx.events.append((self.transition.id, 'committed'))
 
     def close(self):

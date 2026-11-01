@@ -98,7 +98,7 @@ class Engine:
                         continue
                     if s.compensate:
                         # Register before executing: remote success with a lost response is ambiguous.
-                        compensations.register(s.id, s.compensate, ctx)
+                        compensations.register(s.compensate, ctx)
                     for attempt in range(s.attempts):
                         try:
                             self._call(s.id, ctx, s.reads, s.writes)
