@@ -101,7 +101,7 @@ def compile_outputs(config: BuildConfig, *, target: str, workflows: tuple[str, .
         graph.validate(model)
     implementations = {identity: f'{fn.__module__}:{fn.__qualname__}'
                        for identity, fn in sorted(config.registry.handlers.items())
-                       if identity in program.steps or any(s.compensate == identity for s in program.steps.values() if hasattr(s, 'compensate'))}
+                       if identity in program.implementation_ids}
     ir = {'schema_version': 1, 'business': export_business(program),
           'state_graphs': [g.to_dict(model) for g in graphs], 'implementations': implementations}
     documentation = document_program(program, config.registry)

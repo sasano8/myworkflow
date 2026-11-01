@@ -1,6 +1,5 @@
 """Business contracts. Declarations describe behavior; they do not execute it."""
 from dataclasses import dataclass
-from types import MappingProxyType
 from myworkflow.contracts.value_objects import ValueObject
 
 
@@ -83,10 +82,6 @@ class Trigger:
     after: str | None = None
     wait: str | None = None
     actor_role_id: str | None = None
-
-    @property
-    def mapping(self): return MappingProxyType(dict(self.input_mapping))
-
 
 @dataclass(frozen=True)
 class Binding:

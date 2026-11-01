@@ -53,9 +53,9 @@ class Engine:
         t = self.program.trigger(b.id, trigger_id)
         if t.actor_role_id not in principal.roles:
             raise PermissionError(f'{t.id}: {principal.id} lacks {t.actor_role_id}')
-        if set(payload) != set(t.mapping.values()):
+        if set(payload) != {source for _, source in t.input_mapping}:
             raise ContractError(f"{t.id}: payload fields do not match mapping")
-        values = {self.program.artifacts[a].key: payload[source] for a, source in t.mapping.items()}
+        values = {self.program.artifacts[a].key: payload[source] for a, source in t.input_mapping}
         return self._run_or_raise(b.pipeline_id, values, actor=principal.id, run_id=run_id, binding_id=b.id, trigger_id=t.id)
 
     def run(self, pipeline_id, request, *, actor, run_id) -> PipelineResult:
