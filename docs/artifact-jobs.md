@@ -18,6 +18,51 @@
 
 業務状態もアーティファクトとして保存する。例えば `application:123` に申請データ、`state:123` に状態IDを持たせ、同じジョブで確定する。Protocolを将来HTTP等で実装すれば、パイプラインを変えずに中間サーバーへ接続できる。現在は通信アダプターやサーバーを実装していない。
 
+## 楽観ロックと排他ロック
+
+楽観ロックは読込み時のバージョンを確定時に照合する。排他ロックは処理前に同じ対象への同時処理を待機・拒否する。別の仕組みであり、必要なら併用できる。現在のCoordinatorでは `ArtifactWrite.expected_version` による楽観ロックを実装済み。
+
+次は二つの操作が同じバージョンを読み、先に確定した操作だけが成功する例。保存先を一時ディレクトリに限定しているため、単独で実行できる。
+
+```python
+from tempfile import TemporaryDirectory
+from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
+from myworkflow.artifact_jobs import ArtifactConflict, ArtifactWrite
+
+with TemporaryDirectory() as root:
+    coordinator = TemporaryArtifactCoordinator(root=root, namespace="optimistic-example")
+    coordinator.prepare("create", (
+        ArtifactWrite("application:123", {"status": "waiting"}, expected_version=0),
+    ))
+    coordinator.commit("create")
+
+    # 両方が同じ確定済みバージョン1を読む。
+    first = coordinator.read("application:123")
+    second = coordinator.read("application:123")
+    coordinator.prepare("approve", (
+        ArtifactWrite("application:123", {**first.value, "status": "approved"}, first.version),
+    ))
+    coordinator.prepare("reject", (
+        ArtifactWrite("application:123", {**second.value, "status": "rejected"}, second.version),
+    ))
+
+    coordinator.commit("approve")  # バージョン2になる。
+    try:
+        coordinator.commit("reject")  # 想定1に対して実際は2なので競合。
+    except ArtifactConflict:
+        coordinator.discard("reject")
+    else:
+        raise AssertionError("古いバージョンの更新は拒否されるべき")
+
+    current = coordinator.read("application:123")
+    assert current.value["status"] == "approved"
+    assert current.version == 2
+```
+
+競合したジョブの変更は一括して反映されない。再処理する場合は最新値を読み直し、業務条件を再検証して新しいジョブIDで準備する。古い変更のバージョンだけを書き換えて強制適用しない。競合は技術的な再試行で解決できるとは限らず、利用者へ再確認を求める方針も業務ごとに決める。
+
+検査対象は書込みに指定したキーである。読んだだけの別アーティファクトや外部DB・ストレージまで、自動的に競合検査するものではない。
+
 ## 利用側APIの方針
 
 変更をまとめる高水準APIを追加する場合は、`pending` ではなく `changes` と呼ぶ。承認待ち等の業務状態と混同しないためである。状態も通常の項目更新として表し、状態だけを更新する `set_state` は導入しない。
@@ -26,6 +71,8 @@
 # 将来のAPIの説明例。現在のContextにはchangesは実装していない。
 ctx.changes.update(application, approved_by=ctx.actor, status="approved")
 ```
+
+将来の `ctx.changes` は、読込み時のバージョンを変更予定へ自動的に引き継ぎ、確定時の楽観ロックに使用する方針とする。この高水準APIは未実装である。
 
 この操作は変更予定の作成であり、DBへの確定ではない。最後にprepare・commitする保存境界は維持する。現在の低水準APIでは、変更後の値を `ArtifactWrite` で指定する。上記の表記は保存先の構成や、汎用の状態遷移実行・検証まで決めるものではない。
 
