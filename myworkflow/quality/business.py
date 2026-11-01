@@ -3,19 +3,26 @@ from myworkflow.models import Lock
 from myworkflow.codegen import class_name
 
 
+COMPLETION = {
+    'interface': 'PipelineResult', 'success_code': 0, 'default_error_code': 255,
+    'fields': {'code': 'int', 'messages': 'tuple[Message, ...]'},
+    'message_levels': ['info', 'warning', 'error', 'critical'],
+}
+
 SECTIONS = ('roles', 'artifacts', 'pipelines', 'steps', 'workflows', 'bindings', 'triggers')
 
 
 def export_business(program):
     model = program.model
-    result = {'schema_version': 1, **{name: {} for name in SECTIONS}}
+    from copy import deepcopy
+    result = {'schema_version': 2, 'completion': deepcopy(COMPLETION), **{name: {} for name in SECTIONS}}
     for role in model.roles:
         result['roles'][role.id] = {'name': role.name, 'display_name': role.display_name}
     for artifact in model.artifacts:
         result['artifacts'][artifact.id] = {'name': artifact.name, 'key': artifact.key, 'type': artifact.type}
     for pipeline in model.pipelines:
         result['pipelines'][pipeline.id] = {'name': pipeline.name, 'inputs': list(pipeline.inputs),
-            'outputs': list(pipeline.outputs), 'reply': pipeline.reply,
+            'produces': list(pipeline.outputs), 'reply': pipeline.reply,
             'request_interface': class_name(pipeline.id) + 'Request', 'response_interface': class_name(pipeline.id) + 'Response', 'steps': [s.id for s in pipeline.steps]}
         for step in pipeline.steps:
             if isinstance(step, Lock):
@@ -40,10 +47,13 @@ def export_business(program):
 
 def business_to_spec(document):
     """Convert the reviewed output format into the existing interface generator input."""
-    if document.get('schema_version') != 1 or type(document.get('schema_version')) is not int:
+    if document.get('schema_version') != 2 or type(document.get('schema_version')) is not int:
         raise ValueError('Unsupported business document schema')
-    if set(document) != {'schema_version', *SECTIONS} or any(not isinstance(document[k], dict) for k in SECTIONS):
+    if set(document) != {'schema_version', 'completion', *SECTIONS} or any(not isinstance(document[k], dict) for k in SECTIONS):
         raise ValueError('Business document must contain exactly the supported sections')
+    from myworkflow.quality.metrics import same
+    if not same(document['completion'], COMPLETION):
+        raise ValueError('Unsupported completion contract')
     def declarations(section):
         for identity, values in document[section].items():
             if not isinstance(values, dict) or 'id' in values:
@@ -53,7 +63,8 @@ def business_to_spec(document):
     triggers = dict((t['id'], t) for t in declarations('triggers'))
     bindings = dict((b['id'], b) for b in declarations('bindings'))
     try:
-        pipelines = [{**p, 'steps': [steps[s] for s in p['steps']]} for p in declarations('pipelines')]
+        pipelines = [{**{k: v for k, v in p.items() if k != 'produces'}, 'outputs': p['produces'],
+                      'steps': [steps[s] for s in p['steps']]} for p in declarations('pipelines')]
         workflows = [{**w, 'bindings': [{**bindings[b], 'triggers': [triggers[t] for t in bindings[b]['triggers']]}
                                      for b in w['bindings']]} for w in declarations('workflows')]
     except (KeyError, TypeError) as exc:

@@ -6,6 +6,7 @@ from myworkflow.errors import ContractError, RetryableError, ExecutionFailed
 from myworkflow.runtime.context import Context
 from myworkflow.codegen import class_name
 from myworkflow.runtime.compensation import CompensationStack
+from myworkflow.results import PipelineResult
 from myworkflow.ports import ExecutionStore, LockProvider, RunStatus
 
 TYPES = {"str": str, "int": int, "bool": bool, "float": float}
@@ -27,14 +28,24 @@ class Engine:
             raise ContractError('Engine requires an ExecutionStore and a LockProvider for locking steps')
         if interfaces:
             for p in program.plans.values():
-                for direction, ids in (("Request", p["inputs"]), ("Response", p["outputs"])):
+                for direction, ids in (("Request", p["inputs"]), ("Response", ())):
                     name = class_name(p["id"]) + direction
                     cls = getattr(interfaces, name, None)
+                    if direction == 'Response':
+                        if cls is not PipelineResult:
+                            raise ContractError(f"{p['id']}: stale or invalid Response interface")
+                        continue
                     expected = {program.artifacts[i]["key"]: TYPES[program.artifacts[i]["type"]] for i in ids}
                     if cls is None or not is_dataclass(cls) or get_type_hints(cls) != expected:
                         raise ContractError(f"{p['id']}: stale or invalid {direction} interface")
 
-    def invoke(self, binding_id, trigger_id, payload, principal, *, run_id):
+    def invoke(self, binding_id, trigger_id, payload, principal, *, run_id) -> PipelineResult:
+        try:
+            return self.invoke_or_raise(binding_id, trigger_id, payload, principal, run_id=run_id)
+        except Exception as exc:
+            return PipelineResult.from_exception(exc)
+
+    def invoke_or_raise(self, binding_id, trigger_id, payload, principal, *, run_id) -> PipelineResult:
         b = self.program.binding(binding_id)
         t = next((t for t in b["triggers"] if t["id"] == trigger_id), None)
         if t is None:
@@ -44,9 +55,15 @@ class Engine:
         if set(payload) != set(t["mapping"].values()):
             raise ContractError(f"{trigger_id}: payload fields do not match mapping")
         values = {self.program.artifacts[a]["key"]: payload[source] for a, source in t["mapping"].items()}
-        return self.run(b["pipeline"], values, actor=principal.id, run_id=run_id)
+        return self.run_or_raise(b["pipeline"], values, actor=principal.id, run_id=run_id)
 
-    def run(self, pipeline_id, request, *, actor, run_id):
+    def run(self, pipeline_id, request, *, actor, run_id) -> PipelineResult:
+        try:
+            return self.run_or_raise(pipeline_id, request, actor=actor, run_id=run_id)
+        except Exception as exc:
+            return PipelineResult.from_exception(exc)
+
+    def run_or_raise(self, pipeline_id, request, *, actor, run_id) -> PipelineResult:
         p = self.program.plans[pipeline_id]
         values = asdict(request) if is_dataclass(request) else dict(request)
         self.program.values(p["inputs"], values, pipeline_id)
@@ -85,11 +102,9 @@ class Engine:
                             if s.get('compensate'):
                                 compensations.capture(ctx)
                 failure_id = pipeline_id + "/response"
-                result = {self.program.artifacts[a]["key"]: values[self.program.artifacts[a]["key"]] for a in p["outputs"]}
-                self.program.values(p["outputs"], result, pipeline_id)
-                response = result if p['reply'] else None
-                if self.interfaces and p['reply']:
-                    response = getattr(self.interfaces, class_name(pipeline_id) + 'Response')(**result)
+                produced = {self.program.artifacts[a]["key"]: values[self.program.artifacts[a]["key"]] for a in p["outputs"]}
+                self.program.values(p["outputs"], produced, pipeline_id)
+                response = PipelineResult(messages=tuple(ctx.messages))
                 failure_id = pipeline_id + "/unlock"
                 stack.close()
                 failure_id = pipeline_id + "/journal"
@@ -109,6 +124,7 @@ class Engine:
                     secondary.append(('journal', str(journal_error)))
                 failure = ExecutionFailed(failure_id, exc, errors)
                 failure.secondary_errors = tuple(secondary)
+                failure.messages = tuple(ctx.messages)
                 raise failure from exc
         finally:
             # close() is idempotent; original failures are preserved above.

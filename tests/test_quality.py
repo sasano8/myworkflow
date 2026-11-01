@@ -25,10 +25,10 @@ def test_full_pipeline_and_known_source_gaps_are_explicit():
     assert report['metrics']['skeleton']['passed']
     assert report['metrics']['markdown']['exact_match']
     source = report['metrics']['source']
-    assert source['total_units'] == 23
-    assert source['counts'] == {'structured': 9, 'description_only': 11, 'missing': 0, 'unrepresented': 3}
-    assert source['documented_coverage'] == pytest.approx(20 / 23, rel=0, abs=5e-08)
-    assert source['structured_coverage'] == pytest.approx(9 / 23, rel=0, abs=5e-08)
+    assert source['total_units'] == 24
+    assert source['counts'] == {'structured': 10, 'description_only': 11, 'missing': 0, 'unrepresented': 3}
+    assert source['documented_coverage'] == pytest.approx(21 / 24, rel=0, abs=5e-08)
+    assert source['structured_coverage'] == pytest.approx(10 / 24, rel=0, abs=5e-08)
     assert report['judgment'] == 'meets-reviewed-baseline-with-known-gaps'
     assert 'code/interfaces.py' in artifacts
     assert render_quality(report) == (FIXTURE / 'quality-example.md').read_text()
@@ -116,26 +116,26 @@ def test_export_reads_immutable_model_not_input_passthrough():
 
 def test_changed_original_requires_inventory_review():
     corpus = json.loads((FIXTURE / 'coverage.json').read_text())
-    source = (ROOT / 'docs/requirements/purchase.md').read_text()
+    source = (ROOT / 'docs/requirements/purchase-completion.md').read_text()
     business = json.loads((FIXTURE / 'business-input.json').read_text())
     with pytest.raises(ValueError, match='Source changed'):
         source_coverage(source + '\n追加要件', corpus, business)
 
 
 def test_unmapped_units_remain_in_denominator_and_invalid_quotes_fail():
-    source = (ROOT / 'docs/requirements/purchase.md').read_text()
+    source = (ROOT / 'docs/requirements/purchase-completion.md').read_text()
     corpus = json.loads((FIXTURE / 'coverage.json').read_text())
     business = json.loads((FIXTURE / 'business-input.json').read_text())
     corpus['units'].append({'id': 'UNMAPPED', 'quote': corpus['units'][0]['quote'], 'checks': []})
     result = source_coverage(source, corpus, business)
-    assert result['total_units'] == 24
+    assert result['total_units'] == 25
     assert 'UNMAPPED' in result['new_gaps']
     corpus['units'][-1]['quote'] = '原文にない文章'
     with pytest.raises(ValueError): source_coverage(source, corpus, business)
 
 
 def test_source_inventory_does_not_silently_omit_a_sentence():
-    source = (ROOT / 'docs/requirements/purchase.md').read_text()
+    source = (ROOT / 'docs/requirements/purchase-completion.md').read_text()
     corpus = json.loads((FIXTURE / 'coverage.json').read_text())
     business = json.loads((FIXTURE / 'business-input.json').read_text())
     corpus['units'] = [u for u in corpus['units'] if u['id'] != 'PUR-010']
@@ -194,3 +194,28 @@ def test_duplicate_json_keys_are_not_silently_discarded():
     from myworkflow.quality.jsonio import read_json
     with pytest.raises(ValueError, match='Duplicate JSON key'):
         read_json('{"steps":{"s.one":1,"s.one":2}}')
+
+
+def test_legacy_response_schema_is_not_silently_reinterpreted():
+    legacy = json.loads((FIXTURE / 'legacy-v1/business-input.json').read_text())
+    with pytest.raises(ValueError, match='schema'):
+        business_to_spec(legacy)
+
+
+def test_changed_completion_contract_is_rejected():
+    business = json.loads((FIXTURE / 'business-input.json').read_text())
+    business['completion']['success_code'] = False
+    with pytest.raises(ValueError, match='completion'):
+        business_to_spec(business)
+
+
+def test_generated_business_response_cannot_masquerade_as_completion():
+    def broken_generator(spec, directory):
+        initialize(spec, directory)
+        path = directory / 'interfaces.py'
+        path.write_text(path.read_text().replace('PSubmitResponse = _PipelineResult',
+            '@dataclass(frozen=True)\nclass PSubmitResponse:\n    code: int = 0\n    messages: tuple = ()'))
+    report, _ = run_case(FIXTURE / 'case.json', generator=broken_generator)
+    assert report['metrics']['roundtrip']['exact_match']
+    assert not report['metrics']['interfaces']['passed']
+    assert report['metrics']['interfaces']['errors'][0]['class'] == 'PSubmitResponse'

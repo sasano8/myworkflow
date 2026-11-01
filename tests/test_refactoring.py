@@ -76,8 +76,8 @@ def test_engine_works_without_database_or_purchase_services():
     def issue(ctx: Context) -> None: ctx.values['receipt'] = 'done'
     journal = MemoryJournal()
     runner = Engine(program, registry, object(), locks=InProcessLockProvider(), store=journal)
-    result = runner.invoke('ticket.binding', 'ticket.trigger', {'受付番号': 'a'}, Principal('operator', frozenset({'ticket.operator'})), run_id='one')
-    assert result == {'receipt': 'done'}
+    result = runner.invoke_or_raise('ticket.binding', 'ticket.trigger', {'受付番号': 'a'}, Principal('operator', frozenset({'ticket.operator'})), run_id='one')
+    assert result.code == 0
     assert journal.runs['one'][0] == 'completed'
 
 
@@ -94,7 +94,7 @@ def test_original_error_survives_cleanup_and_journal_failures():
             raise OSError('unlock unavailable')
     runner = Engine(Program(SPEC), registry, object(), locks=BrokenLock(), store=BrokenJournal())
     with pytest.raises(ExecutionFailed) as caught:
-        runner.run_internal('ticket.issue', {'number': 'x'}, actor='op', run_id='x')
+        runner.run_or_raise('ticket.issue', {'number': 'x'}, actor='op', run_id='x')
     assert caught.value.step_id == 'ticket.save'
     assert str(caught.value.cause) == 'business failure'
     assert {e[0] for e in caught.value.secondary_errors} == {'lock-release', 'journal'}
@@ -108,7 +108,7 @@ def test_empty_pipeline_journal_error_has_pipeline_location():
         def record(self, *args): raise OSError('journal unavailable')
     runner = Engine(Program(spec), Registry(), object(), store=BrokenJournal())
     with pytest.raises(ExecutionFailed) as caught:
-        runner.run_internal('ticket.issue', {}, actor='op', run_id='x')
+        runner.run_or_raise('ticket.issue', {}, actor='op', run_id='x')
     assert caught.value.step_id == 'ticket.issue/journal'
 
 
@@ -139,7 +139,7 @@ def test_two_applications_share_locks_but_not_execution_ids():
         assert execution_id('a/b', 'c') != execution_id('a_b', 'c')
         runner = Engine(Program(PURCHASE_SPEC), registry, services)
         for application in ('a', 'b'):
-            runner.invoke('b.submit', 't.submit', {'id': application, 'vendor': 'V', 'amount': 1},
+            runner.invoke_or_raise('b.submit', 't.submit', {'id': application, 'vendor': 'V', 'amount': 1},
                           Principal('op', frozenset({'role.requester'})), run_id=execution_id(application, 'submit'))
         with services.connect() as db:
             assert db.execute('SELECT count(*) FROM applications').fetchone()[0] == 2
@@ -179,11 +179,11 @@ def test_compensation_uses_step_boundary_values_not_later_mutations():
     def undo(ctx: Context) -> None: observed.append(ctx.values['receipt'])
     runner = Engine(Program(spec), registry, object(), locks=InProcessLockProvider(), store=MemoryJournal())
     with pytest.raises(ExecutionFailed):
-        runner.run_internal('ticket.issue', {'number': 'n'}, actor='op', run_id='n')
+        runner.run_or_raise('ticket.issue', {'number': 'n'}, actor='op', run_id='n')
     assert observed == ['created']
 
 
-def test_response_constructor_failure_is_attributed_before_completion():
+def test_stale_business_response_is_rejected_before_execution():
     from dataclasses import make_dataclass
     from types import SimpleNamespace
     from myworkflow.codegen import interfaces_source
@@ -196,11 +196,9 @@ def test_response_constructor_failure_is_attributed_before_completion():
     @registry.implements('ticket.save')
     def issue(ctx: Context) -> None: ctx.values['receipt'] = 'created'
     journal = MemoryJournal()
-    runner = Engine(program, registry, object(), interfaces, locks=InProcessLockProvider(), store=journal)
-    with pytest.raises(ExecutionFailed) as caught:
-        runner.run_internal('ticket.issue', {'number': 'n'}, actor='op', run_id='n')
-    assert caught.value.step_id == 'ticket.issue/response'
-    assert journal.runs['n'][0] == 'failed'
+    with pytest.raises(ContractError, match='Response'):
+        Engine(program, registry, object(), interfaces, locks=InProcessLockProvider(), store=journal)
+    assert journal.runs == {}
 
 
 def test_two_scheduled_purchases_share_services_without_colliding():
@@ -217,8 +215,8 @@ def test_two_scheduled_purchases_share_services_without_colliding():
         approver = Principal('approver', frozenset({'role.approver'}))
         clock = SimpleNamespace(now=lambda: datetime.fromisoformat('2030-04-01T10:00:00+09:00'))
         for identity in ('first', 'second'):
-            runner.invoke('b.submit', 't.submit', {'id': identity, 'vendor': 'V', 'amount': 1}, applicant, run_id=execution_id(identity, 'submit'))
-            runner.invoke('b.upload', 't.upload', {'id': identity, 'file_a': 'A', 'file_b': 'B'}, applicant, run_id=execution_id(identity, 'upload'))
+            runner.invoke_or_raise('b.submit', 't.submit', {'id': identity, 'vendor': 'V', 'amount': 1}, applicant, run_id=execution_id(identity, 'submit'))
+            runner.invoke_or_raise('b.upload', 't.upload', {'id': identity, 'file_a': 'A', 'file_b': 'B'}, applicant, run_id=execution_id(identity, 'upload'))
             flow = ScheduledPurchase(runner, clock, clock.now(), application_id=identity, run_id=identity)
             flow.approve(True, approver)
             flow.tick()

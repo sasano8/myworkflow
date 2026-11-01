@@ -16,7 +16,7 @@
 | 001-00001-00000 | トリガー1：担当者が発行を依頼 | 受付担当 | 受付 | 入力元：受付番号 ← 受付番号 | 入力：受付番号 | — | ticket.workflow/ticket.binding/ticket.issue/request |
 | 001-00001-00001 | — | システム | 受付番号の排他 | 排他キー：受付番号。範囲：パイプライン終了まで（異常終了を含む）。競合時：拒否。 | — | 参照：受付番号／保持：排他キー・ロック | ticket.workflow/ticket.binding/ticket.issue/ticket.lock |
 | 001-00001-00002 | — | システム | チケット保存 | 受付番号を重複なく登録し、発行結果を返す。 | — | DB作成：受付番号／保持：発行結果 | ticket.workflow/ticket.binding/ticket.issue/ticket.save |
-| 001-00001-00003 | — | システム | 結果返却 | 結果を返す。 | 出力：発行結果 | — | ticket.workflow/ticket.binding/ticket.issue/response |
+| 001-00001-00003 | — | システム | 結果返却 | 終了コードとメッセージを返す。 | 出力：終了コード・メッセージ | 保持：発行結果 | ticket.workflow/ticket.binding/ticket.issue/response |
 
 ## 型付き契約
 

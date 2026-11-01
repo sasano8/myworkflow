@@ -150,13 +150,13 @@ def test_generated_interfaces_and_compiled_pipeline_execute(tmp_path):
     exec(interfaces_source(compiled.program), interfaces.__dict__)
     store = SQLiteExecutionStore(SQLiteDatabase(tmp_path / 'runs.sqlite'))
     engine = Engine(compiled.program, registry, None, interfaces, store=store)
-    response = engine.invoke('b.review_submit', 't.review_submit', {'id': 'application-1'},
+    response = engine.invoke_or_raise('b.review_submit', 't.review_submit', {'id': 'application-1'},
                              Principal('alice', frozenset({'role.requester'})), run_id='run-1')
-    assert response.application_id == 'application-1'
+    assert response.code == 0
     assert observed == ['application-1']
     assert store.get('run-1')[0] == 'completed'
     with pytest.raises(PermissionError):
-        engine.invoke('b.review_record', 't.review_approve', {'id': 'application-1', 'decision': 'approve'},
+        engine.invoke_or_raise('b.review_record', 't.review_approve', {'id': 'application-1', 'decision': 'approve'},
                       Principal('alice', frozenset({'role.requester'})), run_id='run-2')
     # This invokes a pipeline only; state graph execution/guard enforcement is intentionally absent.
 

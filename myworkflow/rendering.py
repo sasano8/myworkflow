@@ -49,10 +49,10 @@ def render(catalog: Catalog) -> str:
                 else:
                     uses = "／".join(f"{u.operation}：{artifacts[u.artifact_id]}" for u in s.uses) or "—"
                     rows.append((s.name, describe_step(s, artifacts), "—", uses, identity + "/" + s.id))
-            ending = "結果を返す。" if p.reply else "処理を完了する。応答は返さない。"
+            ending = "終了コードとメッセージを返す。" if p.reply else "処理を完了する。応答は返さない。"
             if b.next_workflow_id:
                 ending += f"次ワークフロー起動：{workflows[b.next_workflow_id]}。"
-            rows.append(("結果返却" if p.reply else "完了", ending, "出力：" + ((names(p.outputs) or "なし") if p.reply else "なし（応答不要）"), "—", identity + "/response"))
+            rows.append(("結果返却" if p.reply else "完了", ending, "出力：" + ("終了コード・メッセージ" if p.reply else "なし（応答不要）"), ("保持：" + names(p.outputs)) if p.outputs else "—", identity + "/response"))
             for si, (name, overview, io, uses, fixed_id) in enumerate(rows, 1):
                 number = f"{wi:03}-{bi:05}-{si:05}"
                 slot = p.steps[si - 1].actor if si <= len(p.steps) else "system"

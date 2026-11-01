@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
+from temporalio.exceptions import ApplicationError
 
 with workflow.unsafe.imports_passed_through():
     from examples.purchase.contract import SPEC
@@ -16,11 +17,14 @@ EXECUTION_ID = START.next_workflow_id
 
 
 async def pipeline(binding, trigger, payload, actor, roles):
-    return await workflow.execute_activity(
+    result = await workflow.execute_activity(
         'myworkflow.pipeline',
         {'binding': binding, 'trigger': trigger, 'payload': PROGRAM.payload(binding, trigger, payload), 'actor': actor, 'roles': roles},
         start_to_close_timeout=timedelta(seconds=10), retry_policy=RetryPolicy(maximum_attempts=1),
     )
+    if result['code'] != 0:
+        raise ApplicationError('Pipeline rejected', result, type='BusinessRejected', non_retryable=True)
+    return result
 
 
 @workflow.defn(name=EXECUTION_ID)
@@ -58,15 +62,15 @@ class ApprovePurchase:
         decision = self.decision
         result = await pipeline('b.approve', 't.approve', {'application_id': identity, 'decision': decision['approved']},
                                 decision['actor'], decision['roles'])
-        if result['status'] == 'rejected':
+        if not decision['approved']:
             self.phase = 'rejected'
             return {'application_id': identity, 'status': 'rejected'}
         self.phase = 'waiting-schedule'
         await workflow.sleep(timedelta(seconds=request.get('delay_seconds', 0)))
-        handoff = await pipeline(START.id, 't.timer', {'application_id': identity}, 'system', ['role.system'])
+        await pipeline(START.id, 't.timer', {'application_id': identity}, 'system', ['role.system'])
         self.phase = 'confirming'
         result = await workflow.execute_child_workflow(
-            START.next_workflow_id, handoff, id=f'{workflow.info().workflow_id}/confirm',
+            START.next_workflow_id, {'application_id': identity}, id=f'{workflow.info().workflow_id}/confirm',
         )
         self.phase = 'completed'
         return result

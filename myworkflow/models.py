@@ -89,7 +89,7 @@ class Pipeline(Record):
     id: str
     name: str
     inputs: tuple[str, ...]
-    outputs: tuple[str, ...]
+    outputs: tuple[str, ...]  # produced artifact IDs, not fields of PipelineResult
     steps: tuple[Step | Lock, ...]
     reply: bool = True
 

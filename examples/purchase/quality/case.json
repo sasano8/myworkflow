@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "quality.purchase.roundtrip",
-  "source": "../../../docs/requirements/purchase.md",
+  "source": "../../../docs/requirements/purchase-completion.md",
   "business_input": "business-input.json",
   "expected_markdown": "business-expected.md",
   "coverage": "coverage.json",
@@ -10,8 +10,8 @@
     "conversion_precision": 1.0,
     "roundtrip_recall": 1.0,
     "roundtrip_precision": 1.0,
-    "documented_coverage": 0.8695652173913043,
-    "structured_coverage": 0.391304347826087,
+    "documented_coverage": 0.875,
+    "structured_coverage": 0.4166666666666667,
     "source_inventory_coverage": 1.0
   },
   "sample_conversion": "business-input.json"

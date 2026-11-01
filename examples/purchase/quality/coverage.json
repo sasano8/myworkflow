@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_sha256": "4e6a2f48a380c3f36bc222a23f959b998de1b6c2418a3f37e0c32c974370edfd",
+  "source_sha256": "8ddef86b399344399f778eb2304fe3866b4038bf348c8e623e1ff9025a1b9197",
   "scope": {
     "start": "## 業務\n",
     "end": "## AI・開発者による変換手順"
@@ -62,10 +62,10 @@
     },
     {
       "id": "PUR-003",
-      "quote": "受付時には承認待ちとなり、IDと状態を返す。",
+      "quote": "受付時には承認待ちとなり、IDと状態を成果アーティファクトとして保持する。",
       "checks": [
         {
-          "path": "/pipelines/p.submit/outputs",
+          "path": "/pipelines/p.submit/produces",
           "expected": [
             "a.id",
             "a.status"
@@ -123,10 +123,10 @@
     },
     {
       "id": "PUR-006",
-      "quote": "2件を登録し、登録結果を返す。",
+      "quote": "2件を登録し、登録結果を成果アーティファクトとして保持する。",
       "checks": [
         {
-          "path": "/pipelines/p.upload/outputs",
+          "path": "/pipelines/p.upload/produces",
           "expected": [
             "a.receipt"
           ],
@@ -223,10 +223,10 @@
     },
     {
       "id": "PUR-013",
-      "quote": "承認済み／却下済みの状態を返す。",
+      "quote": "承認済み／却下済みの状態を成果アーティファクトとして保持する。",
       "checks": [
         {
-          "path": "/pipelines/p.approve/outputs",
+          "path": "/pipelines/p.approve/produces",
           "expected": [
             "a.status"
           ],
@@ -416,7 +416,7 @@
           "level": "structured"
         },
         {
-          "path": "/pipelines/p.confirm/outputs",
+          "path": "/pipelines/p.confirm/produces",
           "expected": [],
           "level": "structured"
         }
@@ -475,6 +475,32 @@
         }
       ],
       "note": ""
+    },
+    {
+      "id": "PUR-024",
+      "quote": "パイプラインの実行結果は終了コードとメッセージに統一する。正常終了は0、コードのない例外は255とする。メッセージはinfo・warning・error・criticalの重大度を持つ。",
+      "checks": [
+        {
+          "path": "/completion",
+          "expected": {
+            "interface": "PipelineResult",
+            "success_code": 0,
+            "default_error_code": 255,
+            "fields": {
+              "code": "int",
+              "messages": "tuple[Message, ...]"
+            },
+            "message_levels": [
+              "info",
+              "warning",
+              "error",
+              "critical"
+            ]
+          },
+          "level": "structured"
+        }
+      ],
+      "note": "新しい共通終了結果の契約。成果アーティファクトをレスポンスと見なさない。"
     }
   ]
 }

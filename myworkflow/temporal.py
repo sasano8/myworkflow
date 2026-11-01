@@ -1,13 +1,13 @@
 """Optional bridge: Temporal owns durable orchestration, Engine owns pipelines."""
 import asyncio
-from dataclasses import asdict, is_dataclass
 
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
 from myworkflow.executable import Principal
 from myworkflow.identity import execution_id
-from myworkflow.errors import ContractError, ExecutionFailed, RetryableError
+from myworkflow.errors import BusinessError, ContractError, ExecutionFailed, RetryableError
+from myworkflow.results import PipelineResult
 
 
 class PipelineActivity:
@@ -21,14 +21,17 @@ class PipelineActivity:
         info = activity.info()
         run_id = execution_id(info.workflow_id, info.workflow_run_id, info.activity_id)
         try:
-            result = await asyncio.to_thread(self.engine.invoke, request['binding'], request['trigger'], request['payload'], principal, run_id=run_id)
+            result = await asyncio.to_thread(self.engine.invoke_or_raise, request['binding'], request['trigger'], request['payload'], principal, run_id=run_id)
         except Exception as exc:
             cause = exc.cause if isinstance(exc, ExecutionFailed) else exc
+            result = PipelineResult.from_exception(exc)
+            if isinstance(cause, BusinessError) and not getattr(exc, 'compensation_errors', ()) and not getattr(exc, 'secondary_errors', ()):
+                return result.to_dict()
             kind = ('ContractError' if isinstance(cause, ContractError) else 'PermissionDenied' if isinstance(cause, PermissionError)
                     else 'RetryExhausted' if isinstance(cause, RetryableError) else 'BusinessFailure' if isinstance(cause, ValueError)
                     else 'ExecutionFailure')
-            details = {'step_id': getattr(exc, 'step_id', None),
+            details = {'result': result.to_dict(), 'step_id': getattr(exc, 'step_id', None),
                        'compensation_errors': getattr(exc, 'compensation_errors', ()),
                        'secondary_errors': getattr(exc, 'secondary_errors', ())}
             raise ApplicationError(str(exc), details, type=kind, non_retryable=True) from exc
-        return asdict(result) if is_dataclass(result) else (result or {})
+        return result.to_dict()

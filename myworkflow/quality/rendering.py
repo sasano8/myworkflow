@@ -14,7 +14,7 @@ def render_quality(report):
     interfaces = report['metrics'].get('interfaces')
     if interfaces:
         lines += ['', '## 生成インターフェース', '',
-                  f"{interfaces['expected_classes']}クラス中{interfaces['matched_classes']}クラスで項目・型・順序が一致。未実装の骨格の接続も検査し、業務処理そのものは実行しません。", '',
+                  f"{interfaces['expected_classes']}インターフェース中{interfaces['matched_classes']}インターフェースで項目・型・順序が一致。未実装の骨格の接続も検査し、業務処理そのものは実行しません。", '',
                   '| クラス | 期待する項目・型 | 実際 |', '| --- | --- | --- |']
         for error in interfaces['errors']:
             lines.append('| ' + ' | '.join(map(escape, (error['class'], error['expected'], error['actual']))) + ' |')

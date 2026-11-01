@@ -30,7 +30,7 @@ class TestExecutable:
 
     def invoke(self, binding, trigger, payload, actor=None, run_id=None, engine=None):
         self.sequence += 1
-        return (engine or self.engine).invoke(binding, trigger, payload, actor or self.requester,
+        return (engine or self.engine).invoke_or_raise(binding, trigger, payload, actor or self.requester,
                                             run_id=run_id or f'run-{self.sequence}')
 
     def submit(self):
@@ -49,7 +49,8 @@ class TestExecutable:
     def test_end_to_end_typed_interfaces_and_persistence(self):
         assert isinstance(self.submit(), interfaces.PSubmitResponse)
         assert isinstance(self.upload(), interfaces.PUploadResponse)
-        assert self.decide().status == 'approved'
+        assert self.decide().code == 0
+        assert self.services.application('x')['status'] == 'approved'
         self.invoke('b.confirm', 't.confirm', {'id': 'x'}, self.system)
         assert Services(self.services.database).application('x')['status'] == 'confirmed'
         assert len(self.rows('orders')) == 1
@@ -57,7 +58,8 @@ class TestExecutable:
 
     def test_rejection_branch_does_not_approve_or_order(self):
         self.submit()
-        assert self.decide(False).status == 'rejected'
+        assert self.decide(False).code == 0
+        assert self.services.application('x')['status'] == 'rejected'
         assert self.rows('orders') == []
         events = json.loads(self.rows('runs')[-1][2])
         assert ['s.approve', 'skipped'] in events
@@ -303,7 +305,8 @@ class TestExecutable:
         with pytest.raises(ContractError):
             self.invoke('b.submit', 't.submit', {'id': 'x', 'vendor': 'V', 'amount': 1}, engine=engine)
         result = self.invoke('b.submit', 't.submit', {'id': 'x', 'vendor': 'V', 'amount': 1, 'department': '営業'}, engine=engine)
-        assert result.status == 'waiting-approval'
+        assert result.code == 0
+        assert self.services.application('x')['status'] == 'waiting-approval'
         assert seen_departments == ['営業']
         assert '依頼部門' in changed.documentation()
         assert spec['pipelines'][0]['steps'][1]['id'] == 's.submit'

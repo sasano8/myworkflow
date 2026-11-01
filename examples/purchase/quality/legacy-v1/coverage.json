@@ -1,0 +1,480 @@
+{
+  "schema_version": 1,
+  "source_sha256": "4e6a2f48a380c3f36bc222a23f959b998de1b6c2418a3f37e0c32c974370edfd",
+  "scope": {
+    "start": "## 業務\n",
+    "end": "## AI・開発者による変換手順"
+  },
+  "accepted_gaps": [
+    "PUR-008",
+    "PUR-009",
+    "PUR-010"
+  ],
+  "units": [
+    {
+      "id": "PUR-001",
+      "quote": "購買依頼部門の担当者（表示名：申請者）は、購買申請ID、取引先、正の整数の金額を指定して申請する。",
+      "checks": [
+        {
+          "path": "/roles/role.requester/name",
+          "expected": "購買依頼部門の担当者",
+          "level": "structured"
+        },
+        {
+          "path": "/roles/role.requester/display_name",
+          "expected": "申請者",
+          "level": "structured"
+        },
+        {
+          "path": "/triggers/t.submit/role",
+          "expected": "role.requester",
+          "level": "structured"
+        },
+        {
+          "path": "/pipelines/p.submit/inputs",
+          "expected": [
+            "a.id",
+            "a.vendor",
+            "a.amount"
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/artifacts/a.amount/type",
+          "expected": "int",
+          "level": "structured"
+        }
+      ],
+      "note": "担当者・入出力・型の対応。正の値という条件は次の単位で測る。"
+    },
+    {
+      "id": "PUR-002",
+      "quote": "購買依頼部門の担当者（表示名：申請者）は、購買申請ID、取引先、正の整数の金額を指定して申請する。",
+      "checks": [
+        {
+          "path": "/steps/s.submit/summary",
+          "expected": "正の金額",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": "正数という条件は概要文にあり、型のintだけでは保証できない。"
+    },
+    {
+      "id": "PUR-003",
+      "quote": "受付時には承認待ちとなり、IDと状態を返す。",
+      "checks": [
+        {
+          "path": "/pipelines/p.submit/outputs",
+          "expected": [
+            "a.id",
+            "a.status"
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.submit/summary",
+          "expected": "承認待ち",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-004",
+      "quote": "申請者は申請に見積書A・Bを添付できる。",
+      "checks": [
+        {
+          "path": "/pipelines/p.upload/inputs",
+          "expected": [
+            "a.id",
+            "a.quote-a",
+            "a.quote-b"
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/triggers/t.upload/role",
+          "expected": "role.requester",
+          "level": "structured"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-005",
+      "quote": "本人の承認待ち申請だけを更新できる。",
+      "checks": [
+        {
+          "path": "/steps/s.check-upload/summary",
+          "expected": "申請者本人",
+          "operator": "contains",
+          "level": "description"
+        },
+        {
+          "path": "/steps/s.check-upload/summary",
+          "expected": "承認待ち",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-006",
+      "quote": "2件を登録し、登録結果を返す。",
+      "checks": [
+        {
+          "path": "/pipelines/p.upload/outputs",
+          "expected": [
+            "a.receipt"
+          ],
+          "level": "structured"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-007",
+      "quote": "2件目が失敗したら今回の実行で作成したファイルを取り消す。",
+      "checks": [
+        {
+          "path": "/steps/s.put-a/compensate",
+          "expected": "c.delete-a",
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.put-b/compensate",
+          "expected": "c.delete-b",
+          "level": "structured"
+        }
+      ],
+      "note": "補償の対応付けのみ。所有する実行の判定は次の単位。"
+    },
+    {
+      "id": "PUR-008",
+      "quote": "2件目が失敗したら今回の実行で作成したファイルを取り消す。",
+      "checks": [],
+      "note": "今回の実行に属するファイルだけを取り消す所有権条件を、現行の業務出力形式では独立に表現できない。"
+    },
+    {
+      "id": "PUR-009",
+      "quote": "他の実行のファイルは削除しない。",
+      "checks": [],
+      "note": "他の実行の物を削除しない条件は実装・受入シナリオ側にあり、現行の概要契約には明示項目がない。"
+    },
+    {
+      "id": "PUR-010",
+      "quote": "取り消せなければ手動復旧が必要な状態を残す。",
+      "checks": [],
+      "note": "補償失敗時のmanual-recoveryという状態は実行基盤にあるが、現行の業務契約に独立の宣言項目がない。"
+    },
+    {
+      "id": "PUR-011",
+      "quote": "購買依頼部門の部門長（表示名：承認者）は承認または却下を行う。",
+      "checks": [
+        {
+          "path": "/roles/role.approver/name",
+          "expected": "購買依頼部門の部門長",
+          "level": "structured"
+        },
+        {
+          "path": "/roles/role.approver/display_name",
+          "expected": "承認者",
+          "level": "structured"
+        },
+        {
+          "path": "/triggers/t.approve/role",
+          "expected": "role.approver",
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.approve/when",
+          "expected": [
+            "a.decision",
+            true
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.reject/when",
+          "expected": [
+            "a.decision",
+            false
+          ],
+          "level": "structured"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-012",
+      "quote": "申請者本人による承認判断は禁止する。",
+      "checks": [
+        {
+          "path": "/steps/s.check-approval/summary",
+          "expected": "申請者と承認者が別人",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-013",
+      "quote": "承認済み／却下済みの状態を返す。",
+      "checks": [
+        {
+          "path": "/pipelines/p.approve/outputs",
+          "expected": [
+            "a.status"
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.approve/summary",
+          "expected": "承認済み",
+          "operator": "contains",
+          "level": "description"
+        },
+        {
+          "path": "/steps/s.reject/summary",
+          "expected": "却下済み",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-014",
+      "quote": "承認後、指定日時にシステムが発注確定を開始する。",
+      "checks": [
+        {
+          "path": "/triggers/t.timer/role",
+          "expected": "role.system",
+          "level": "structured"
+        },
+        {
+          "path": "/triggers/t.timer/wait",
+          "expected": "承認済みかつ指定日時に到達",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": "日時・承認条件の詳細は説明文で、型付きの状態機械や絶対日時ではない。"
+    },
+    {
+      "id": "PUR-015",
+      "quote": "購買部の発注担当者（表示名：発注担当者）による開始も同じ処理を利用する。",
+      "checks": [
+        {
+          "path": "/roles/role.buyer/name",
+          "expected": "購買部の発注担当者",
+          "level": "structured"
+        },
+        {
+          "path": "/roles/role.buyer/display_name",
+          "expected": "発注担当者",
+          "level": "structured"
+        },
+        {
+          "path": "/triggers/t.manual/role",
+          "expected": "role.buyer",
+          "level": "structured"
+        },
+        {
+          "path": "/bindings/b.dispatch/triggers",
+          "expected": [
+            "t.timer",
+            "t.manual"
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/bindings/b.dispatch/pipeline",
+          "expected": "p.dispatch",
+          "level": "structured"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-016",
+      "quote": "却下時は発注を開始しない。",
+      "checks": [
+        {
+          "path": "/steps/s.reject/summary",
+          "expected": "発注は行わない",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-017",
+      "quote": "発注確定は別の業務単位として扱う。",
+      "checks": [
+        {
+          "path": "/workflows/w.execution/bindings",
+          "expected": [
+            "b.confirm"
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/bindings/b.confirm/pipeline",
+          "expected": "p.confirm",
+          "level": "structured"
+        },
+        {
+          "path": "/bindings/b.dispatch/next_workflow",
+          "expected": "w.execution",
+          "level": "structured"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-018",
+      "quote": "承認済み・見積書2件あり・未発注の場合に発注情報を作成し、申請を発注確定済みにする。",
+      "checks": [
+        {
+          "path": "/steps/s.eligibility/summary",
+          "expected": "承認済み、見積書2件あり、未発注",
+          "operator": "contains",
+          "level": "description"
+        },
+        {
+          "path": "/steps/s.confirm/when",
+          "expected": [
+            "a.eligible",
+            true
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.confirm/uses",
+          "expected": [
+            [
+              "a.order",
+              "DB作成"
+            ],
+            [
+              "a.status",
+              "DB更新"
+            ]
+          ],
+          "level": "structured"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-019",
+      "quote": "両更新は同じDBトランザクションで行う。",
+      "checks": [
+        {
+          "path": "/steps/s.confirm/summary",
+          "expected": "同一DBトランザクション",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-020",
+      "quote": "条件を満たさないときは発注しない。",
+      "checks": [
+        {
+          "path": "/steps/s.stop/when",
+          "expected": [
+            "a.eligible",
+            false
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.stop/summary",
+          "expected": "発注しない",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-021",
+      "quote": "発注確定パイプラインは応答不要とする。",
+      "checks": [
+        {
+          "path": "/pipelines/p.confirm/reply",
+          "expected": false,
+          "level": "structured"
+        },
+        {
+          "path": "/pipelines/p.confirm/outputs",
+          "expected": [],
+          "level": "structured"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-022",
+      "quote": "申請・添付・承認・発注の更新処理は、申請ID単位で排他する。",
+      "checks": [
+        {
+          "path": "/steps/s.submit-lock/reads",
+          "expected": [
+            "a.id"
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.upload-lock/reads",
+          "expected": [
+            "a.id"
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.approve-lock/reads",
+          "expected": [
+            "a.id"
+          ],
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.order-lock/reads",
+          "expected": [
+            "a.id"
+          ],
+          "level": "structured"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "PUR-023",
+      "quote": "競合時は拒否し、例外時にも解放する。",
+      "checks": [
+        {
+          "path": "/steps/s.order-lock/conflict",
+          "expected": "拒否",
+          "level": "structured"
+        },
+        {
+          "path": "/steps/s.order-lock/scope",
+          "expected": "異常終了",
+          "operator": "contains",
+          "level": "description"
+        }
+      ],
+      "note": ""
+    }
+  ]
+}

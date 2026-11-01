@@ -125,7 +125,8 @@ def permission_denied(ctx):
 @then('最後の操作は失敗である', '検証基盤', ('p.confirm',))
 def failed(ctx):
     from myworkflow.executable import ExecutionFailed
-    return isinstance(ctx.error, ExecutionFailed)
+    from myworkflow.results import PipelineResult
+    return isinstance(ctx.error, ExecutionFailed) or (isinstance(ctx.error, PipelineResult) and not ctx.error.ok)
 
 
 @then('最後の操作の結果は "{result}" である', '検証基盤', ('p.upload',))

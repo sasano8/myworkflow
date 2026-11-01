@@ -37,6 +37,7 @@ flowchart TD
 | loading.py / validation.py | 外部の辞書形式の解釈、構造・名前・参照・型・データフロー検証 |
 | program.py | 検証済みモデルの索引、配置・トリガー・入力変換・引継ぎ先の解決 |
 | registry.py | 関数の登録、検索、明示的な差替え |
+| results.py | 終了コードと重大度付きメッセージの共通契約 |
 | runtime/ | Context、実行、ステップ境界で記録する補償状態 |
 | ports.py / locking.py | 基盤Protocol、実行状態、プロセス内ロック |
 | adapters/sqlite.py | SQLite接続と実行履歴。業務SQLは含まない |
@@ -73,7 +74,7 @@ engine = Engine(
 
 ExecutionStoreには `begin` と `record`、LockProviderには `acquire` を要求する。既存の購買Servicesは互換用の組立て役として残し、`execution_store` と `lock_provider` を公開する。Engineが購買SQLを直接呼ぶことはない。
 
-公開受付は `invoke(binding_id, trigger_id, payload, principal, run_id=...)` を使う。内部向けは `run_internal(...)`。旧 `run(...)` は内部実行の互換名で、認可済み受付の代わりにはならない。Principalは信頼された入口で構築する。
+公開受付は `invoke(binding_id, trigger_id, payload, principal, run_id=...)` を使い、通常の例外を共通終了結果へ変換する。[終了結果と例外API](pipeline-results.md)を参照。内部向けは `run_internal(...)`。旧 `run(...)` は内部実行の互換名で、認可済み受付の代わりにはならない。Principalは信頼された入口で構築する。
 
 Contextは値・業務用の依存・実行情報を分けて保持し、`ctx.execution` で不変の実行メタデータを参照できる。ステップの読書き範囲と値の型の検査を維持する。
 

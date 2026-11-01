@@ -1,5 +1,6 @@
 """Generated interfaces. Edit the contract, then regenerate."""
 from dataclasses import dataclass
+from myworkflow.results import PipelineResult as _PipelineResult
 
 @dataclass(frozen=True)
 class PSubmitRequest:
@@ -7,10 +8,7 @@ class PSubmitRequest:
     vendor: str
     amount: int
 
-@dataclass(frozen=True)
-class PSubmitResponse:
-    application_id: str
-    status: str
+PSubmitResponse = _PipelineResult
 
 @dataclass(frozen=True)
 class PUploadRequest:
@@ -18,31 +16,23 @@ class PUploadRequest:
     quote_a: str
     quote_b: str
 
-@dataclass(frozen=True)
-class PUploadResponse:
-    receipt: str
+PUploadResponse = _PipelineResult
 
 @dataclass(frozen=True)
 class PApproveRequest:
     application_id: str
     decision: bool
 
-@dataclass(frozen=True)
-class PApproveResponse:
-    status: str
+PApproveResponse = _PipelineResult
 
 @dataclass(frozen=True)
 class PDispatchRequest:
     application_id: str
 
-@dataclass(frozen=True)
-class PDispatchResponse:
-    application_id: str
+PDispatchResponse = _PipelineResult
 
 @dataclass(frozen=True)
 class PConfirmRequest:
     application_id: str
 
-@dataclass(frozen=True)
-class PConfirmResponse:
-    pass
+PConfirmResponse = _PipelineResult

@@ -33,7 +33,7 @@ diff -u examples/purchase/requirements.md /tmp/purchase.md
 
 ## 要件からコードへ、コードから概要へ
 
-[初期の業務要件](docs/requirements/purchase.md)をAI・開発者が解釈した構造から、最初のコードを生成します。
+[初期の業務要件](docs/requirements/purchase.md)と解釈結果は履歴として保持しています。現在の共通終了結果を前提とした[回帰入力](docs/requirements/purchase-completion.md)と生成・比較は[継続品質検査](docs/requirements-quality.md)を参照してください。次のコマンドは初期入力の構造から現在の契約方式で骨格を生成するもので、旧レスポンス契約との意味の一致を保証しません。
 
 ```sh
 python3.14 -m myworkflow.scaffold init docs/requirements/purchase-initial.json /tmp/purchase-scaffold
@@ -51,6 +51,10 @@ python3.14 -m pytest -q
 
 期待値の更新は差分をレビューして行います。テスト中には再生成しません。初期要件の記録は履歴として残し、移行後の契約へ手作業で追従させません。
 
+## パイプラインの終了結果
+
+パイプラインは `PipelineResult(code, messages)` を返します。成功は0、コードのない例外は255。メッセージにはinfo・warning・error・criticalを付けられます。業務データはアーティファクトとして別に扱います。[例外・Temporal・生成型の契約](docs/pipeline-results.md)を参照してください。
+
 ## モデル
 
 | 要素 | 責務 |
@@ -58,7 +62,7 @@ python3.14 -m pytest -q
 | Workflow | 業務のまとまり |
 | Binding | パイプラインの配置・起動定義。共通処理と利用箇所を分離 |
 | Trigger | 起動経路、操作ロール、入力元と契約の対応 |
-| Pipeline | 入力・出力・応答有無、処理順序 |
+| Pipeline | 入力・成果アーティファクト・終了結果・応答有無、処理順序 |
 | Step | 固定ID、業務概要、実装関数、参照／保持する情報、分岐・補償 |
 | Artifact | 情報の固定ID、名前、コード上のキー、型 |
 | Role | ロールの正式名と表示名 |

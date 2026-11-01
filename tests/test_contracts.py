@@ -38,7 +38,8 @@ class TestContracts:
         assert text == render(self.catalog)
         assert '| 001-00001-00002 | — | システム | 値の変換 | 入力値を整形する。 | — | 参照：入力値／保持：処理結果 | w.first/b.first/p.convert/s.convert |' in text
         assert '入力：入力値' in text
-        assert '出力：処理結果' in text
+        assert '出力：終了コード・メッセージ' in text
+        assert '保持：処理結果' in text
 
     def test_reuse_has_distinct_placement_identity_and_shared_definition(self):
         text = render(self.catalog)
@@ -78,7 +79,7 @@ class TestContracts:
         cases = [
             replace(self.catalog, artifacts=self.catalog.artifacts + (self.catalog.artifacts[0],)),
             replace(self.catalog, pipelines=(replace(p, inputs=('missing',)),)),
-            replace(self.catalog, pipelines=(replace(p, reply=False),)),
+            replace(self.catalog, pipelines=(replace(p, reply="invalid"),)),
             replace(self.catalog, pipelines=(replace(p, steps=(replace(p.steps[1], uses=(Use('a.input', 'invalid'),)),)),)),
         ]
         for changes in ({'input_mapping': ()}, {'pipeline_id': 'missing'}, {'after': 'b.first'}, {'next_workflow_id': 'missing'}):
@@ -125,7 +126,8 @@ class TestContracts:
         text = render(self.catalog)
         assert '参照：入力値／保持：処理結果' in text
         assert '入力：入力値' in text
-        assert '出力：処理結果' in text
+        assert '出力：終了コード・メッセージ' in text
+        assert '保持：処理結果' in text
         assert '起動定義なし' not in text
 
     def test_wait_lock_and_no_reply_are_visible(self):

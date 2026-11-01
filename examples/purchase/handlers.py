@@ -1,5 +1,5 @@
 """Handwritten business implementations; generators never overwrite this file."""
-from myworkflow.executable import Context, Registry
+from myworkflow.executable import BusinessError, Context, Registry
 
 registry = Registry()
 
@@ -9,6 +9,7 @@ def submit(ctx: Context) -> None:
     v = ctx.values
     ctx.services.submit(v['application_id'], ctx.actor, v['vendor'], v['amount'])
     v['status'] = 'waiting-approval'
+    ctx.add_message('申請を受け付けました')
 
 
 @registry.implements('s.check-upload')
@@ -75,4 +76,4 @@ def confirm(ctx: Context) -> None:
 
 @registry.implements('s.stop')
 def stop(ctx: Context) -> None:
-    raise ValueError('Order conditions are not satisfied')
+    raise BusinessError(10, 'Order conditions are not satisfied', level='warning')

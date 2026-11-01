@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "roles": {
     "role.requester": {
       "name": "購買依頼部門の担当者",
@@ -78,16 +78,16 @@
         "a.vendor",
         "a.amount"
       ],
-      "outputs": [
-        "a.id",
-        "a.status"
-      ],
       "reply": true,
       "request_interface": "PSubmitRequest",
       "response_interface": "PSubmitResponse",
       "steps": [
         "s.submit-lock",
         "s.submit"
+      ],
+      "produces": [
+        "a.id",
+        "a.status"
       ]
     },
     "p.upload": {
@@ -97,9 +97,6 @@
         "a.quote-a",
         "a.quote-b"
       ],
-      "outputs": [
-        "a.receipt"
-      ],
       "reply": true,
       "request_interface": "PUploadRequest",
       "response_interface": "PUploadResponse",
@@ -108,6 +105,9 @@
         "s.check-upload",
         "s.put-a",
         "s.put-b"
+      ],
+      "produces": [
+        "a.receipt"
       ]
     },
     "p.approve": {
@@ -115,9 +115,6 @@
       "inputs": [
         "a.id",
         "a.decision"
-      ],
-      "outputs": [
-        "a.status"
       ],
       "reply": true,
       "request_interface": "PApproveRequest",
@@ -127,6 +124,9 @@
         "s.check-approval",
         "s.approve",
         "s.reject"
+      ],
+      "produces": [
+        "a.status"
       ]
     },
     "p.dispatch": {
@@ -134,14 +134,14 @@
       "inputs": [
         "a.id"
       ],
-      "outputs": [
-        "a.id"
-      ],
       "reply": true,
       "request_interface": "PDispatchRequest",
       "response_interface": "PDispatchResponse",
       "steps": [
         "s.dispatch"
+      ],
+      "produces": [
+        "a.id"
       ]
     },
     "p.confirm": {
@@ -149,7 +149,6 @@
       "inputs": [
         "a.id"
       ],
-      "outputs": [],
       "reply": false,
       "request_interface": "PConfirmRequest",
       "response_interface": "PConfirmResponse",
@@ -158,7 +157,8 @@
         "s.eligibility",
         "s.confirm",
         "s.stop"
-      ]
+      ],
+      "produces": []
     }
   },
   "steps": {
@@ -571,5 +571,20 @@
       "after": null,
       "wait": null
     }
+  },
+  "completion": {
+    "interface": "PipelineResult",
+    "success_code": 0,
+    "default_error_code": 255,
+    "fields": {
+      "code": "int",
+      "messages": "tuple[Message, ...]"
+    },
+    "message_levels": [
+      "info",
+      "warning",
+      "error",
+      "critical"
+    ]
   }
 }

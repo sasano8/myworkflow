@@ -17,8 +17,8 @@ def validate_catalog(catalog):
     pipelines = {p.id: p for p in catalog.pipelines}
     workflows = {w.id for w in catalog.workflows}
     for p in catalog.pipelines:
-        if not p.reply and p.outputs:
-            raise ValueError("A no-reply pipeline cannot declare response outputs")
+        if type(p.reply) is not bool:
+            raise ValueError("Pipeline reply must be boolean")
         refs = list(p.inputs + p.outputs)
         for s in p.steps:
             if isinstance(s, Lock):
@@ -96,8 +96,8 @@ def validate_names(program):
 
 def validate_flow(program):
     for p in program.plans.values():
-        if not p["reply"] and p["outputs"]:
-            raise ContractError(f"{p['id']}: no-reply pipeline has outputs")
+        if type(p.reply) is not bool:
+            raise ContractError(f"{p.id}: reply must be boolean")
         available = set(p["inputs"])
         conditional = {}
         tested_conditions = set()

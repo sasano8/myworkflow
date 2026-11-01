@@ -16,7 +16,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 001-00001-00000 | トリガー1：申請操作 | 申請者 | 受付 | 入力元：申請ID ← id | 入力：申請ID | — | w.review/b.review_submit/p.review_submit/request |
 | 001-00001-00001 | — | システム | 申請の記録 | 申請内容を受け付ける。 | — | 参照：申請ID | w.review/b.review_submit/p.review_submit/s.review_submit |
-| 001-00001-00002 | — | システム | 結果返却 | 結果を返す。 | 出力：申請ID | — | w.review/b.review_submit/p.review_submit/response |
+| 001-00001-00002 | — | システム | 結果返却 | 終了コードとメッセージを返す。 | 出力：終了コード・メッセージ | 保持：申請ID | w.review/b.review_submit/p.review_submit/response |
 
 ### 001-00002 審査結果の反映
 
@@ -26,7 +26,7 @@
 | 001-00002-00000 | トリガー2：差戻し操作 | 承認者 | 受付 | 入力元：申請ID ← id、審査判断 ← decision | 入力：申請ID、審査判断 | — | w.review/b.review_record/p.review_record/request/t.review_return |
 | 001-00002-00000 | トリガー3：却下操作 | 承認者 | 受付 | 入力元：申請ID ← id、審査判断 ← decision | 入力：申請ID、審査判断 | — | w.review/b.review_record/p.review_record/request/t.review_reject |
 | 001-00002-00001 | — | システム | 審査操作の記録 | 対象申請に対する審査判断（承認・差戻し・却下）を記録する。 | — | 参照：申請ID／参照：審査判断 | w.review/b.review_record/p.review_record/s.review_record |
-| 001-00002-00002 | — | システム | 結果返却 | 結果を返す。 | 出力：申請ID | — | w.review/b.review_record/p.review_record/response |
+| 001-00002-00002 | — | システム | 結果返却 | 終了コードとメッセージを返す。 | 出力：終了コード・メッセージ | 保持：申請ID | w.review/b.review_record/p.review_record/response |
 
 ### 001-00003 申請内容の受付
 
@@ -34,7 +34,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 001-00003-00000 | トリガー1：再申請操作 | 申請者 | 受付 | 入力元：申請ID ← id | 入力：申請ID | — | w.review/b.review_resubmit/p.review_submit/request |
 | 001-00003-00001 | — | システム | 申請の記録 | 申請内容を受け付ける。 | — | 参照：申請ID | w.review/b.review_resubmit/p.review_submit/s.review_submit |
-| 001-00003-00002 | — | システム | 結果返却 | 結果を返す。 | 出力：申請ID | — | w.review/b.review_resubmit/p.review_submit/response |
+| 001-00003-00002 | — | システム | 結果返却 | 終了コードとメッセージを返す。 | 出力：終了コード・メッセージ | 保持：申請ID | w.review/b.review_resubmit/p.review_submit/response |
 
 ## 型付き契約
 

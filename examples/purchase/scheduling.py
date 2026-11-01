@@ -31,7 +31,7 @@ class ScheduledPurchase:
         if self.decision is not None:
             return
         self.sequence += 1
-        self.engine.invoke('b.approve', 't.approve', self.engine.program.payload('b.approve', 't.approve', {'application_id': self.application_id, 'decision': decision}),
+        self.engine.invoke_or_raise('b.approve', 't.approve', self.engine.program.payload('b.approve', 't.approve', {'application_id': self.application_id, 'decision': decision}),
                            principal, run_id=execution_id(self.run_id, 'decision', self.sequence))
         self.decision = decision
         self.tick()
@@ -40,8 +40,8 @@ class ScheduledPurchase:
         if self.completed or self.decision is not True or aware_time(self.clock.now()) < self.due_at:
             return
         system = Principal('scheduler', frozenset({'role.system'}))
-        handoff = self.engine.invoke('b.dispatch', 't.timer', self.engine.program.payload('b.dispatch', 't.timer', {'application_id': self.application_id}), system, run_id=execution_id(self.run_id, 'dispatch'))
+        self.engine.invoke_or_raise('b.dispatch', 't.timer', self.engine.program.payload('b.dispatch', 't.timer', {'application_id': self.application_id}), system, run_id=execution_id(self.run_id, 'dispatch'))
         target = self.engine.program.next_binding('b.dispatch', 'b.confirm')
-        payload = self.engine.program.payload(target.id, 't.confirm', handoff)
-        self.engine.invoke(target.id, 't.confirm', payload, system, run_id=execution_id(self.run_id, 'confirm'))
+        payload = self.engine.program.payload(target.id, 't.confirm', {'application_id': self.application_id})
+        self.engine.invoke_or_raise(target.id, 't.confirm', payload, system, run_id=execution_id(self.run_id, 'confirm'))
         self.completed = True

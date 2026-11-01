@@ -18,5 +18,5 @@ def issue(ctx, number):
 @steps.step('Outcome', parsers.parse('チケットが1件保存され発行結果が返る'), actor='検証基盤', refs=('ticket.save',))
 def check_ticket(ctx):
     with ctx.engine.services.database.connect() as db:
-        count = db.execute('SELECT count(*) FROM tickets').fetchone()[0]
-    return count == 1 and ctx.result['receipt'] == '発行済み:T-001'
+        numbers = [r[0] for r in db.execute('SELECT number FROM tickets').fetchall()]
+    return numbers == ['T-001'] and ctx.result.code == 0

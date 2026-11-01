@@ -8,6 +8,7 @@ from examples.purchase.handlers import registry
 from examples.purchase.scheduling import ScheduledPurchase, aware_time
 from examples.purchase.services import Services
 from myworkflow.executable import Engine, Principal, Program, Registry
+from myworkflow.results import PipelineResult
 
 
 class ManualClock:
@@ -52,6 +53,8 @@ class World:
         self.result = None
         try:
             self.result = action()
+            if isinstance(self.result, PipelineResult) and not self.result.ok:
+                self.error = self.result
         except Exception as exc:
             self.error = exc
 

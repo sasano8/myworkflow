@@ -4,12 +4,14 @@ def class_name(identity):
 
 
 def interfaces_source(program):
-    lines = ['"""Generated interfaces. Edit the contract, then regenerate."""', 'from dataclasses import dataclass', '']
+    lines = ['"""Generated interfaces. Edit the contract, then regenerate."""',
+             'from dataclasses import dataclass',
+             'from myworkflow.results import PipelineResult as _PipelineResult', '']
     for p in program.plans.values():
-        for direction, ids in (("Request", p["inputs"]), ("Response", p["outputs"])):
-            lines.extend(['@dataclass(frozen=True)', f'class {class_name(p["id"])}{direction}:'])
-            lines.extend([f'    {program.artifacts[a]["key"]}: {program.artifacts[a]["type"]}' for a in ids] or ['    pass'])
-            lines.append('')
+        name = class_name(p['id'])
+        lines.extend(['@dataclass(frozen=True)', f'class {name}Request:'])
+        lines.extend([f'    {program.artifacts[a]["key"]}: {program.artifacts[a]["type"]}' for a in p.inputs] or ['    pass'])
+        lines.extend(['', f'{name}Response = _PipelineResult', ''])
     return '\n'.join(lines).rstrip() + '\n'
 
 
