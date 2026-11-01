@@ -6,6 +6,7 @@ from dataclasses import dataclass
 class DocumentOptions:
     title: str = '受入シナリオ'
     report_title: str = '受入テスト結果'
+    requirements_link: str | None = None
     business_link: str = 'business.md'
     acceptance_link: str = 'acceptance.md'
     features_link: str = 'features'
@@ -39,7 +40,12 @@ def render_cases(cases, definitions, *, options=None):
 
 def render_business(program, registry, cases, *, options=None):
     options = options or DocumentOptions()
-    text = document_program(program, registry, details_link=options.details_link, data_definitions_link=options.data_definitions_link) + '\n## 受入条件との対応\n\n'
+    if options.requirements_link and registry:
+        program.check(registry)
+    text = (f'# 業務要件と受入条件の対応\n\n[業務要件]({options.requirements_link})\n'
+            if options.requirements_link else document_program(program, registry, details_link=options.details_link,
+                                                                data_definitions_link=options.data_definitions_link))
+    text += '\n## 受入条件との対応\n\n'
     for identity in sorted({r for c in cases for r in c.requirements}):
         text += f'<a id="{identity}"></a>\n### {identity}\n\n'
         for case in cases:

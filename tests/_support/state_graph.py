@@ -1,10 +1,10 @@
 """_support behavior and invariants."""
-from myworkflow import Binding, ContractCatalog, Pipeline, Role, Workflow
+from myworkflow import Trigger, Binding, ContractCatalog, Pipeline, Role, Workflow
 from myworkflow.contracts.state_graph import State, StateGraph, Transition
 
 def example():
     pipeline = Pipeline('p.save', '判断を保存', (), (), ())
-    binding = Binding('b.review', pipeline.id, '承認操作', (), actor_role_id='role.reviewer', role_mapping=(('system', 'role.reviewer'),))
+    binding = Binding('b.review', pipeline.id, (Trigger('t.review', '承認操作', (), actor_role_id='role.reviewer'),), role_mapping=(('system', 'role.reviewer'),))
     workflow = Workflow('w.review', '申請審査', (binding,))
     catalog = ContractCatalog((), (pipeline,), (workflow,), (Role('role.reviewer', '審査担当者', '承認者'),))
     pending = State('state.pending', '承認待ち')

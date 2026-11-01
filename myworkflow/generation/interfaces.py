@@ -21,9 +21,9 @@ def interfaces_source(program):
         lines.extend([f'import {model.__module__} as _ValueModule{index}',
                       f'_Value{index} = _ValueModule{index}.{model.__qualname__}', ''])
     for p in program.plans.values():
-        name = class_name(p['id'])
+        name = class_name(p.id)
         lines.extend(['@dataclass(frozen=True)', f'class {name}Request:'])
-        lines.extend([f'    {program.artifacts[a]["key"]}: {"_Value" + str(definitions.index(program.artifacts[a].value_object)) if program.artifacts[a].value_object else program.artifacts[a].type}' for a in p.inputs] or ['    pass'])
+        lines.extend([f"    {program.artifacts[a].key}: {('_Value' + str(definitions.index(program.artifacts[a].value_object)) if program.artifacts[a].value_object else program.artifacts[a].type)}" for a in p.inputs] or ['    pass'])
         lines.extend(['', f'{name}Response = _PipelineResult', ''])
     return '\n'.join(lines).rstrip() + '\n'
 
@@ -31,7 +31,7 @@ def interfaces_source(program):
 def skeleton_source(program):
     lines = ['"""Generated skeleton: copy into your implementation; never overwrite existing work."""',
              'from myworkflow.executable import Context, Registry', '', 'registry = Registry()', '']
-    ids = {s['id'] for s in program.steps.values() if s['kind'] != 'lock'} | {s['compensate'] for s in program.steps.values() if s.get('compensate')}
+    ids = program.implementation_ids
     for identity in sorted(ids):
         lines.extend([f'@registry.implements({identity!r})', f'def {class_name(identity).lower()}(ctx: Context) -> None:',
                       f'    raise NotImplementedError({identity!r})', ''])

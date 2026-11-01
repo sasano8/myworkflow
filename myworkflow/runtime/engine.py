@@ -30,20 +30,20 @@ class Engine:
             raise ContractError('Transition runtime must use the Engine catalog')
         self.locks = locks or getattr(services, 'lock_provider', None)
         self.store = store or getattr(services, 'execution_store', None)
-        if self.store is None or (any(s['kind'] == 'lock' for s in program.steps.values()) and self.locks is None):
+        if self.store is None or (any((s.kind == 'lock' for s in program.steps.values())) and self.locks is None):
             raise ContractError('Engine requires an ExecutionStore and a LockProvider for locking steps')
         if interfaces:
             for p in program.plans.values():
-                for direction, ids in (("Request", p["inputs"]), ("Response", ())):
-                    name = class_name(p["id"]) + direction
+                for direction, ids in (("Request", p.inputs), ("Response", ())):
+                    name = class_name(p.id) + direction
                     cls = getattr(interfaces, name, None)
                     if direction == 'Response':
                         if cls is not PipelineResult:
-                            raise ContractError(f"{p['id']}: stale or invalid Response interface")
+                            raise ContractError(f'{p.id}: stale or invalid Response interface')
                         continue
-                    expected = {program.artifacts[i]["key"]: (program.artifacts[i].value_object.model if program.artifacts[i].value_object else TYPES[program.artifacts[i]["type"]]) for i in ids}
+                    expected = {program.artifacts[i].key: (program.artifacts[i].value_object.model if program.artifacts[i].value_object else TYPES[program.artifacts[i].type]) for i in ids}
                     if cls is None or not is_dataclass(cls) or get_type_hints(cls) != expected:
-                        raise ContractError(f"{p['id']}: stale or invalid {direction} interface")
+                        raise ContractError(f'{p.id}: stale or invalid {direction} interface')
 
     def invoke(self, binding_id, trigger_id, payload, principal, *, run_id) -> PipelineResult:
         try:
@@ -54,16 +54,15 @@ class Engine:
     def invoke_or_raise(self, binding_id, trigger_id, payload, principal, *, run_id) -> PipelineResult:
         b = self.program.binding(binding_id)
         trigger_id = definition_id(trigger_id)
-        t = next((t for t in b["triggers"] if t["id"] == trigger_id), None)
+        t = next((t for t in b.triggers if t.id == trigger_id), None)
         if t is None:
             raise ContractError(f"{binding_id}: unknown trigger {trigger_id}")
-        if t["role"] not in principal.roles:
-            raise PermissionError(f"{trigger_id}: {principal.id} lacks {t['role']}")
-        if set(payload) != set(t["mapping"].values()):
+        if t.actor_role_id not in principal.roles:
+            raise PermissionError(f'{trigger_id}: {principal.id} lacks {t.actor_role_id}')
+        if set(payload) != set(t.mapping.values()):
             raise ContractError(f"{trigger_id}: payload fields do not match mapping")
-        values = {self.program.artifacts[a]["key"]: payload[source] for a, source in t["mapping"].items()}
-        return self._run_or_raise(b["pipeline"], values, actor=principal.id, run_id=run_id,
-                                  binding_id=b.id, trigger_id=trigger_id)
+        values = {self.program.artifacts[a].key: payload[source] for a, source in t.mapping.items()}
+        return self._run_or_raise(b.pipeline_id, values, actor=principal.id, run_id=run_id, binding_id=b.id, trigger_id=trigger_id)
 
     def run(self, pipeline_id, request, *, actor, run_id) -> PipelineResult:
         try:
@@ -80,7 +79,7 @@ class Engine:
     def _run_or_raise(self, pipeline_id, request, *, actor, run_id, binding_id=None, trigger_id=None):
         p = self.program.plans[pipeline_id]
         values = asdict(request) if is_dataclass(request) else dict(request)
-        values = self.program.values(p["inputs"], values, pipeline_id)
+        values = self.program.values(p.inputs, values, pipeline_id)
         ctx = Context(values, self.services, run_id, actor, [])
         self.store.begin(run_id)
         compensations = CompensationStack()
@@ -92,35 +91,35 @@ class Engine:
             try:
                 if self.transitions is not None and binding_id is not None:
                     session = self.transitions.begin(ctx, binding_id, trigger_id)
-                for s in p["steps"]:
-                    failure_id = s["id"]
-                    condition = s.get("when")
-                    if condition and values[self.program.artifacts[condition[0]]["key"]] != condition[1]:
-                        ctx.events.append((s["id"], "skipped"))
-                        continue
-                    if s["kind"] == "lock":
-                        keys = tuple((a, values[self.program.artifacts[a]["key"]]) for a in s["reads"])
+                for s in p.steps:
+                    failure_id = s.id
+                    if s.kind == "lock":
+                        keys = tuple((a, values[self.program.artifacts[a].key]) for a in s.reads)
                         stack.enter_context(self.locks.acquire(keys, namespace=s.namespace, timeout=s.timeout))
-                        ctx.events.append((s["id"], "locked"))
+                        ctx.events.append((s.id, 'locked'))
                         continue
-                    if s.get("compensate"):
+                    condition = s.when
+                    if condition and values[self.program.artifacts[condition[0]].key] != condition[1]:
+                        ctx.events.append((s.id, 'skipped'))
+                        continue
+                    if s.compensate:
                         # Register before executing: remote success with a lost response is ambiguous.
-                        compensations.register(s["id"], s["compensate"], ctx)
-                    for attempt in range(s.get("attempts", 1)):
+                        compensations.register(s.id, s.compensate, ctx)
+                    for attempt in range(s.attempts):
                         try:
-                            self._call(s["id"], ctx, s["reads"], s["writes"])
-                            ctx.events.append((s["id"], "completed"))
+                            self._call(s.id, ctx, s.reads, s.writes)
+                            ctx.events.append((s.id, 'completed'))
                             break
                         except RetryableError:
-                            if attempt + 1 == s.get("attempts", 1):
+                            if attempt + 1 == s.attempts:
                                 raise
-                            ctx.events.append((s["id"], "retry"))
+                            ctx.events.append((s.id, 'retry'))
                         finally:
-                            if s.get('compensate'):
+                            if s.compensate:
                                 compensations.capture(ctx)
                 failure_id = pipeline_id + "/response"
-                produced = {self.program.artifacts[a]["key"]: values[self.program.artifacts[a]["key"]] for a in p["outputs"]}
-                values.update(self.program.values(p["outputs"], produced, pipeline_id))
+                produced = {self.program.artifacts[a].key: values[self.program.artifacts[a].key] for a in p.outputs}
+                values.update(self.program.values(p.outputs, produced, pipeline_id))
                 if session is not None:
                     failure_id = pipeline_id + "/transition"
                     session.finish(ctx)
@@ -163,11 +162,11 @@ class Engine:
         return self.run(pipeline_id, request, actor=actor, run_id=run_id)
 
     def _call(self, identity, ctx, reads, writes):
-        keys = {self.program.artifacts[a]["key"] for a in reads}
+        keys = {self.program.artifacts[a].key for a in reads}
         selected = {k: ctx.values[k] for k in keys if k in ctx.values}
         ctx.values.update(self.program.values(reads, selected, identity))
         before = deepcopy(ctx.values)
-        allowed = {self.program.artifacts[a]["key"] for a in writes}
+        allowed = {self.program.artifacts[a].key for a in writes}
         raw = ctx.values
         ctx.values = StepValues(raw, keys, allowed, identity)
         try:

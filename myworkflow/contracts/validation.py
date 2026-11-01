@@ -1,17 +1,15 @@
 """Structural and semantic contract checks."""
-from myworkflow.contracts.models import Lock, Trigger
+import re
+
+from myworkflow.contracts.models import Lock
 from myworkflow.contracts.value_objects import validate_definitions
 
 
 def validate_catalog(catalog):
+    ids = [e.id for e in catalog.entities]
+    if len(ids) != len(set(ids)) or any(not isinstance(i, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]*", i) for i in ids):
+        raise ValueError("IDs must be unique, nonempty and contain no slash")
     validate_definitions(catalog.value_objects)
-    entities = [*catalog.artifacts, *catalog.pipelines, *catalog.workflows, *catalog.roles, *catalog.value_objects]
-    entities += [s for p in catalog.pipelines for s in p.steps]
-    entities += [b for w in catalog.workflows for b in w.bindings]
-    entities += [t for w in catalog.workflows for b in w.bindings for t in b.additional_triggers]
-    ids = [e.id for e in entities]
-    if any(not i.strip() for i in ids) or len(ids) != len(set(ids)):
-        raise ValueError("IDs must be nonempty and globally unique")
     roles = {r.id for r in catalog.roles}
     if any(not r.name.strip() or not r.display_name.strip() for r in catalog.roles):
         raise ValueError("Role names must be nonempty")
@@ -50,13 +48,17 @@ def validate_catalog(catalog):
                 raise ValueError("Role mapping must cover pipeline role slots exactly")
             if set(mapping.values()) - roles:
                 raise ValueError("Unknown mapped role")
-            triggers = (Trigger(b.id, b.trigger, b.input_mapping, b.after, b.wait, b.actor_role_id), *b.additional_triggers)
-            for t in triggers:
+            if not b.triggers:
+                raise ValueError(f'{b.id}: no triggers')
+            for t in b.triggers:
                 if t.actor_role_id not in roles:
                     raise ValueError("Unknown trigger actor role")
                 mapped = [target for target, source in t.input_mapping]
                 if len(mapped) != len(set(mapped)) or set(mapped) != set(pipelines[b.pipeline_id].inputs):
                     raise ValueError("Input mapping must cover the pipeline contract exactly")
+                sources = [source for _, source in t.input_mapping]
+                if len(set(sources)) != len(sources):
+                    raise ValueError(f'{t.id}: input sources must be unambiguous')
                 if not t.name.strip() or any(not source.strip() for _, source in t.input_mapping):
                     raise ValueError("Trigger and input sources must be described")
                 if t.after is not None and (t.after not in placements or t.after == b.id):

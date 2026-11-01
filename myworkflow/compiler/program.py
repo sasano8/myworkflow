@@ -1,5 +1,6 @@
 from myworkflow.contracts.errors import ContractError
 from myworkflow.contracts.identity import definition_id
+from myworkflow.contracts.models import Step
 
 from myworkflow.contracts.value_objects import PRIMITIVES as TYPES
 
@@ -17,9 +18,7 @@ class Program:
     @classmethod
     def from_catalog(cls, catalog):
         """Use typed declarations directly, retaining object identity for graph references."""
-        import json
         from myworkflow.contracts.models import ContractCatalog
-        from myworkflow.compiler.serialization import catalog_to_spec
         if not isinstance(catalog, ContractCatalog):
             raise ContractError('contract: expected ContractCatalog')
         from dataclasses import fields, is_dataclass
@@ -41,7 +40,7 @@ class Program:
         result.model = catalog
         # Validate before export so invalid duplicate references cannot disappear in dicts.
         result._index()
-        result._source_json = json.dumps(catalog_to_spec(catalog), ensure_ascii=False)
+        result._source_json = None
         return result
 
     def _index(self):
@@ -50,12 +49,17 @@ class Program:
         self.plans = MappingProxyType({p.id: p for p in self.model.pipelines})
         self.bindings = MappingProxyType({b.id: b for w in self.model.workflows for b in w.bindings})
         self.steps = MappingProxyType({s.id: s for p in self.model.pipelines for s in p.steps})
+        self.actions = tuple(s for s in self.steps.values() if isinstance(s, Step))
+        self.implementation_ids = frozenset(identity for s in self.actions for identity in (s.id, s.compensate) if identity)
         self.validate()
 
     @property
     def spec(self):
         """Compatibility snapshot; mutating it never changes the compiled model."""
         import json
+        if self._source_json is None:
+            from myworkflow.compiler.serialization import catalog_to_spec
+            self._source_json = json.dumps(catalog_to_spec(self.model), ensure_ascii=False)
         return json.loads(self._source_json)
 
     def validate(self):
@@ -113,8 +117,6 @@ class Program:
         return normalized
 
     def check(self, registry):
-        for s in self.steps.values():
-            if s["kind"] != "lock":
-                for identity in [s["id"], *([s["compensate"]] if s.get("compensate") else [])]:
-                    if identity not in registry.handlers:
-                        raise ContractError(f"{identity}: missing implementation")
+        for identity in sorted(self.implementation_ids):
+            if identity not in registry.handlers:
+                raise ContractError(f'{identity}: missing implementation')

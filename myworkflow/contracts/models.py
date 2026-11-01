@@ -1,39 +1,18 @@
 """Business contracts. Declarations describe behavior; they do not execute it."""
-from collections.abc import Mapping
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from types import MappingProxyType
 from myworkflow.contracts.value_objects import ValueObject
 
 
-class Record(Mapping):
-    """Read-only mapping aliases preserve the initial dictionary-facing API."""
-    aliases = {}
-
-    def __getitem__(self, key):
-        attr = self.aliases.get(key, key)
-        if attr.startswith('_') or not hasattr(self, attr):
-            raise KeyError(key)
-        value = getattr(self, attr)
-        if key == 'uses':
-            return tuple((u.artifact_id, u.operation) for u in value)
-        return value
-
-    def __iter__(self):
-        return iter(f.name for f in fields(self))
-
-    def __len__(self):
-        return len(fields(self))
-
-
 @dataclass(frozen=True)
-class Role(Record):
+class Role:
     id: str
     name: str  # formal business name
     display_name: str
 
 
 @dataclass(frozen=True)
-class Artifact(Record):
+class Artifact:
     id: str
     name: str
     key: str = ""
@@ -48,7 +27,7 @@ class Use:
 
 
 @dataclass(frozen=True)
-class Step(Record):
+class Step:
     id: str
     name: str
     summary: str
@@ -63,7 +42,7 @@ class Step(Record):
 
 
 @dataclass(frozen=True)
-class Lock(Record):
+class Lock:
     id: str
     name: str
     keys: tuple[str, ...]  # artifact IDs already in context
@@ -87,7 +66,7 @@ class Lock(Record):
 
 
 @dataclass(frozen=True)
-class Pipeline(Record):
+class Pipeline:
     id: str
     name: str
     inputs: tuple[str, ...]
@@ -97,8 +76,7 @@ class Pipeline(Record):
 
 
 @dataclass(frozen=True)
-class Trigger(Record):
-    aliases = {"role": "actor_role_id", "mapping": "mapping"}
+class Trigger:
     id: str
     name: str
     input_mapping: tuple[tuple[str, str], ...]
@@ -111,27 +89,16 @@ class Trigger(Record):
 
 
 @dataclass(frozen=True)
-class Binding(Record):
-    aliases = {"pipeline": "pipeline_id", "next_workflow": "next_workflow_id"}
-    id: str  # placement identity, independent of reusable pipeline identity
+class Binding:
+    id: str
     pipeline_id: str
-    trigger: str
-    input_mapping: tuple[tuple[str, str], ...]  # contract input -> source description
-    after: str | None = None  # preceding placement, if any
-    wait: str | None = None
+    triggers: tuple[Trigger, ...]
+    role_mapping: tuple[tuple[str, str], ...] = ()
     next_workflow_id: str | None = None
-    additional_triggers: tuple[Trigger, ...] = ()
-    actor_role_id: str | None = None
-    role_mapping: tuple[tuple[str, str], ...] = ()  # abstract slot -> concrete role ID
-    trigger_id: str | None = None
-
-    @property
-    def triggers(self):
-        return (Trigger(self.trigger_id or self.id, self.trigger, self.input_mapping, self.after, self.wait, self.actor_role_id), *self.additional_triggers)
 
 
 @dataclass(frozen=True)
-class Workflow(Record):
+class Workflow:
     id: str
     name: str
     bindings: tuple[Binding, ...]
@@ -145,6 +112,13 @@ class ContractCatalog:
     workflows: tuple[Workflow, ...]
     roles: tuple[Role, ...] = ()
     value_objects: tuple[ValueObject, ...] = ()
+
+    @property
+    def entities(self):
+        return (*self.artifacts, *self.pipelines, *self.workflows, *self.roles, *self.value_objects,
+                *(s for p in self.pipelines for s in p.steps),
+                *(b for w in self.workflows for b in w.bindings),
+                *(t for w in self.workflows for b in w.bindings for t in b.triggers))
 
     def validate(self) -> None:
         from myworkflow.contracts.validation import validate_catalog

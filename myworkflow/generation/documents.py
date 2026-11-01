@@ -1,6 +1,6 @@
-from myworkflow._internal.markdown import escape
 """Deterministic business documentation."""
-from myworkflow.contracts.models import ContractCatalog, Lock, Trigger
+from myworkflow._internal.markdown import escape
+from myworkflow.contracts.models import ContractCatalog, Lock
 
 def render(catalog: ContractCatalog) -> str:
     """Generate deterministic Markdown; order is explicit declaration order."""
@@ -30,7 +30,7 @@ def render(catalog: ContractCatalog) -> str:
             lines.extend([f"### {wi:03}-{bi:05} {cell(p.name)}", "",
                           "| 連番 | トリガー | 実行者 | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 | 固定ID |",
                           "| --- | --- | --- | --- | --- | --- | --- | --- |"])
-            triggers = (Trigger(b.id, b.trigger, b.input_mapping, b.after, b.wait, b.actor_role_id), *b.additional_triggers)
+            triggers = b.triggers
             for ti, t in enumerate(triggers, 1):
                 summary = ""
                 if t.after:
@@ -64,7 +64,7 @@ def render(catalog: ContractCatalog) -> str:
 
 
 def document_program(program, registry=None, *, details_link=None, data_definitions_link="data-definitions.md"):
-    text = render(program.catalog()) + "\n## 型付き契約\n\n| 固定ID | 名前 | コード上のキー | Python型 |\n| --- | --- | --- | --- |\n"
+    text = render(program.model) + "\n## 型付き契約\n\n| 固定ID | 名前 | コード上のキー | Python型 |\n| --- | --- | --- | --- |\n"
     safe = escape
     for a in program.artifacts.values():
         text += "| " + " | ".join(map(safe, (a.id, a.name, a.key, a.value_object.model.__name__ if a.value_object else a.type))) + " |\n"
@@ -75,12 +75,12 @@ def document_program(program, registry=None, *, details_link=None, data_definiti
                 text += f"| {safe(artifact.id)} | [{safe(artifact.value_object.id)}]({data_definitions_link}#{artifact.value_object.id}) |\n"
     text += "\n## 起動定義の対応\n\n| トリガー固定ID | 配置 | パイプライン | 許可ロール |\n| --- | --- | --- | --- |\n"
     for b in program.bindings.values():
-        for t in b['triggers']:
-            text += "| " + " | ".join(map(safe, (t['id'], b['id'], b['pipeline'], t['role']))) + " |\n"
+        for t in b.triggers:
+            text += "| " + ' | '.join(map(safe, (t.id, b.id, b.pipeline_id, t.actor_role_id))) + " |\n"
     if registry:
         program.check(registry)
         text += "\n## 実装対応\n\n| 固定ID | 実装 |\n| --- | --- |\n"
-        for identity in sorted({s['id'] for s in program.steps.values() if s['kind'] != 'lock'} | {s['compensate'] for s in program.steps.values() if s.get('compensate')}):
+        for identity in sorted(program.implementation_ids):
             fn = registry.handlers[identity]
             text += f"| {safe(identity)} | {safe(fn.__module__)}.{safe(fn.__name__)} |\n"
         text += "\nロックはEngine → LockProvider、受付認可はEngine → Principal.rolesで実行。"

@@ -4,7 +4,7 @@ import pytest
 from pydantic import BaseModel
 from examples.feature_demos.approval_values import application as sample
 from examples.feature_demos.approval_values.value_objects import ApplicationId, approval_application, delivery_period
-from myworkflow import Artifact, ValueObject
+from myworkflow import Trigger, Artifact, ValueObject
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.storage.artifacts import ArtifactWrite
 from myworkflow.contracts.errors import ContractError, ExecutionFailed
@@ -73,8 +73,7 @@ def typed_pipeline_program():
     step = Step('s.process', '処理', '内容を確認する', reads=(data.id,))
     pipeline = Pipeline('p.process', '処理', (data.id,), (), (step,))
     role = Role('role.user', '利用者', '利用者')
-    binding = Binding('b.process', pipeline.id, '入力', ((data.id, 'data'),), actor_role_id=role.id,
-                      role_mapping=(('system', role.id),), trigger_id='t.process')
+    binding = Binding('b.process', pipeline.id, (Trigger('t.process', '入力', ((data.id, 'data'),), actor_role_id=role.id),), role_mapping=(('system', role.id),))
     catalog = ContractCatalog((data,), (pipeline,), (Workflow('w.process', '処理', (binding,)),), (role,), (approval_application,))
     return Program.from_catalog(catalog)
 

@@ -97,6 +97,38 @@ def workflow(*, id: str, name: str) -> Callable[[type[T]], type[T]]:
     return decorate
 
 
+def _fail(where, message):
+    raise ContractError(f'{where}: {message}')
+
+
+def _sequence(value, typ, where):
+    if not isinstance(value, tuple) or any(not isinstance(v, typ) for v in value):
+        _fail(where, f'expected a tuple of {typ.__name__}')
+
+
+def _workflow_members(declarations):
+    if not declarations:
+        _fail('workflows', 'at least one class is required')
+    if len({id(c) for c in declarations}) != len(declarations):
+        _fail('workflows', 'duplicate class')
+    metadata = {}
+    members = {}
+    for cls in declarations:
+        if not isinstance(cls, type) or not isinstance(vars(cls).get('__workflow_options__'), WorkflowOptions):
+            _fail('workflow', 'expected a class decorated with @workflow')
+        if cls.__bases__ != (object,):
+            _fail(cls.__name__, 'workflow inheritance is not supported')
+        options = vars(cls)['__workflow_options__']
+        metadata[cls] = options
+        named = [(name, value) for name, value in vars(cls).items()
+                 if isinstance(value, (StateDeclaration, Placement, TransitionDeclaration))]
+        if len({id(value) for _, value in named}) != len(named):
+            _fail(options.id, 'declaration aliases are not supported')
+        members[cls] = tuple(value for _, value in named)
+
+    return metadata, members
+
+
 def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
                       pipelines: tuple[Pipeline | PipelineDeclaration, ...] = (), roles: tuple[Role, ...] = (),
                       value_objects: tuple[ValueObject, ...] = ()) -> CompiledWorkflows:
@@ -106,59 +138,35 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
     Pipelines and roles are collected from placements, or explicitly ordered.
     Symbolic pipeline references are lowered into the same immutable model as legacy inputs.
     """
-    def fail(where, message):
-        raise ContractError(f'{where}: {message}')
-
-    def sequence(value, typ, where):
-        if not isinstance(value, tuple) or any(not isinstance(v, typ) for v in value):
-            fail(where, f'expected a tuple of {typ.__name__}')
-
-    sequence(artifacts, Artifact, 'artifacts')
+    _sequence(artifacts, Artifact, 'artifacts')
     validate_definitions(value_objects)
     definitions = {d.id: d for d in value_objects}
     for artifact in artifacts:
         if artifact.value_object is not None:
             definition = artifact.value_object
             if not isinstance(definition, ValueObject):
-                fail(artifact.id, 'value_object must reference ValueObject')
+                _fail(artifact.id, 'value_object must reference ValueObject')
             if definition.id in definitions and definitions[definition.id] is not definition:
-                fail(definition.id, 'different objects share a value object ID')
+                _fail(definition.id, 'different objects share a value object ID')
             definitions[definition.id] = definition
     if len({id(a) for a in artifacts}) != len(artifacts):
-        fail('artifacts', 'duplicate declaration')
-    if not declarations:
-        fail('workflows', 'at least one class is required')
-    if len({id(c) for c in declarations}) != len(declarations):
-        fail('workflows', 'duplicate class')
-    metadata = {}
-    members = {}
-    for cls in declarations:
-        if not isinstance(cls, type) or not isinstance(vars(cls).get('__workflow_options__'), WorkflowOptions):
-            fail('workflow', 'expected a class decorated with @workflow')
-        if cls.__bases__ != (object,):
-            fail(cls.__name__, 'workflow inheritance is not supported')
-        options = vars(cls)['__workflow_options__']
-        metadata[cls] = options
-        named = [(name, value) for name, value in vars(cls).items()
-                 if isinstance(value, (StateDeclaration, Placement, TransitionDeclaration))]
-        if len({id(value) for _, value in named}) != len(named):
-            fail(options.id, 'declaration aliases are not supported')
-        members[cls] = tuple(value for _, value in named)
+        _fail('artifacts', 'duplicate declaration')
+    metadata, members = _workflow_members(declarations)
 
     declared_pipelines, declared_roles = pipelines, roles
     if not isinstance(declared_pipelines, tuple) or not isinstance(declared_roles, tuple):
-        fail('catalog', 'pipelines and roles must be tuples')
+        _fail('catalog', 'pipelines and roles must be tuples')
     if len({id(p) for p in declared_pipelines}) != len(declared_pipelines) or len({id(r) for r in declared_roles}) != len(declared_roles):
-        fail('catalog', 'duplicate explicit pipeline or role declaration')
+        _fail('catalog', 'duplicate explicit pipeline or role declaration')
     pipelines, roles = {}, {}
     lowered = {}
     artifact_objects = {id(a) for a in artifacts}
 
     def collect(target, obj, typ, where):
         if not isinstance(obj, typ):
-            fail(where, f'expected {"Pipeline" if isinstance(typ, tuple) else typ.__name__} reference')
+            _fail(where, f'expected {"Pipeline" if isinstance(typ, tuple) else typ.__name__} reference')
         if obj.id in target and target[obj.id] is not obj:
-            fail(where, f'{obj.id}: different objects share a stable ID')
+            _fail(where, f'{obj.id}: different objects share a stable ID')
         target[obj.id] = obj
 
     for pipeline in declared_pipelines:
@@ -173,24 +181,24 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
         placements = tuple(v for v in values if isinstance(v, Placement))
         transitions = tuple(v for v in values if isinstance(v, TransitionDeclaration))
         if any(type(s.initial) is not bool for s in states):
-            fail(options.id, 'initial must be boolean')
+            _fail(options.id, 'initial must be boolean')
         initial = [s for s in states if s.initial]
         if (states or transitions) and len(initial) != 1:
-            fail(options.id, 'exactly one initial state is required')
+            _fail(options.id, 'exactly one initial state is required')
         placement_objects = {id(p) for p in placements}
         bindings = {}
         compiled_triggers = {}
         for p in placements:
             collect(pipelines, p.pipeline, (Pipeline, PipelineDeclaration), p.id)
-            sequence(p.triggers, TriggerDeclaration, p.id + '.triggers')
+            _sequence(p.triggers, TriggerDeclaration, p.id + '.triggers')
             if not p.triggers or len({id(t) for t in p.triggers}) != len(p.triggers):
-                fail(p.id, 'at least one distinct trigger is required')
+                _fail(p.id, 'at least one distinct trigger is required')
             if not isinstance(p.roles, tuple):
-                fail(p.id, 'roles must be a tuple of slot/Role pairs')
+                _fail(p.id, 'roles must be a tuple of slot/Role pairs')
             role_mapping = []
             for pair in p.roles:
                 if not isinstance(pair, tuple) or len(pair) != 2 or not isinstance(pair[0], str):
-                    fail(p.id, 'roles must contain slot/Role pairs')
+                    _fail(p.id, 'roles must contain slot/Role pairs')
                 slot, role = pair
                 collect(roles, role, Role, p.id)
                 role_mapping.append((slot, role.id))
@@ -198,38 +206,36 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
             for t in p.triggers:
                 collect(roles, t.actor, Role, t.id)
                 if not isinstance(t.mapping, tuple):
-                    fail(t.id, 'mapping must be a tuple of Artifact/source pairs')
+                    _fail(t.id, 'mapping must be a tuple of Artifact/source pairs')
                 mapping = []
                 for pair in t.mapping:
                     if not isinstance(pair, tuple) or len(pair) != 2:
-                        fail(t.id, 'mapping must contain Artifact/source pairs')
+                        _fail(t.id, 'mapping must contain Artifact/source pairs')
                     artifact, source = pair
                     if not isinstance(artifact, Artifact) or id(artifact) not in artifact_objects:
-                        fail(t.id, 'mapping must reference a declared Artifact object')
+                        _fail(t.id, 'mapping must reference a declared Artifact object')
                     if not isinstance(source, str):
-                        fail(t.id, 'input source must be text')
+                        _fail(t.id, 'input source must be text')
                     mapping.append((artifact.id, source))
                 if t.after is not None and id(t.after) not in placement_objects:
-                    fail(t.id, 'preceding placement must belong to this workflow')
+                    _fail(t.id, 'preceding placement must belong to this workflow')
                 if t.wait is not None and not isinstance(t.wait, str):
-                    fail(t.id, 'wait must be text')
+                    _fail(t.id, 'wait must be text')
                 compiled = Trigger(t.id, t.name, tuple(mapping), t.after.id if t.after else None, t.wait, t.actor.id)
                 triggers.append(compiled)
                 compiled_triggers[id(p), id(t)] = compiled
             if p.next_workflow is not None and p.next_workflow not in metadata:
-                fail(p.id, 'next workflow must be included in compilation')
-            primary = triggers[0]
-            bindings[id(p)] = Binding(p.id, p.pipeline.id, primary.name, primary.input_mapping,
-                primary.after, primary.wait, metadata[p.next_workflow].id if p.next_workflow else None,
-                tuple(triggers[1:]), primary.actor_role_id, tuple(role_mapping), primary.id)
+                _fail(p.id, 'next workflow must be included in compilation')
+            bindings[id(p)] = Binding(p.id, p.pipeline.id, tuple(triggers), tuple(role_mapping),
+                metadata[p.next_workflow].id if p.next_workflow else None)
         compiled_workflow = Workflow(options.id, options.name, tuple(bindings.values()))
         compiled_transitions = []
         for t in transitions:
             if id(t.binding) not in bindings:
-                fail(t.id, 'binding must reference a placement in this workflow')
+                _fail(t.id, 'binding must reference a placement in this workflow')
             trigger_key = (id(t.binding), id(t.trigger))
             if trigger_key not in compiled_triggers:
-                fail(t.id, 'trigger must reference an object belonging to the placement')
+                _fail(t.id, 'trigger must reference an object belonging to the placement')
             compiled_transitions.append(Transition(t.id, t.name, t.source, t.target,
                 bindings[id(t.binding)], compiled_triggers[trigger_key], t.condition, t.guard))
         workflows.append(compiled_workflow)
@@ -249,6 +255,6 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
         graph.validate(catalog)
         for entity in (*graph.states, *graph.transitions):
             if entity.id in graph_ids:
-                fail(entity.id, 'graph IDs must be globally unique')
+                _fail(entity.id, 'graph IDs must be globally unique')
             graph_ids.add(entity.id)
     return CompiledWorkflows(program, tuple(graphs), declarations)

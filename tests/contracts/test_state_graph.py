@@ -24,6 +24,7 @@ def test_cycles_and_symbolic_references_are_exported_without_execution():
     (lambda g: replace(g, transitions=(replace(g.transitions[0], target=replace(g.states[2])), *g.transitions[1:])), 'undeclared source or target'),
     (lambda g: replace(g, transitions=(replace(g.transitions[0], binding=replace(g.workflow.bindings[0])), *g.transitions[1:])), 'binding must belong'),
     (lambda g: replace(g, transitions=(replace(g.transitions[0], trigger=replace(g.transitions[0].trigger, id='other')), *g.transitions[1:])), 'trigger must belong'),
+    (lambda g: replace(g, transitions=(replace(g.transitions[0], trigger=replace(g.transitions[0].trigger)), *g.transitions[1:])), 'trigger must belong'),
     (lambda g: replace(g, transitions=(replace(g.transitions[0], condition=True), *g.transitions[1:])), 'condition must be text'),
     (lambda g: replace(g, workflow=replace(g.workflow)), 'workflow must belong'),
 ])

@@ -180,3 +180,10 @@ def test_unknown_case_filter_is_not_a_success(tmp_path):
                             cwd=ROOT, capture_output=True, text=True, timeout=30)
     assert result.returncode != 0
     assert 'Unknown acceptance case IDs' in result.stderr + result.stdout
+
+
+@pytest.mark.parametrize('requirements_link', [None, 'requirements.md'])
+def test_business_documents_require_connected_handlers_even_when_linking_to_requirements(requirements_link):
+    from myworkflow.executable import ContractError, Registry
+    with pytest.raises(ContractError, match='missing implementation'):
+        render_business(program, Registry(), cases(), options=replace(DOCUMENTS, requirements_link=requirements_link))

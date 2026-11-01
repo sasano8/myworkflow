@@ -13,12 +13,8 @@ def small_catalog():
             Step('s.convert', '値の変換', '入力値を整形する。', (Use('a.input', '参照'), Use('a.output', '保持'))),
         )),),
         workflows=(
-            Workflow('w.first', '受付', (Binding('b.first', 'p.convert', '入力イベント', (('a.input', '本文'),),
-                next_workflow_id='w.second', actor_role_id='role.operator', role_mapping=(('system', 'role.system'),),
-                additional_triggers=(Trigger('t.timer', '指定日時', (('a.input', '待機情報'),),
-                                             wait='予定時刻に到達', actor_role_id='role.system'),)),)),
-            Workflow('w.second', '後続', (Binding('b.second', 'p.convert', '内部イベント', (('a.input', 'イベント'),),
-                actor_role_id='role.system', role_mapping=(('system', 'role.system'),)),)),
+            Workflow('w.first', '受付', (Binding('b.first', 'p.convert', (Trigger('t.first', '入力イベント', (('a.input', '本文'),), actor_role_id='role.operator'), Trigger('t.timer', '指定日時', (('a.input', '待機情報'),), wait='予定時刻に到達', actor_role_id='role.system')), role_mapping=(('system', 'role.system'),), next_workflow_id='w.second'),)),
+            Workflow('w.second', '後続', (Binding('b.second', 'p.convert', (Trigger('t.second', '内部イベント', (('a.input', 'イベント'),), actor_role_id='role.system'),), role_mapping=(('system', 'role.system'),)),)),
         ),
         roles=(Role('role.operator', '入力担当部署の担当者', '操作者'), Role('role.system', '処理システム', 'システム')),
     )
@@ -31,6 +27,9 @@ class TestContracts:
 
     def first_binding(self, **changes):
         w = self.catalog.workflows[0]
+        trigger_changes = {k: changes.pop(k) for k in ('input_mapping', 'after', 'actor_role_id') if k in changes}
+        if trigger_changes:
+            changes['triggers'] = (replace(w.bindings[0].triggers[0], **trigger_changes), *w.bindings[0].triggers[1:])
         return replace(self.catalog, workflows=(replace(w, bindings=(replace(w.bindings[0], **changes),)), self.catalog.workflows[1]))
 
     def test_declarations_render_deterministically(self):
@@ -58,10 +57,10 @@ class TestContracts:
     @pytest.mark.parametrize("case_index", range(3), ids=["missing-input", "duplicate-id", "self-after"])
     def test_additional_trigger_contract_is_validated(self, case_index):
         b = self.catalog.workflows[0].bindings[0]
-        t = b.additional_triggers[0]
+        t = b.triggers[1]
         invalid = (replace(t, input_mapping=()), replace(t, id=b.id), replace(t, after=b.id))[case_index]
         with pytest.raises(ValueError):
-            render(self.first_binding(additional_triggers=(invalid,)))
+            render(self.first_binding(triggers=(b.triggers[0], invalid)))
 
     def test_rename_and_reorder_preserve_ids(self):
         first, second = self.catalog.workflows
@@ -119,8 +118,8 @@ class TestContracts:
         with pytest.raises(ValueError): render(self.first_binding(**changes))
 
     def test_additional_trigger_with_unknown_role_is_rejected(self):
-        t = replace(self.catalog.workflows[0].bindings[0].additional_triggers[0], actor_role_id='missing')
-        with pytest.raises(ValueError): render(self.first_binding(additional_triggers=(t,)))
+        t = replace(self.catalog.workflows[0].bindings[0].triggers[1], actor_role_id='missing')
+        with pytest.raises(ValueError): render(self.first_binding(triggers=(self.catalog.workflows[0].bindings[0].triggers[0], t)))
 
     def test_artifact_operations_and_boundaries_are_visible(self):
         text = render(self.catalog)
@@ -136,3 +135,19 @@ class TestContracts:
         for expected in ('待機・再開条件：予定時刻に到達', '次ワークフロー起動：後続', '異常終了を含む',
                          '参照：入力値／保持：排他キー・ロック', '出力：なし（応答不要）'):
             assert expected in text
+
+
+@pytest.mark.parametrize('triggers', [
+    (),
+    (Trigger('t.same', '入力', (('a.input', '本文'),), actor_role_id='role.operator'),) * 2,
+    (Trigger('b.first', '入力', (('a.input', '本文'),), actor_role_id='role.operator'),),
+])
+def test_every_trigger_has_a_distinct_identity(triggers):
+    catalog = small_catalog()
+    workflow = catalog.workflows[0]
+    catalog = replace(catalog, workflows=(replace(workflow, bindings=(replace(workflow.bindings[0], triggers=triggers),)),))
+    with pytest.raises(ValueError):
+        catalog.validate()
+    from myworkflow.compiler.program import Program
+    with pytest.raises(ValueError):
+        Program.from_catalog(catalog)

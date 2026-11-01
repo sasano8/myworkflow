@@ -151,4 +151,4 @@ UIそのものを主要価値にするなら、既存Modelerやフロー製品�
 - **[S] SpiffWorkflow / SpiffArena**：[エンジン公式README](https://github.com/sartography/SpiffWorkflow/blob/main/README.md)、[Arena公式README](https://github.com/sartography/spiff-arena/blob/main/README.md)。Python、BPMN・DMN、コードによる定義、図の編集・実行。
 - **[T] Temporal**：[サーバー公式README](https://github.com/temporalio/temporal/blob/main/README.md)、[Python SDK公式README](https://github.com/temporalio/sdk-python/blob/main/README.md)。永続実行、Web UI、Signal、Update、Timer、テスト、再生。
 - **[F] Prefect**：[公式README](https://github.com/PrefectHQ/prefect/blob/main/README.md)。Pythonのflow/task、定期実行、イベント、再試行、UI。
-- **myworkflowの根拠**：[概念](product-concept.md)、[状態宣言の現在の範囲](state-graph.md)、[往復品質の指標と既知の欠落](requirements-quality.md)、[PoCの評価](poc-evaluation.md)、[受入テストの評価](acceptance-evaluation.md)。
+- **myworkflowの根拠**：[概念](../README.md)、[状態宣言の現在の範囲](state-graph.md)、[往復品質の指標と既知の欠落](requirements-quality.md)、[PoCの評価](poc-evaluation.md)、[受入テストの評価](acceptance-evaluation.md)。

@@ -8,7 +8,7 @@ def load_cases(paths, program, definitions):
     known = set(program.plans) | set(program.steps) | set(program.bindings)
     known |= {w.id for w in program.model.workflows}
     known |= set(program.artifacts) | {r.id for r in program.model.roles}
-    known |= {s['compensate'] for s in program.steps.values() if s.get('compensate')}
+    known |= program.implementation_ids
     cases, scenario_ids = [], set()
     for path in sorted(paths):
         source = path.read_text(encoding='utf-8')

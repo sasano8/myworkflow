@@ -43,10 +43,7 @@ class StateGraph:
             raise ContractError(f'{self.workflow.id}: workflow must belong to catalog')
         if not isinstance(self.states, tuple) or not isinstance(self.transitions, tuple):
             raise ContractError(f'{self.workflow.id}: graph declarations must be tuples')
-        ids = {e.id for e in (*catalog.artifacts, *catalog.roles, *catalog.pipelines, *catalog.workflows, *catalog.value_objects)}
-        ids.update(s.id for p in catalog.pipelines for s in p.steps)
-        ids.update(b.id for w in catalog.workflows for b in w.bindings)
-        ids.update(t.id for w in catalog.workflows for b in w.bindings for t in b.triggers)
+        ids = {e.id for e in catalog.entities}
         for entity in (*self.states, *self.transitions):
             if not isinstance(entity.id, str) or not entity.id or not isinstance(entity.name, str) or not entity.name:
                 raise ContractError('state graph: nonempty IDs and names are required')
@@ -62,7 +59,7 @@ class StateGraph:
                 raise ContractError(f'{transition.id}: undeclared source or target state')
             if not any(transition.binding is b for b in self.workflow.bindings):
                 raise ContractError(f'{transition.id}: binding must belong to workflow')
-            if transition.trigger not in transition.binding.triggers:
+            if not any(transition.trigger is t for t in transition.binding.triggers):
                 raise ContractError(f'{transition.id}: trigger must belong to binding')
             if transition.guard is not None and not isfunction(transition.guard):
                 raise ContractError(f'{transition.id}: guard must be a Python function')

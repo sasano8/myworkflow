@@ -67,18 +67,12 @@ def load_catalog(spec, *, value_objects=()):
                     triggers.append(Trigger(t['id'], t['name'], tuple(t['mapping'].items()), t.get('after'), t.get('wait'), t['role']))
                 if not triggers:
                     raise ContractError(f'{b["id"]}.triggers: at least one is required')
-                primary = triggers[0]
-                bindings.append(Binding(b['id'], b['pipeline'], primary.name, primary.input_mapping,
-                    primary.after, primary.wait, b.get('next_workflow'), tuple(triggers[1:]), primary.actor_role_id,
-                    tuple((key, value) for key, value in b.get('role_mapping', {'system': 'role.system'}).items()), primary.id))
+                bindings.append(Binding(b['id'], b['pipeline'], tuple(triggers),
+                    tuple(b.get('role_mapping', {'system': 'role.system'}).items()), b.get('next_workflow')))
             workflows.append(Workflow(w['id'], w['name'], tuple(bindings)))
         model = ContractCatalog(artifacts, tuple(pipelines), tuple(workflows), roles, value_objects)
-        entities = [*artifacts, *roles, *pipelines, *workflows]
-        entities += [s for p in pipelines for s in p.steps]
-        entities += [b for w in workflows for b in w.bindings]
-        entities += [t for b in [b for w in workflows for b in w.bindings] for t in b.triggers]
-        for entity in entities:
-            if not isinstance(entity.id, str) or not isinstance(entity.name if hasattr(entity, 'name') else entity.trigger, str):
+        for entity in model.entities:
+            if not isinstance(entity.id, str) or (hasattr(entity, 'name') and not isinstance(entity.name, str)):
                 raise ContractError(f'{location}: IDs and names must be strings')
         for artifact in artifacts:
             if not isinstance(artifact.key, str) or not isinstance(artifact.type, str):
