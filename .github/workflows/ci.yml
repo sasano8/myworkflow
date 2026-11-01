@@ -40,7 +40,7 @@ jobs:
           /tmp/core-env/bin/python -m pip install . 'pytest==9.2.0'
           /tmp/core-env/bin/python -c "import importlib.util; assert importlib.util.find_spec('pytest_bdd') is None"
       - name: Verify core without BDD or Temporal
-        run: /tmp/core-env/bin/python -m pytest tests/test_contracts.py tests/test_executable.py tests/test_refactoring.py tests/test_quality.py tests/test_state_graph.py tests/test_declarations.py tests/test_results.py -q
+        run: /tmp/core-env/bin/python -m pytest tests/test_contracts.py tests/test_executable.py tests/test_refactoring.py tests/test_quality.py tests/test_state_graph.py tests/test_declarations.py tests/test_results.py tests/test_artifact_jobs.py -q
   test:
     runs-on: ubuntu-latest
     steps:
@@ -62,8 +62,10 @@ jobs:
           diff -u examples/purchase/requirements.md /tmp/purchase.md
           python -m examples.purchase.acceptance docs --check
           python -m myworkflow.acceptance --config examples.tickets.acceptance.catalog docs --check
-      - name: Run purchase flow
-        run: python -m examples.purchase
+      - name: Run sample flows
+        run: |
+          python -m examples.purchase
+          python -m examples.prepared_approval
       - name: Render acceptance results
         if: always()
         run: |

@@ -39,6 +39,7 @@ flowchart TD
 | registry.py | 関数の登録、検索、明示的な差替え |
 | results.py | 終了コードと重大度付きメッセージの共通契約 |
 | runtime/ | Context、実行、ステップ境界で記録する補償状態 |
+| artifact_jobs.py / adapters/local_artifacts.py | ジョブIDによる準備・確定のProtocolと、一時領域SQLiteのProvider |
 | ports.py / locking.py | 基盤Protocol、実行状態、プロセス内ロック |
 | adapters/sqlite.py | SQLite接続と実行履歴。業務SQLは含まない |
 | temporal.py / adapters/temporal_testing.py | 任意のTemporal接続とテスト資源の管理 |
@@ -134,3 +135,7 @@ PostgreSQLのセッション／トランザクション単位のアドバイザ�
 購買のfeatureと固定IDは変更せず、4種類の誤実装を検出する試験も残している。新たに契約の不変性、複数申請、Provider共有、補償の値の保持、履歴・解放の二次障害、生成の復元、レポートの準備・後片付け・収集中断、第二の業務を確認した。GitHub上のCI結果と顧客レビューは未確認で、ローカルの成功と区別する。
 
 購買サンプルの整理後は、定義を `examples/purchase/contract.py` に一本化した。旧サンプルは削除し、宣言APIはテスト内の小さな専用データで検証する。模擬Temporal実験も統合し、実際の購買フローに対する結合試験は4件となった。
+
+## アーティファクトの確定境界
+
+[ジョブ管理と準備・確定](artifact-jobs.md)を追加した。中間サーバーへのインターフェースを先に定義し、現在は一時領域のSQLiteで実装する。既存の業務DBと別DBのまま原子性を拡張するものではなく、独立した承認例で検証する。

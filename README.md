@@ -55,6 +55,10 @@ python3.14 -m pytest -q
 
 パイプラインは `PipelineResult(code, messages)` を返します。成功は0、コードのない例外は1。メッセージにはinfo・warning・error・criticalを付けられます。業務データはアーティファクトとして別に扱います。[例外・Temporal・生成型の契約](docs/pipeline-results.md)を参照してください。
 
+## アーティファクトの準備と一括確定
+
+[共通インターフェースと一時領域Provider](docs/artifact-jobs.md)を追加しました。ジョブIDで準備・確定・照会・破棄を管理し、同じSQLite内の業務データと状態をまとめて確定します。`python -m examples.prepared_approval` で[承認例](examples/prepared_approval.py)を実行できます。外部DB等を含む一括確定は保証範囲外です。
+
 ## モデル
 
 | 要素 | 責務 |
