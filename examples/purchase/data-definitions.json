@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "value_objects": [
+    {
+      "id": "vo.purchase.application_id",
+      "name": "購買申請ID",
+      "description": "サンプルでは文字列であることを検証する。書式・長さ・空文字の制約は未定義。",
+      "python_type": "examples.purchase.value_objects:ApplicationId",
+      "rules": [],
+      "validators": [],
+      "schema": {
+        "description": "購買申請を識別する文字列。",
+        "examples": [
+          "purchase-001"
+        ],
+        "title": "ApplicationId",
+        "type": "string"
+      }
+    },
+    {
+      "id": "vo.purchase.vendor",
+      "name": "取引先名",
+      "description": "既存の購買申請処理が要求する取引先名。",
+      "python_type": "examples.purchase.value_objects:VendorName",
+      "rules": [
+        "空文字・空白だけの取引先名を拒否する。前後の空白は削除せず保持する。"
+      ],
+      "validators": [
+        {
+          "name": "not_blank",
+          "kind": "field_validators",
+          "fields": [
+            "root"
+          ]
+        }
+      ],
+      "schema": {
+        "description": "購買先の取引先名。",
+        "examples": [
+          "サンプル商事"
+        ],
+        "minLength": 1,
+        "title": "VendorName",
+        "type": "string"
+      }
+    },
+    {
+      "id": "vo.purchase.amount",
+      "name": "購買申請金額",
+      "description": "既存の購買申請処理と同じく0以下を拒否する。通貨単位・税込／税抜の区別は未定義。",
+      "python_type": "examples.purchase.value_objects:PurchaseAmount",
+      "rules": [],
+      "validators": [],
+      "schema": {
+        "description": "正の整数で指定する購買申請金額。",
+        "examples": [
+          10000
+        ],
+        "exclusiveMinimum": 0,
+        "title": "PurchaseAmount",
+        "type": "integer"
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "a.id",
+      "name": "購買申請ID",
+      "value_object": "vo.purchase.application_id"
+    },
+    {
+      "id": "a.vendor",
+      "name": "取引先",
+      "value_object": "vo.purchase.vendor"
+    },
+    {
+      "id": "a.amount",
+      "name": "申請金額",
+      "value_object": "vo.purchase.amount"
+    }
+  ]
+}

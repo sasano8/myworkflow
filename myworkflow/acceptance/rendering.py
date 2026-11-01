@@ -9,6 +9,7 @@ class DocumentOptions:
     acceptance_link: str = 'acceptance.md'
     features_link: str = 'features'
     details_link: str | None = None
+    data_definitions_link: str = "data-definitions.md"
 
 
 from myworkflow.markdown import escape as safe
@@ -37,7 +38,7 @@ def render_cases(cases, definitions, *, options=None):
 
 def render_business(program, registry, cases, *, options=None):
     options = options or DocumentOptions()
-    text = program.documentation(registry, details_link=options.details_link) + '\n## 受入条件との対応\n\n'
+    text = program.documentation(registry, details_link=options.details_link, data_definitions_link=options.data_definitions_link) + '\n## 受入条件との対応\n\n'
     for identity in sorted({r for c in cases for r in c.requirements}):
         text += f'<a id="{identity}"></a>\n### {identity}\n\n'
         for case in cases:

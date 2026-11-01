@@ -245,3 +245,34 @@ def test_interface_inspection_detects_schema_drift_even_with_same_python_name():
     report = check_interfaces(export_business(sample.compiled.program), module)
     assert not report['passed']
     assert report['errors'][0]['schema_errors'] == ['vo.application_id']
+
+
+
+def test_purchase_owns_value_definitions_and_builds_frozen_documents():
+    from examples.purchase import contract, value_objects
+    from examples.purchase.build import BUILD as purchase_build
+    assert contract.amount.value_object is value_objects.amount_type
+    assert contract.vendor.value_object is value_objects.vendor_type
+    assert contract.application_id.value_object is value_objects.application_id_type
+    outputs = compile_outputs(purchase_build, target='temporal')
+    for name in ('data-definitions.md', 'data-definitions.json'):
+        assert outputs[name] == (ROOT / 'examples/purchase' / name).read_text()
+    assert 'data-definitions.md#vo.purchase.amount' in contract.program.documentation()
+    from myworkflow.acceptance.rendering import DocumentOptions, render_business
+    options = DocumentOptions(data_definitions_link='../data-definitions.md')
+    assert '../data-definitions.md#vo.purchase.amount' in render_business(contract.program, None, (), options=options)
+
+
+@pytest.mark.parametrize('vendor, amount', [('V', 0), ('V', -1), ('', 1), ('   ', 1)])
+def test_purchase_value_constraints_reject_before_storage(tmp_path, vendor, amount):
+    from examples.purchase import contract, interfaces
+    from examples.purchase.handlers import registry
+    from examples.purchase.services import Services
+    services = Services(tmp_path / 'purchase.db')
+    runner = Engine(contract.program, registry, services, interfaces)
+    result = runner.invoke(contract.PurchaseApproval.submit, contract.PurchaseApproval.submission,
+                           {'id': 'x', 'vendor': vendor, 'amount': amount},
+                           Principal('alice', frozenset({contract.requester.id})), run_id='invalid')
+    assert not result.ok
+    with services.connect() as database:
+        assert database.execute('SELECT COUNT(*) FROM applications').fetchone()[0] == 0

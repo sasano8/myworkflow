@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from examples.purchase import interfaces
-from examples.purchase.contract import SPEC
+from examples.purchase.contract import SPEC, compiled
 from examples.purchase.handlers import registry
 from examples.purchase.services import Services
 from myworkflow.executable import (Context, ContractError, Engine, ExecutionFailed, Principal,
@@ -21,7 +21,7 @@ class TestExecutable:
     def prepare(self, tmp_path):
         self.tmp_path = tmp_path
         self.services = Services(self.tmp_path / 'db.sqlite')
-        self.program = Program(copy.deepcopy(SPEC))
+        self.program = Program(copy.deepcopy(SPEC), value_objects=compiled.catalog.value_objects)
         self.engine = Engine(self.program, registry, self.services, interfaces)
         self.requester = Principal('alice', frozenset({'role.requester'}))
         self.approver = Principal('bob', frozenset({'role.approver'}))
@@ -79,7 +79,8 @@ class TestExecutable:
         assert self.rows('applications') == []
 
     def test_invalid_amount_and_unauthorized_or_self_approval(self):
-        with pytest.raises(ExecutionFailed):
+        # Value constraints now reject the request before the pipeline starts.
+        with pytest.raises(ContractError):
             self.invoke('b.submit', 't.submit', {'id': 'x', 'vendor': 'V', 'amount': -1})
         self.submit()
         with pytest.raises(PermissionError):
@@ -277,14 +278,14 @@ class TestExecutable:
             steps = spec['pipelines'][4]['steps']
             steps[1], steps[2] = steps[2], steps[1]
         with pytest.raises((ContractError, ValueError)):
-            Program(spec)
+            Program(spec, value_objects=compiled.catalog.value_objects)
 
     def test_stale_interface_and_required_input_change(self):
         spec = copy.deepcopy(SPEC)
         spec['artifacts'].append(dict(id='a.department', key='department', name='依頼部門', type='str'))
         spec['pipelines'][0]['inputs'].append('a.department')
         spec['workflows'][0]['bindings'][0]['triggers'][0]['mapping']['a.department'] = 'department'
-        changed = Program(spec)
+        changed = Program(spec, value_objects=compiled.catalog.value_objects)
         with pytest.raises(ContractError, match='p.submit'):
             Engine(changed, registry, self.services, interfaces)
         generated = SimpleNamespace()
@@ -292,7 +293,7 @@ class TestExecutable:
         updated_registry = registry.fork()
         # Extend both the step contract and implementation for the new requirement.
         spec['pipelines'][0]['steps'][1]['reads'].append('a.department')
-        changed = Program(spec)
+        changed = Program(spec, value_objects=compiled.catalog.value_objects)
         seen_departments = []
         @updated_registry.implements('s.department-submit')
         def department_submit(ctx: Context) -> None:
@@ -345,7 +346,7 @@ class TestExecutable:
         spec['workflows'][0]['bindings'][0]['triggers'].append(dict(
             id='t.import', name='申請取込', role='role.requester',
             mapping={'a.id': 'number', 'a.vendor': 'supplier', 'a.amount': 'total'}))
-        changed = Program(spec)
+        changed = Program(spec, value_objects=compiled.catalog.value_objects)
         engine = Engine(changed, registry, self.services, interfaces)
         self.invoke('b.submit', 't.import', {'number': 'x', 'supplier': 'V', 'total': 1}, engine=engine)
         with pytest.raises(PermissionError):

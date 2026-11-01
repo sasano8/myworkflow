@@ -11,7 +11,7 @@ from temporalio.testing import WorkflowEnvironment
 from temporalio.worker import Worker
 
 from examples.purchase import interfaces
-from examples.purchase.contract import SPEC
+from examples.purchase.contract import program
 from examples.purchase.handlers import registry
 from examples.purchase.services import Services
 from examples.purchase.temporal_workflow import ApprovePurchase, ConfirmPurchase
@@ -29,7 +29,7 @@ class TestPurchaseTemporal:
         self.environment = await WorkflowEnvironment.start_local(dev_server_existing_path=executable)
         try:
             self.services = Services(tmp_path / 'purchase.db')
-            self.activity = PipelineActivity(Engine(Program(SPEC), registry, self.services, interfaces))
+            self.activity = PipelineActivity(Engine(program, registry, self.services, interfaces))
             self.queue = f'purchase-{uuid4()}'
             yield
         finally:

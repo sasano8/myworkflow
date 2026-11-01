@@ -70,9 +70,9 @@
 
 | 固定ID | 名前 | コード上のキー | Python型 |
 | --- | --- | --- | --- |
-| a.id | 購買申請ID | application_id | str |
-| a.vendor | 取引先 | vendor | str |
-| a.amount | 申請金額 | amount | int |
+| a.id | 購買申請ID | application_id | ApplicationId |
+| a.vendor | 取引先 | vendor | VendorName |
+| a.amount | 申請金額 | amount | PurchaseAmount |
 | a.status | 申請状態 | status | str |
 | a.quote-a | 見積書A | quote_a | str |
 | a.quote-b | 見積書B | quote_b | str |
@@ -80,6 +80,16 @@
 | a.decision | 承認判断 | decision | bool |
 | a.eligible | 発注可能 | eligible | bool |
 | a.order | 発注番号 | order_id | str |
+
+## データ定義への参照
+
+詳細な制約は別ファイルの[データ定義](data-definitions.md)を参照。
+
+| アーティファクト固定ID | データ定義固定ID |
+| --- | --- |
+| a.id | [vo.purchase.application_id](data-definitions.md#vo.purchase.application_id) |
+| a.vendor | [vo.purchase.vendor](data-definitions.md#vo.purchase.vendor) |
+| a.amount | [vo.purchase.amount](data-definitions.md#vo.purchase.amount) |
 
 ## 起動定義の対応
 

@@ -63,16 +63,16 @@ def render(catalog: ContractCatalog) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
-def document_program(program, registry=None, *, details_link=None):
+def document_program(program, registry=None, *, details_link=None, data_definitions_link="data-definitions.md"):
     text = render(program.catalog()) + "\n## 型付き契約\n\n| 固定ID | 名前 | コード上のキー | Python型 |\n| --- | --- | --- | --- |\n"
     safe = escape
     for a in program.artifacts.values():
         text += "| " + " | ".join(map(safe, (a.id, a.name, a.key, a.value_object.model.__name__ if a.value_object else a.type))) + " |\n"
     if program.model.value_objects:
-        text += "\n## データ定義への参照\n\n詳細な制約は別ファイルの[データ定義](data-definitions.md)を参照。\n\n| アーティファクト固定ID | データ定義固定ID |\n| --- | --- |\n"
+        text += f"\n## データ定義への参照\n\n詳細な制約は別ファイルの[データ定義]({data_definitions_link})を参照。\n\n| アーティファクト固定ID | データ定義固定ID |\n| --- | --- |\n"
         for artifact in program.model.artifacts:
             if artifact.value_object:
-                text += f"| {safe(artifact.id)} | [{safe(artifact.value_object.id)}](data-definitions.md#{artifact.value_object.id}) |\n"
+                text += f"| {safe(artifact.id)} | [{safe(artifact.value_object.id)}]({data_definitions_link}#{artifact.value_object.id}) |\n"
     text += "\n## 起動定義の対応\n\n| トリガー固定ID | 配置 | パイプライン | 許可ロール |\n| --- | --- | --- | --- |\n"
     for b in program.bindings.values():
         for t in b['triggers']:

@@ -127,7 +127,7 @@ def test_shared_provider_and_typed_order_independent_keys():
 
 def test_two_applications_share_locks_but_not_execution_ids():
     from examples.purchase.services import Services
-    from examples.purchase.contract import SPEC as PURCHASE_SPEC
+    from examples.purchase.contract import program as purchase_program
     from examples.purchase.handlers import registry
     with tempfile.TemporaryDirectory() as directory:
         locks = InProcessLockProvider()
@@ -137,7 +137,7 @@ def test_two_applications_share_locks_but_not_execution_ids():
             with pytest.raises(LockConflict):
                 with other.lock((('a.id', 'a'),)): pass
         assert execution_id('a/b', 'c') != execution_id('a_b', 'c')
-        runner = Engine(Program(PURCHASE_SPEC), registry, services)
+        runner = Engine(purchase_program, registry, services)
         for application in ('a', 'b'):
             runner.invoke_or_raise('b.submit', 't.submit', {'id': application, 'vendor': 'V', 'amount': 1},
                           Principal('op', frozenset({'role.requester'})), run_id=execution_id(application, 'submit'))
@@ -205,12 +205,12 @@ def test_two_scheduled_purchases_share_services_without_colliding():
     from datetime import datetime
     from types import SimpleNamespace
     from examples.purchase.services import Services
-    from examples.purchase.contract import SPEC as PURCHASE_SPEC
+    from examples.purchase.contract import program as purchase_program
     from examples.purchase.handlers import registry
     from examples.purchase.scheduling import ScheduledPurchase
     with tempfile.TemporaryDirectory() as directory:
         services = Services(Path(directory) / 'purchase.db')
-        runner = Engine(Program(PURCHASE_SPEC), registry, services)
+        runner = Engine(purchase_program, registry, services)
         applicant = Principal('applicant', frozenset({'role.requester'}))
         approver = Principal('approver', frozenset({'role.approver'}))
         clock = SimpleNamespace(now=lambda: datetime.fromisoformat('2030-04-01T10:00:00+09:00'))

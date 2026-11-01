@@ -80,3 +80,19 @@ ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.
 機械可読の業務出力とIRにも定義・参照を含める。旧辞書SPECからモデルを再接続するときは `Program(spec, value_objects=definitions)` が必要で、Schema・メタデータがPython定義と一致することを確認する。外部ドキュメントに記載されたPythonパスを勝手にimportしない。JSON Schemaから任意の独自バリデーターを復元・自動生成する機能は残課題である。
 
 既存の購買往復評価を、この追加によって意味の完全一致や全要件の構造化を達成したとは扱わない。状態遷移・データ定義を含む総合的な往復指標、実案件レビュー、外部サービスを含む確定、保持期限・GCは引き続き残課題。
+
+
+## 購買サンプルの出力先
+
+購買の正本は [purchase/value_objects.py](../examples/purchase/value_objects.py) に置き、contract.pyの申請ID・取引先・金額のArtifactから参照する。購買自身のContractCatalogへ含め、入力検証・生成Request・業務概要・ビルドに同じ定義を使う。
+
+- [購買のデータ定義](../examples/purchase/data-definitions.md)（[JSON](../examples/purchase/data-definitions.json)）。
+- [購買の業務概要](../examples/purchase/requirements.md)。
+
+```sh
+python -m myworkflow build --config examples.purchase.build --target temporal --output dist/purchase
+```
+
+既存の検証と一致するよう、金額は正の整数、取引先は空文字・空白のみを拒否する。通貨・税区分、申請IDの書式等の未定義な制約を補ってはいない。申請ID等の未確定部分はデータ定義にも記載する。他の項目は基本型のままで、保存先Repositoryをchangesへ移行したものではない。
+
+先行するapproval-valuesの例は、納品期間の独自検証や確定前検証を示す追加サンプルとして維持する。購買の固定原文・変換結果を使う往復評価は従来の独立した基準を維持し、今回のデータ定義全体を採点済みとは扱わない。

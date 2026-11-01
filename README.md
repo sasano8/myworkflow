@@ -140,8 +140,8 @@ python -m examples.guarded_approval
 
 ### バリューオブジェクトと別ファイルのデータ定義
 
-Pydanticモデルを固定ID付きの `ValueObject` として宣言し、入力と型を結び付けた更新を検証します。業務概要とは別に[データ定義](examples/approval-values/data-definitions.md)を生成します。[定義方法と保証範囲](docs/value-objects.md)を参照してください。
+Pydanticモデルを固定ID付きの `ValueObject` として宣言し、入力と型を結び付けた更新を検証します。購買の[業務概要](examples/purchase/requirements.md)とは別に[データ定義](examples/purchase/data-definitions.md)を生成します。[定義コード](examples/purchase/value_objects.py)は購買自身の業務契約カタログへ接続しています。[定義方法と保証範囲](docs/value-objects.md)を参照してください。
 
 ```sh
-python -m myworkflow build --config examples.approval_values_build --target temporal --output dist/approval-values
+python -m myworkflow build --config examples.purchase.build --target temporal --output dist/purchase
 ```

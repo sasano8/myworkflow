@@ -63,6 +63,8 @@ jobs:
           python -m myworkflow build --config examples.purchase.build --target temporal --output /tmp/build-temporal --check
           python -m myworkflow build --config examples.purchase.build --target kestra --workflow w.attach --output /tmp/build-kestra
           diff -u examples/purchase/kestra-attachment.yaml /tmp/build-kestra/manifest.yaml
+          diff -u examples/purchase/data-definitions.md /tmp/build-temporal/data-definitions.md
+          diff -u examples/purchase/data-definitions.json /tmp/build-temporal/data-definitions.json
           python -m examples.declarative_review --flowchart > /tmp/declarative-review-flow.md
           diff -u examples/declarative_review-flow.md /tmp/declarative-review-flow.md
           python -m examples.declarative_review > /tmp/declarative-review.md

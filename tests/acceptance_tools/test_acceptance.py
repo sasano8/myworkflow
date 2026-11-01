@@ -96,7 +96,7 @@ def test_rename_and_row_reorder_preserve_ids(tmp_path):
     assert {c.id for c in original} == {c.id for c in changed}
     spec = copy.deepcopy(program.spec)
     spec['pipelines'][4]['name'] = '新しい発注名'
-    text = render_business(Program(spec), registry, changed)
+    text = render_business(Program(spec, value_objects=program.model.value_objects), registry, changed)
     assert '新しい発注名' in text
     assert 'scenario.purchase.schedule' in text
     assert 'w.execution/b.confirm/p.confirm/s.confirm' in text

@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_temporal_build_validates_code_without_generating_another_runtime():
     outputs = compile_outputs(BUILD, target='temporal')
-    assert set(outputs) == {'ir.json', 'requirements.md', 'interfaces.py', 'build.json'}
+    assert set(outputs) == {'ir.json', 'requirements.md', 'interfaces.py', 'build.json', 'data-definitions.md', 'data-definitions.json'}
     assert json.loads(outputs['ir.json'])['business'] == export_business(purchase.program)
     assert json.loads(outputs['build.json'])['mode'] == 'application-owned-code'
     assert outputs == compile_outputs(BUILD, target='temporal')

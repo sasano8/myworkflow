@@ -120,6 +120,6 @@ class Program:
                     if identity not in registry.handlers:
                         raise ContractError(f"{identity}: missing implementation")
 
-    def documentation(self, registry=None, *, details_link=None):
+    def documentation(self, registry=None, *, details_link=None, data_definitions_link="data-definitions.md"):
         from myworkflow.rendering import document_program
-        return document_program(self, registry, details_link=details_link)
+        return document_program(self, registry, details_link=details_link, data_definitions_link=data_definitions_link)

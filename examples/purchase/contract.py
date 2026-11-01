@@ -2,15 +2,16 @@
 from myworkflow import Artifact, Role
 from myworkflow.declarations import bind, compile_workflows, trigger, workflow
 from myworkflow.pipeline_declarations import Action, Mutex, Operation, PipelineDeclaration
+from examples.purchase import value_objects as vo
 
 requester = Role('role.requester', '購買依頼部門の担当者', '申請者')
 approver = Role('role.approver', '購買依頼部門の部門長', '承認者')
 buyer = Role('role.buyer', '購買部の発注担当者', '発注担当者')
 system = Role('role.system', '購買管理システム', 'システム')
 
-application_id = Artifact('a.id', '購買申請ID', 'application_id', 'str')
-vendor = Artifact('a.vendor', '取引先', 'vendor', 'str')
-amount = Artifact('a.amount', '申請金額', 'amount', 'int')
+application_id = Artifact('a.id', '購買申請ID', 'application_id', 'str', value_object=vo.application_id_type)
+vendor = Artifact('a.vendor', '取引先', 'vendor', 'str', value_object=vo.vendor_type)
+amount = Artifact('a.amount', '申請金額', 'amount', 'int', value_object=vo.amount_type)
 application_status = Artifact('a.status', '申請状態', 'status', 'str')
 quote_a = Artifact('a.quote-a', '見積書A', 'quote_a', 'str')
 quote_b = Artifact('a.quote-b', '見積書B', 'quote_b', 'str')

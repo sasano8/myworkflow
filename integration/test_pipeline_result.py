@@ -4,7 +4,7 @@ from temporalio.exceptions import ApplicationError
 from temporalio.testing import ActivityEnvironment
 
 from examples.purchase import interfaces
-from examples.purchase.contract import SPEC
+from examples.purchase.contract import program
 from examples.purchase.handlers import registry
 from examples.purchase.services import Services
 from myworkflow.errors import BusinessError, ExecutionFailed
@@ -14,7 +14,7 @@ from myworkflow.temporal import PipelineActivity
 
 @pytest.fixture
 def activity(tmp_path):
-    return PipelineActivity(Engine(Program(SPEC), registry, Services(tmp_path / 'app.db'), interfaces))
+    return PipelineActivity(Engine(program, registry, Services(tmp_path / 'app.db'), interfaces))
 
 
 def submit(engine):
