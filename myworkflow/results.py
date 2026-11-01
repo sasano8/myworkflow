@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 from typing import Literal
 
+DEFAULT_ERROR_CODE = 1
+
 MessageLevel = Literal['info', 'warning', 'error', 'critical']
 
 
@@ -38,11 +40,11 @@ class PipelineResult:
         from myworkflow.errors import ExecutionFailed, PipelineError
         cause = error.cause if isinstance(error, ExecutionFailed) else error
         messages = [m for m in getattr(error, 'messages', ()) if isinstance(m, Message)]
-        code = cause.code if isinstance(cause, PipelineError) else 255
+        code = cause.code if isinstance(cause, PipelineError) else DEFAULT_ERROR_CODE
         messages.append(Message(cause.level if isinstance(cause, PipelineError) else 'error', str(cause)))
         for kind, failures in (('補償', getattr(error, 'compensation_errors', ())),
                                ('後処理', getattr(error, 'secondary_errors', ()))):
             for identity, detail in failures:
                 messages.append(Message('critical', f'{kind}失敗：{identity}：{detail}'))
-                code = 255
+                code = DEFAULT_ERROR_CODE
         return cls(code, tuple(messages))

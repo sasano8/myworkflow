@@ -575,7 +575,7 @@
   "completion": {
     "interface": "PipelineResult",
     "success_code": 0,
-    "default_error_code": 255,
+    "default_error_code": 1,
     "fields": {
       "code": "int",
       "messages": "tuple[Message, ...]"

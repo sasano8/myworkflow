@@ -65,12 +65,12 @@ def test_explicit_exception_code_and_messages_survive(make_engine, exception):
     assert store.get('one')[0] == 'failed'
 
 
-def test_unknown_exception_uses_255_and_strict_api_preserves_cause(make_engine):
+def test_unknown_exception_uses_1_and_strict_api_preserves_cause(make_engine):
     def fail(ctx):
         raise RuntimeError('unexpected')
     engine, store = make_engine(fail)
     result = invoke(engine)
-    assert result == PipelineResult(255, (Message('error', 'unexpected'),))
+    assert result == PipelineResult(1, (Message('error', 'unexpected'),))
     assert store.get('one')[0] == 'failed'
     with pytest.raises(ExecutionFailed) as caught:
         engine.run_or_raise('ticket.issue', {'number': 'T-001'}, actor='operator', run_id='strict')
@@ -84,7 +84,7 @@ def test_ingress_rejection_returns_result_without_executing(make_engine):
                            Principal('intruder', frozenset()), run_id='denied')
     malformed = engine.invoke('ticket.binding', 'ticket.trigger', {},
                               Principal('operator', frozenset({'ticket.operator'})), run_id='invalid')
-    assert denied.code == malformed.code == 255
+    assert denied.code == malformed.code == 1
     assert calls == []
 
 
@@ -107,7 +107,7 @@ def test_exhausted_retry_is_a_failed_result(make_engine):
         attempts.append('attempt')
         raise RetryableError('unavailable')
     engine, store = make_engine(fail)
-    assert invoke(engine).code == 255
+    assert invoke(engine).code == 1
     assert len(attempts) == 2
     assert store.get('one')[0] == 'failed'
 
@@ -119,7 +119,7 @@ def test_compensation_failure_overrides_business_rejection_with_critical(make_en
         raise OSError('cannot undo')
     engine, store = make_engine(fail, undo=undo)
     result = invoke(engine)
-    assert result.code == 255
+    assert result.code == 1
     assert result.messages[0] == Message('warning', '業務上の拒否')
     assert result.messages[-1].level == 'critical'
     assert 'cannot undo' in result.messages[-1].text
@@ -147,7 +147,7 @@ def test_invalid_context_messages_are_a_failed_result(make_engine):
         ctx.messages.append('not a Message')
     engine, store = make_engine(invalid)
     result = invoke(engine)
-    assert result.code == 255
+    assert result.code == 1
     assert result.messages[0].level == 'error'
     assert store.get('one')[0] == 'failed'
 
@@ -158,5 +158,5 @@ def test_journal_failure_is_critical_and_cannot_be_success(make_engine, monkeypa
         raise OSError('journal unavailable')
     monkeypatch.setattr(store, 'record', unavailable)
     result = invoke(engine)
-    assert result.code == 255
+    assert result.code == 1
     assert any(m.level == 'critical' and 'journal unavailable' in m.text for m in result.messages)

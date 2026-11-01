@@ -63,6 +63,6 @@
 | PUR-021 | structured | 発注確定パイプラインは応答不要とする。 |  |
 | PUR-022 | structured | 申請・添付・承認・発注の更新処理は、申請ID単位で排他する。 |  |
 | PUR-023 | description_only | 競合時は拒否し、例外時にも解放する。 |  |
-| PUR-024 | structured | パイプラインの実行結果は終了コードとメッセージに統一する。正常終了は0、コードのない例外は255とする。メッセージはinfo・warning・error・criticalの重大度を持つ。 | 新しい共通終了結果の契約。成果アーティファクトをレスポンスと見なさない。 |
+| PUR-024 | structured | パイプラインの実行結果は終了コードとメッセージに統一する。正常終了は0、コードのない例外は1とする。メッセージはinfo・warning・error・criticalの重大度を持つ。 | 新しい共通終了結果の契約。成果アーティファクトをレスポンスと見なさない。 |
 
 段階：load=passed、convert=passed、generate=passed、export=passed、compare=passed

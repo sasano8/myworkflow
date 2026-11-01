@@ -54,7 +54,7 @@ async def test_contract_error_is_an_activity_failure_with_completion_details(act
             'actor': 'alice', 'roles': ['role.requester'],
         })
     assert caught.value.type == 'ContractError'
-    assert caught.value.details[0]['result']['code'] == 255
+    assert caught.value.details[0]['result']['code'] == 1
     assert caught.value.non_retryable  # Whole-pipeline replay is intentionally still disabled.
 
 
@@ -68,7 +68,7 @@ async def test_retry_exhaustion_remains_an_activity_failure(activity):
             'actor': 'alice', 'roles': ['role.requester'],
         })
     assert caught.value.type == 'RetryExhausted'
-    assert caught.value.details[0]['result']['code'] == 255
+    assert caught.value.details[0]['result']['code'] == 1
     with activity.engine.services.connect() as db:
         assert db.execute('SELECT count(*) FROM objects').fetchone()[0] == 0
 
@@ -83,5 +83,16 @@ async def test_failed_compensation_cannot_be_returned_as_ordinary_business_rejec
             'binding': 'b', 'trigger': 't', 'payload': {}, 'actor': 'a', 'roles': [],
         })
     result = caught.value.details[0]['result']
-    assert result['code'] == 255
+    assert result['code'] == 1
     assert result['messages'][-1]['level'] == 'critical'
+
+
+@pytest.mark.asyncio
+async def test_adapter_uses_failure_kind_rather_than_code_one_alone():
+    class RejectedEngine:
+        def invoke_or_raise(self, *args, **kwargs):
+            raise BusinessError(1, '業務上の拒否', level='warning')
+    result = await ActivityEnvironment().run(PipelineActivity(RejectedEngine()).invoke, {
+        'binding': 'b', 'trigger': 't', 'payload': {}, 'actor': 'a', 'roles': [],
+    })
+    assert result == {'code': 1, 'messages': [{'level': 'warning', 'text': '業務上の拒否'}]}

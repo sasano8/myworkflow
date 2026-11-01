@@ -53,7 +53,7 @@ python3.14 -m pytest -q
 
 ## パイプラインの終了結果
 
-パイプラインは `PipelineResult(code, messages)` を返します。成功は0、コードのない例外は255。メッセージにはinfo・warning・error・criticalを付けられます。業務データはアーティファクトとして別に扱います。[例外・Temporal・生成型の契約](docs/pipeline-results.md)を参照してください。
+パイプラインは `PipelineResult(code, messages)` を返します。成功は0、コードのない例外は1。メッセージにはinfo・warning・error・criticalを付けられます。業務データはアーティファクトとして別に扱います。[例外・Temporal・生成型の契約](docs/pipeline-results.md)を参照してください。
 
 ## モデル
 

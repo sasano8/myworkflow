@@ -1,10 +1,11 @@
 """Machine-readable business output; generated from declarations, never Program.spec."""
 from myworkflow.models import Lock
+from myworkflow.results import DEFAULT_ERROR_CODE
 from myworkflow.codegen import class_name
 
 
 COMPLETION = {
-    'interface': 'PipelineResult', 'success_code': 0, 'default_error_code': 255,
+    'interface': 'PipelineResult', 'success_code': 0, 'default_error_code': DEFAULT_ERROR_CODE,
     'fields': {'code': 'int', 'messages': 'tuple[Message, ...]'},
     'message_levels': ['info', 'warning', 'error', 'critical'],
 }
