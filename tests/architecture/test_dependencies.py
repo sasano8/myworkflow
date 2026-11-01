@@ -46,3 +46,11 @@ def test_default_collection_includes_build_tests():
     assert result.returncode == 0, result.stderr
     assert 'tests/build/test_build.py::test_temporal_build_validates_code_without_generating_another_runtime' in result.stdout
     assert 'tests/build/test_value_outputs.py::test_build_includes_separate_data_files_and_detects_constraint_drift' in result.stdout
+
+
+
+def test_source_and_test_build_packages_are_not_gitignored():
+    result = subprocess.run(['git', '-C', str(ROOT), 'check-ignore', '--no-index',
+                             'myworkflow/build/__init__.py', 'myworkflow/build/__main__.py',
+                             'tests/build/test_value_outputs.py'], capture_output=True, text=True)
+    assert result.returncode == 1, result.stdout + result.stderr
