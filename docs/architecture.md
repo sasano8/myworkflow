@@ -33,7 +33,7 @@ flowchart TD
 | myworkflow/models.py | 共通の不変宣言モデル |
 | pipeline_declarations.py | Artifact・条件・補償をオブジェクト参照するパイプライン宣言のコンパイル |
 | building.py / build.py / cli.py | 共通IR・概要・型とKestraプレビューの生成、未対応宣言の拒否、差分検査 |
-| declarations.py / state_graph.py | 実験用クラス宣言のコンパイル、状態・遷移の静的検査と概要出力。遷移の実行は未実装 |
+| declarations.py / state_graph.py | 実験用クラス宣言のコンパイル、状態・遷移の静的検査と概要出力。実行は明示的に接続するruntime/transitions.pyが担当 |
 | flowchart.py | 同じ状態宣言から閲覧用のMermaid業務フロー図を生成 |
 | serialization.py | 型付き契約から互換用の辞書スナップショットを生成 |
 | loading.py / validation.py | 外部の辞書形式の解釈、構造・名前・参照・型・データフロー検証 |
@@ -60,7 +60,7 @@ flowchart TD
 
 SPECの形は維持している。モデルの索引値は型付きレコードで、初期APIの `record['id']` や `get()` も受け付ける。利用側は属性参照を推奨する。
 
-bool分岐は引き続き線形の条件付きステップで表す。分岐に使った判定値の再代入は静的検証の前提を壊すため拒否する。パイプラインの実行機構は一般的な循環グラフや任意の条件式を実装したものではない。別の状態グラフでは循環を宣言・検査できるが、その遷移の実行は未実装である。
+bool分岐は引き続き線形の条件付きステップで表す。分岐に使った判定値の再代入は静的検証の前提を壊すため拒否する。パイプラインの実行機構は一般的な循環グラフや任意の条件式を実装したものではない。別の状態グラフでは循環を宣言・検査できるが、その実行は明示的に接続するruntime/transitions.pyが担当である。
 
 レジストリの `handlers` は読取り専用。差替えは `fork()` でコピーした上で `replace(id, function)`、削除は `remove(id)` を使う。差替え時も `(ctx: Context) -> None` の契約を検査する。テスト用の変更が元のレジストリへ漏れない。
 
@@ -144,3 +144,5 @@ PostgreSQLのセッション／トランザクション単位のアドバイザ�
 [ジョブ管理と準備・確定](artifact-jobs.md)を追加した。中間サーバーへのインターフェースを先に定義し、現在は一時領域のSQLiteで実装する。既存の業務DBと別DBのまま原子性を拡張するものではなく、独立した承認例で検証する。
 
 [ビルドと残課題](build.md)では、Pythonの正本から中間表現と実行基盤向け出力を生成する境界を定義する。SPECは互換用の生成物であり、購買の実行・受入設定は同じ `contract.program` を参照する。
+
+[トランジション実行](transition-execution.md)は `runtime/changes.py` の項目更新と `runtime/transitions.py` の契約検証をEngineへ接続する。状態グラフからのTemporal/Kestra構築や外部副作用の一括確定は行わない。

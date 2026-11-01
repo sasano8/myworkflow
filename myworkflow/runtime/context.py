@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from myworkflow.results import Message, MessageLevel
+from myworkflow.runtime.changes import Changes
 
 
 @dataclass(frozen=True)
@@ -17,6 +18,7 @@ class Context:
     events: list
 
     messages: list[Message] = field(default_factory=list)
+    changes: Changes | None = None
 
     def add_message(self, text: str, *, level: MessageLevel = 'info') -> None:
         self.messages.append(Message(level, text))

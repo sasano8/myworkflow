@@ -25,7 +25,7 @@ Kestra出力は `deployable: false` のプレビューです。実機へ配備�
 
 ## 名前付きクラス宣言の実験
 
-[クラス宣言例](examples/declarative_review.py)から、既存の型付き契約と状態グラフをコンパイルできます。[生成結果](examples/declarative_review.md)には承認・差戻し・再申請・却下を出力します。[業務フロー図](examples/declarative_review-flow.md)も同じ宣言からMermaid形式で生成し、GitHubで表示できます。`python -m examples.declarative_review --flowchart` で図だけ出力できます。`python -m examples.declarative_review` で再生成できます。構文・対応範囲・残タスクは[状態遷移モデル](docs/state-graph.md)を参照してください。状態遷移の実行・永続化は未実装です。
+[クラス宣言例](examples/declarative_review.py)から、既存の型付き契約と状態グラフをコンパイルできます。[生成結果](examples/declarative_review.md)には承認・差戻し・再申請・却下を出力します。[業務フロー図](examples/declarative_review-flow.md)も同じ宣言からMermaid形式で生成し、GitHubで表示できます。`python -m examples.declarative_review --flowchart` で図だけ出力できます。`python -m examples.declarative_review` で再生成できます。構文・対応範囲・残タスクは[状態遷移モデル](docs/state-graph.md)を参照してください。ローカルでの遷移検証・確定は[TransitionRuntime](docs/transition-execution.md)を明示的に接続して行えます。この宣言例自体は審査を保存するアプリケーションではありません。
 
 ## 動く購買申請サンプル
 
@@ -127,3 +127,11 @@ python -m myworkflow.quality --case examples/purchase/quality/case.json --output
 ## 判断と限界
 
 [PoC評価](docs/poc-evaluation.md)、[実行設計・保証範囲](docs/execution-design.md)、[ゴールとタスク](docs/poc-plan.md)を参照してください。表層の契約対応を検証するPoCであり、本番用のワークフロー製品としての完成を意味しません。
+
+### トランジション契約付きの更新
+
+[実行サンプル](examples/guarded_approval.py)では `ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.id)` を、開始状態・ロール・ガード・成功後の状態と照合し、最後に楽観ロック付きで一括確定する。[使い方と保存範囲](docs/transition-execution.md)を参照。
+
+```sh
+python -m examples.guarded_approval
+```

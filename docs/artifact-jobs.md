@@ -65,16 +65,16 @@ with TemporaryDirectory() as root:
 
 ## 利用側APIの方針
 
-変更をまとめる高水準APIを追加する場合は、`pending` ではなく `changes` と呼ぶ。承認待ち等の業務状態と混同しないためである。状態も通常の項目更新として表し、状態だけを更新する `set_state` は導入しない。
+変更をまとめる高水準APIは `ctx.changes` と呼ぶ。[トランジション実行](transition-execution.md)を接続したEngineで使用できる。承認待ち等の業務状態と混同しないためである。状態も通常の項目更新として表し、状態だけを更新する `set_state` は導入しない。
 
 ```python
-# 将来のAPIの説明例。現在のContextにはchangesは実装していない。
-ctx.changes.update(application, approved_by=ctx.actor, status="approved")
+# applicationはctx.changes.subject。状態値には宣言した固定IDを使う。
+ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.id)
 ```
 
-将来の `ctx.changes` は、読込み時のバージョンを変更予定へ自動的に引き継ぎ、確定時の楽観ロックに使用する方針とする。この高水準APIは未実装である。
+`ctx.changes` は読込み時のバージョンを変更予定へ自動的に引き継ぎ、確定時の楽観ロックに使用する。Engineが開始状態・ガードと成功後の状態を検証し、最後に変更全体を確定する。
 
-この操作は変更予定の作成であり、DBへの確定ではない。最後にprepare・commitする保存境界は維持する。現在の低水準APIでは、変更後の値を `ArtifactWrite` で指定する。上記の表記は保存先の構成や、汎用の状態遷移実行・検証まで決めるものではない。
+この操作は変更予定の作成であり、DBへの確定ではない。最後にprepare・commitする保存境界は維持する。現在の低水準APIでは、変更後の値を `ArtifactWrite` で指定する。高水準APIでは、既存JSONレコードの状態フィールドを対象にする。状態が別アーティファクトにある旧サンプルを暗黙に変換しない。
 
 ## デフォルトの一時領域
 

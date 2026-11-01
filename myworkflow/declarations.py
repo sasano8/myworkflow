@@ -46,6 +46,7 @@ class TransitionDeclaration:
     binding: Placement
     trigger: TriggerDeclaration
     condition: str = ''
+    guard: Callable | None = None
 
 
 @dataclass(frozen=True)
@@ -218,7 +219,7 @@ def compile_workflows(*declarations: type, artifacts: tuple[Artifact, ...] = (),
             if trigger_key not in compiled_triggers:
                 fail(t.id, 'trigger must reference an object belonging to the placement')
             compiled_transitions.append(Transition(t.id, t.name, t.source, t.target,
-                bindings[id(t.binding)], compiled_triggers[trigger_key], t.condition))
+                bindings[id(t.binding)], compiled_triggers[trigger_key], t.condition, t.guard))
         workflows.append(compiled_workflow)
         if states or transitions:
             graphs.append(StateGraph(compiled_workflow, initial[0], states, tuple(compiled_transitions)))

@@ -1,0 +1,68 @@
+"""A declared transition enforces plain status updates and optimistic final commit."""
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from myworkflow import Artifact, Role
+from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
+from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
+from myworkflow.artifact_jobs import ArtifactWrite
+from myworkflow.declarations import bind, compile_workflows, state, transition, trigger, workflow
+from myworkflow.executable import Context, Engine, Principal, Registry
+from myworkflow.pipeline_declarations import Action, PipelineDeclaration
+from myworkflow.runtime.transitions import GuardContext, TransitionRuntime
+
+application_id = Artifact('a.guarded_id', '申請ID', 'application_id', 'str')
+reviewer = Role('role.guarded_reviewer', '審査責任者', '承認者')
+system = Role('role.guarded_system', '業務システム', 'システム')
+record_approval = Action('s.guarded_approve', '承認変更の作成',
+                         '申請者本人の承認を拒否し、承認者と承認済みの状態を変更予定に記録する。')
+approval = PipelineDeclaration('p.guarded_approve', '申請承認', (application_id,), (), (record_approval,))
+
+
+def may_approve(ctx: GuardContext) -> bool:
+    return ctx.application['owner'] != ctx.actor and ctx.application['amount'] > 0
+
+
+@workflow(id='w.guarded_approval', name='トランジション契約に従う申請承認')
+class Approval:
+    waiting = state('state.guarded_waiting', '承認待ち', initial=True)
+    approved = state('state.guarded_approved', '承認済み')
+    requested = trigger('t.guarded_approve', '承認操作', reviewer, ((application_id, 'id'),))
+    execute = bind('b.guarded_approve', approval, (requested,), (('system', system),))
+    approve = transition('tr.guarded_approve', '承認', waiting, approved, execute, requested,
+                         condition='申請者本人ではなく、金額が正である', guard=may_approve)
+
+
+compiled = compile_workflows(Approval, artifacts=(application_id,))
+registry = Registry()
+
+
+@registry.implements(record_approval)
+def approve(ctx: Context) -> None:
+    application = ctx.changes.subject
+    ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.id)
+    ctx.add_message('承認変更を作成しました')
+
+
+def seed(coordinator, identity='example'):
+    coordinator.prepare(f'seed:{identity}', (
+        ArtifactWrite(f'application:{identity}', {'owner': 'alice', 'amount': 100, 'status': Approval.waiting.id}),
+    ))
+    coordinator.commit(f'seed:{identity}')
+
+
+def engine(coordinator, journal_path: Path, *, handlers=None):
+    transitions = TransitionRuntime(compiled, compiled.graphs[0], coordinator,
+                                    key=lambda values: f"application:{values['application_id']}")
+    return Engine(compiled.program, handlers or registry, None,
+                  store=SQLiteExecutionStore(SQLiteDatabase(journal_path)), transitions=transitions)
+
+
+if __name__ == '__main__':
+    with TemporaryDirectory() as temporary:
+        coordinator = TemporaryArtifactCoordinator(temporary, namespace='guarded-approval')
+        seed(coordinator)
+        runner = engine(coordinator, Path(temporary) / 'runs.sqlite')
+        print(runner.invoke(Approval.execute, Approval.requested, {'id': 'example'},
+                            Principal('bob', frozenset({reviewer.id})), run_id='approval-job'))
+        print(coordinator.read('application:example'))

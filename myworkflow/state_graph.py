@@ -1,5 +1,7 @@
-"""Experimental static state graph; independent of declaration syntax and execution."""
+"""State graph declarations; optional execution is provided by TransitionRuntime."""
 from dataclasses import dataclass
+from collections.abc import Callable
+from inspect import isfunction
 
 from myworkflow.errors import ContractError
 from myworkflow.markdown import escape
@@ -21,13 +23,14 @@ class Transition:
     binding: Binding
     trigger: Trigger
     condition: str = ""
+    guard: Callable | None = None
 
 
 @dataclass(frozen=True)
 class StateGraph:
     """Static workflow view. A target is promised only after successful completion.
 
-    This model neither executes guards nor updates persisted business state.
+    This model alone neither executes guards nor updates persisted business state.
     Failure, compensation and commit policies belong to the execution adapter.
     """
     workflow: Workflow
@@ -62,6 +65,8 @@ class StateGraph:
                 raise ContractError(f'{transition.id}: binding must belong to workflow')
             if transition.trigger not in transition.binding.triggers:
                 raise ContractError(f'{transition.id}: trigger must belong to binding')
+            if transition.guard is not None and not isfunction(transition.guard):
+                raise ContractError(f'{transition.id}: guard must be a Python function')
             if not isinstance(transition.condition, str):
                 raise ContractError(f'{transition.id}: condition must be text')
         # Reachability, rather than topological sorting: revision/resubmission cycles are legal.
@@ -88,6 +93,7 @@ class StateGraph:
                 'binding': t.binding.id, 'pipeline': t.binding.pipeline_id,
                 'trigger': t.trigger.id, 'actor': t.trigger.actor_role_id,
                 'condition': t.condition,
+                **({'guard': f"{t.guard.__module__}:{t.guard.__qualname__}"} if t.guard is not None else {}),
             } for t in self.transitions],
         }
 

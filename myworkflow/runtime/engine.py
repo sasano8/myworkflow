@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, is_dataclass
 from typing import get_type_hints
 from myworkflow.errors import ContractError, RetryableError, ExecutionFailed
 from myworkflow.runtime.context import Context
+from myworkflow.runtime.transitions import TransitionRuntime
 from myworkflow.codegen import class_name
 from myworkflow.runtime.compensation import CompensationStack
 from myworkflow.results import PipelineResult
@@ -19,10 +20,13 @@ class Principal:
 
 
 class Engine:
-    def __init__(self, program, registry, services, interfaces=None, *, locks: LockProvider | None = None, store: ExecutionStore | None = None):
+    def __init__(self, program, registry, services, interfaces=None, *, locks: LockProvider | None = None, store: ExecutionStore | None = None, transitions: TransitionRuntime | None = None):
         program.check(registry)
         self.program, self.registry, self.services = program, registry, services
         self.interfaces = interfaces
+        self.transitions = transitions
+        if transitions is not None and transitions.catalog is not program.model:
+            raise ContractError('Transition runtime must use the Engine catalog')
         self.locks = locks or getattr(services, 'lock_provider', None)
         self.store = store or getattr(services, 'execution_store', None)
         if self.store is None or (any(s['kind'] == 'lock' for s in program.steps.values()) and self.locks is None):
@@ -57,7 +61,8 @@ class Engine:
         if set(payload) != set(t["mapping"].values()):
             raise ContractError(f"{trigger_id}: payload fields do not match mapping")
         values = {self.program.artifacts[a]["key"]: payload[source] for a, source in t["mapping"].items()}
-        return self.run_or_raise(b["pipeline"], values, actor=principal.id, run_id=run_id)
+        return self._run_or_raise(b["pipeline"], values, actor=principal.id, run_id=run_id,
+                                  binding_id=b.id, trigger_id=trigger_id)
 
     def run(self, pipeline_id, request, *, actor, run_id) -> PipelineResult:
         try:
@@ -67,6 +72,11 @@ class Engine:
 
     def run_or_raise(self, pipeline_id, request, *, actor, run_id) -> PipelineResult:
         pipeline_id = definition_id(pipeline_id)
+        if self.transitions is not None and self.transitions.governs_pipeline(pipeline_id):
+            raise ContractError('Transition-controlled pipelines must use invoke with an authorized trigger')
+        return self._run_or_raise(pipeline_id, request, actor=actor, run_id=run_id)
+
+    def _run_or_raise(self, pipeline_id, request, *, actor, run_id, binding_id=None, trigger_id=None):
         p = self.program.plans[pipeline_id]
         values = asdict(request) if is_dataclass(request) else dict(request)
         self.program.values(p["inputs"], values, pipeline_id)
@@ -76,8 +86,11 @@ class Engine:
         failure_id = pipeline_id
         secondary = []
         stack = ExitStack()
+        session = None
         try:
             try:
+                if self.transitions is not None and binding_id is not None:
+                    session = self.transitions.begin(ctx, binding_id, trigger_id)
                 for s in p["steps"]:
                     failure_id = s["id"]
                     condition = s.get("when")
@@ -107,6 +120,9 @@ class Engine:
                 failure_id = pipeline_id + "/response"
                 produced = {self.program.artifacts[a]["key"]: values[self.program.artifacts[a]["key"]] for a in p["outputs"]}
                 self.program.values(p["outputs"], produced, pipeline_id)
+                if session is not None:
+                    failure_id = pipeline_id + "/transition"
+                    session.finish(ctx)
                 response = PipelineResult(messages=tuple(ctx.messages))
                 failure_id = pipeline_id + "/unlock"
                 stack.close()
@@ -115,7 +131,13 @@ class Engine:
                 return response
             except Exception as exc:
                 ctx.events.append((failure_id, 'failed'))
-                errors = compensations.unwind(self.registry, ctx)
+                if session is not None and session.prepare_attempted:
+                    # Do not undo side effects after a potentially successful durable commit.
+                    errors = []
+                    secondary.append(('transition-recovery',
+                                      f'Inspect coordinator job {run_id}; automatic compensation was withheld'))
+                else:
+                    errors = compensations.unwind(self.registry, ctx)
                 try:
                     stack.close()
                 except Exception as cleanup_error:
@@ -130,6 +152,8 @@ class Engine:
                 failure.messages = tuple(ctx.messages)
                 raise failure from exc
         finally:
+            if session is not None:
+                session.close()
             # close() is idempotent; original failures are preserved above.
             stack.close()
 
