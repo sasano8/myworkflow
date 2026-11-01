@@ -57,7 +57,7 @@ python3.14 -m pytest -q
 
 ## アーティファクトの準備と一括確定
 
-[共通インターフェースと一時領域Provider](docs/artifact-jobs.md)を追加しました。ジョブIDで準備・確定・照会・破棄を管理し、同じSQLite内の業務データと状態をまとめて確定します。`python -m examples.prepared_approval` で[承認例](examples/prepared_approval.py)を実行できます。外部DB等を含む一括確定は保証範囲外です。
+[共通インターフェースと一時領域Provider](docs/artifact-jobs.md)を追加しました。ジョブIDで準備・確定・照会・破棄を管理し、同じSQLite内の業務データ・状態・ファイル参照をまとめて確定します。blob本体はジョブ別のファイルとして保存し、DBへ格納しません。`python -m examples.prepared_approval` で[承認例](examples/prepared_approval.py)を実行できます。外部DB等を含む一括確定は保証範囲外です。
 
 ## モデル
 

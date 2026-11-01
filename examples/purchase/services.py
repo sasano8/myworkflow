@@ -1,7 +1,7 @@
 """Compatibility facade composing the purchase sample's independent adapters."""
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.locking import InProcessLockProvider
-from examples.purchase.object_store import SQLiteObjectStore
+from examples.purchase.object_store import FileObjectStore
 from examples.purchase.recovery import Recovery
 from examples.purchase.testing import Faults, ObservedObjectStore, ObservedRepository
 
@@ -14,13 +14,18 @@ class Services:
         self.execution_store = SQLiteExecutionStore(self.db)
         self.faults = Faults()
         self.repository = ObservedRepository(self.db, self.faults)
-        self.objects = ObservedObjectStore(SQLiteObjectStore(self.db), self.faults)
+        self.objects = ObservedObjectStore(FileObjectStore(self.db), self.faults)
         self.recovery = Recovery(self.execution_store, self.objects)
         with self.connect() as db:
+            columns = {r[1] for r in db.execute('PRAGMA table_info(objects)')}
+            if 'body' in columns:
+                if db.execute('SELECT 1 FROM objects LIMIT 1').fetchone():
+                    raise ValueError('Legacy blob bodies need explicit export before using the file-backed store')
+                db.execute('ALTER TABLE objects RENAME COLUMN body TO sha256')
             db.executescript('''
                 CREATE TABLE IF NOT EXISTS applications(id TEXT PRIMARY KEY, owner TEXT, vendor TEXT, amount INTEGER, status TEXT);
                 CREATE TABLE IF NOT EXISTS orders(id TEXT PRIMARY KEY, application_id TEXT UNIQUE);
-                CREATE TABLE IF NOT EXISTS objects(key TEXT PRIMARY KEY, owner TEXT, version TEXT, body TEXT);
+                CREATE TABLE IF NOT EXISTS objects(key TEXT PRIMARY KEY, owner TEXT, version TEXT, sha256 TEXT);
                 CREATE TABLE IF NOT EXISTS intents(run_id TEXT, slot TEXT, key TEXT, version TEXT, state TEXT, PRIMARY KEY(run_id, slot));
                 CREATE TABLE IF NOT EXISTS attachments(application_id TEXT, run_id TEXT, slot TEXT, key TEXT, PRIMARY KEY(application_id, slot));
             ''')

@@ -1,4 +1,5 @@
 """Execution-independent contract for prepared artifacts and their final commit."""
+from myworkflow.blob_files import BlobRef, BlobStore
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
@@ -16,14 +17,14 @@ class JobState(StrEnum):
 @dataclass(frozen=True)
 class ArtifactWrite:
     key: str
-    value: ArtifactValue
+    value: ArtifactValue | BlobRef
     expected_version: int = 0  # zero requires the artifact to be absent
 
 
 @dataclass(frozen=True)
 class ArtifactSnapshot:
     key: str
-    value: ArtifactValue
+    value: ArtifactValue | BlobRef
     version: int
 
 
@@ -55,6 +56,8 @@ class ArtifactCoordinator(Protocol):
     outcomes queryable, and commit writes and the receipt atomically within their
     advertised storage boundary. Network/transaction details are not pipeline code.
     """
+    @property
+    def blobs(self) -> BlobStore: ...
     def read(self, key: str) -> ArtifactSnapshot | None: ...
     def prepare(self, job_id: str, writes: tuple[ArtifactWrite, ...]) -> ArtifactJob: ...
     def commit(self, job_id: str) -> ArtifactJob: ...

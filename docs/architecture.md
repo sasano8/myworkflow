@@ -39,6 +39,7 @@ flowchart TD
 | registry.py | 関数の登録、検索、明示的な差替え |
 | results.py | 終了コードと重大度付きメッセージの共通契約 |
 | runtime/ | Context、実行、ステップ境界で記録する補償状態 |
+| blob_files.py / adapters/local_blob_files.py | blobの参照契約と、ジョブ単位のファイル保存。本文はDBへ保存しない |
 | artifact_jobs.py / adapters/local_artifacts.py | ジョブIDによる準備・確定のProtocolと、一時領域SQLiteのProvider |
 | ports.py / locking.py | 基盤Protocol、実行状態、プロセス内ロック |
 | adapters/sqlite.py | SQLite接続と実行履歴。業務SQLは含まない |
@@ -89,7 +90,7 @@ Contextは値・業務用の依存・実行情報を分けて保持し、`ctx.ex
 
 ## 購買の保存と補償
 
-購買Repositoryが申請・承認・添付登録・発注のSQLとトランザクションを管理する。SQLiteObjectStoreが模擬オブジェクトとintentを扱い、Recoveryが履歴と保存先を使って明示的な復旧を行う。障害注入・呼出観測は `testing.py` のラッパーへ分離した。
+購買Repositoryが申請・承認・添付登録・発注のSQLとトランザクションを管理する。FileObjectStoreがファイルの実体とSQLiteの所有者・バージョン・SHA256・intentを扱い、Recoveryが履歴と保存先を使って明示的な復旧を行う。障害注入・呼出観測は `testing.py` のラッパーへ分離した。
 
 補償は正処理の前に登録し、ステップ境界の入力・得られた値をコピーする。後続処理がContextを書き換えても、以前の補償に使う値を変えない。応答を受け取れなかった外部の結果はContextだけで復元できないため、保存先のintentと所有者・バージョンの照合が必要である。
 
