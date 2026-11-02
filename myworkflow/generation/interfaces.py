@@ -30,9 +30,11 @@ def interfaces_source(program):
 
 def skeleton_source(program):
     lines = ['"""Generated skeleton: copy into your implementation; never overwrite existing work."""',
+             'from myworkflow import annotate',
+             'from myworkflow.compiler.pipelines import Operation',
              'from myworkflow.executable import Context, Registry', '', 'registry = Registry()', '']
-    ids = program.implementation_ids
-    for identity in sorted(ids):
-        lines.extend([f'@registry.implements({identity!r})', f'def {class_name(identity).lower()}(ctx: Context) -> None:',
-                      f'    raise NotImplementedError({identity!r})', ''])
+    for identity in sorted(program.implementation_ids):
+        name = class_name(identity).lower()
+        lines.extend([f'@annotate(Operation({identity!r}))', f'def {name}(ctx: Context) -> None:',
+                      f'    raise NotImplementedError({identity!r})', '', f'registry.register({name})', ''])
     return '\n'.join(lines).rstrip() + '\n'

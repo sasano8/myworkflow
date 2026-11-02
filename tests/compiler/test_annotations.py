@@ -174,3 +174,18 @@ def test_standard_dataclass_conversion_still_supports_extension_metadata():
     assert exported['extensions'] == {'ui': {'tags': ['customer']}}
     with pytest.raises(TypeError):
         action.extensions['ui'].update({'label': '変更'})
+
+
+@pytest.mark.parametrize('module_name', [
+    'examples.apps.purchase.handlers',
+    'examples.apps.tickets.application',
+    'examples.feature_demos.approval_values.application',
+    'examples.feature_demos.prepared_approval.application',
+])
+def test_sample_registries_use_their_function_annotations(module_name):
+    from importlib import import_module
+    module = import_module(module_name)
+    assert module.registry.handlers
+    for identity, handler in module.registry.handlers.items():
+        assert declaration(handler) is not handler
+        assert declaration(handler).id == identity

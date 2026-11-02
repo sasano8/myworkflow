@@ -6,9 +6,9 @@ from types import ModuleType
 import pytest
 
 from examples.feature_demos.declarative_review import contract as sample
-from myworkflow import Trigger, Artifact, ContractCatalog, Lock, Pipeline, Role, Step
+from myworkflow import annotate, Trigger, Artifact, ContractCatalog, Lock, Pipeline, Role, Step
 from myworkflow.generation.interfaces import interfaces_source
-from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, workflow
+from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, WorkflowDeclaration
 from myworkflow.contracts.errors import ContractError
 from myworkflow.executable import Context, Engine, Principal, Program, Registry
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
@@ -50,7 +50,7 @@ def minimal(*, initial_count=1):
     role = Role('role.test', '操作担当者', '担当者')
     pipeline = Pipeline('p.test', '検査', (), (), ())
 
-    @workflow(id='w.test', name='検査業務')
+    @annotate(WorkflowDeclaration(id='w.test', name='検査業務'))
     class Flow:
         start = state('state.start', '開始', initial=initial_count > 0)
         end = state('state.end', '完了', initial=initial_count > 1)
@@ -108,7 +108,7 @@ def test_class_requirements_and_inheritance():
     with pytest.raises(ContractError, match='annotation'):
         compile_workflows(type('Undecorated', (), {}))
     with pytest.raises(ContractError, match='inheritance'):
-        compile_workflows(workflow(id='w.child', name='継承')(type('Child', (minimal(),), {})))
+        compile_workflows(annotate(WorkflowDeclaration(id='w.child', name='継承'))(type('Child', (minimal(),), {})))
     with pytest.raises(ContractError, match='duplicate class'):
         flow = minimal()
         compile_workflows(flow, flow)

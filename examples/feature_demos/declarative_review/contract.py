@@ -4,8 +4,8 @@ Run: python -m examples.feature_demos.declarative_review
 This example declares contracts only; it does not persist a review or its state.
 """
 from myworkflow.generation.documents import document_program
-from myworkflow import Artifact, Pipeline, Role, Step, Use
-from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, workflow
+from myworkflow import annotate, Artifact, Pipeline, Role, Step, Use
+from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, WorkflowDeclaration
 from myworkflow.generation.state_tables import render_state_graph
 from myworkflow.generation.flowcharts import render_business_flow
 
@@ -25,7 +25,7 @@ record_review = Pipeline('p.review_record', '審査結果の反映', (applicatio
 ))
 
 
-@workflow(id='w.review', name='申請内容の審査と再申請')
+@annotate(WorkflowDeclaration(id='w.review', name='申請内容の審査と再申請'))
 class ApplicationReview:
     draft = state('state.review_draft', '未申請', initial=True)
     pending = state('state.review_pending', '承認待ち')

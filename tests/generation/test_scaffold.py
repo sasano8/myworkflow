@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from examples.apps.purchase.contract import program
 from examples.apps.purchase.handlers import registry
+from myworkflow import declaration
 from myworkflow.executable import Context, Program, interfaces_source
 from myworkflow.generation.documents import document_program
 from myworkflow.generation.scaffold import initialize
@@ -27,6 +28,9 @@ class TestScaffold:
         initialize(initial, target)
         namespace = {}
         exec((target / 'handlers.py').read_text(), namespace)
+        for identity, handler in namespace['registry'].handlers.items():
+            assert declaration(handler).id == identity
+            assert namespace[handler.__name__] is handler
         with pytest.raises(NotImplementedError):
             namespace['registry'].handlers['s.submit'](Context({}, None, 'id', 'actor', []))
         with pytest.raises(FileExistsError):

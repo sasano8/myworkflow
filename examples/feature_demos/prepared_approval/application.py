@@ -3,11 +3,11 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
-from myworkflow import Artifact, BusinessError, Pipeline, Role, Step
+from myworkflow import annotate, Artifact, BusinessError, Pipeline, Role, Step
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.storage.artifacts import ArtifactCoordinator, ArtifactWrite
-from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, workflow
+from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, WorkflowDeclaration
 from myworkflow.executable import Context, Engine, Registry
 
 application_id = Artifact('a.staged_id', '申請ID', 'application_id', 'str')
@@ -26,7 +26,7 @@ approval = Pipeline('p.staged_approval', '申請の承認確定', (application_i
 ))
 
 
-@workflow(id='w.staged_approval', name='申請の準備と承認確定')
+@annotate(WorkflowDeclaration(id='w.staged_approval', name='申請の準備と承認確定'))
 class PreparedApproval:
     pending = state('state.staged_pending', '承認待ち', initial=True)
     approved = state('state.staged_approved', '承認済み')
@@ -36,7 +36,6 @@ class PreparedApproval:
 
 
 compiled = compile_workflows(PreparedApproval, artifacts=(application_id, application_version, state_version, proposed))
-registry = Registry()
 
 
 @dataclass
@@ -44,7 +43,7 @@ class ApprovalServices:
     coordinator: ArtifactCoordinator
 
 
-@registry.implements('s.staged_read')
+@annotate(compiled.program.steps['s.staged_read'])
 def read_and_validate(ctx: Context) -> None:
     coordinator = ctx.services.coordinator
     identity = ctx.values['application_id']
@@ -59,7 +58,7 @@ def read_and_validate(ctx: Context) -> None:
     ctx.values['proposed'] = json.dumps({**application.value, 'approved_by': ctx.actor})
 
 
-@registry.implements('s.staged_prepare')
+@annotate(compiled.program.steps['s.staged_prepare'])
 def prepare(ctx: Context) -> None:
     identity = ctx.values['application_id']
     ctx.services.coordinator.prepare(ctx.run_id, (
@@ -68,10 +67,15 @@ def prepare(ctx: Context) -> None:
     ))
 
 
-@registry.implements('s.staged_commit')
+@annotate(compiled.program.steps['s.staged_commit'])
 def commit(ctx: Context) -> None:
     ctx.services.coordinator.commit(ctx.run_id)
     ctx.add_message('申請と状態を確定しました')
+
+
+registry = Registry()
+for implementation in (read_and_validate, prepare, commit):
+    registry.register(implementation)
 
 
 def seed(coordinator: ArtifactCoordinator, identity='example'):

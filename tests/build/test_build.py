@@ -13,9 +13,9 @@ import pytest
 from examples.apps.purchase import contract as purchase
 from examples.apps.purchase.build import BUILD
 from examples.apps.purchase.handlers import registry
-from myworkflow import Artifact, Role
+from myworkflow import annotate, Artifact, Role
 from myworkflow.build import BuildConfig, BuildError, build, compile_outputs
-from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, workflow
+from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, WorkflowDeclaration
 from myworkflow.contracts.errors import ContractError
 from myworkflow.executable import Context, Registry
 from myworkflow.compiler.pipelines import Action, Mutex, Operation, PipelineDeclaration
@@ -110,7 +110,7 @@ def symbolic_example(*, with_states=False, with_after=False):
     undo = Operation('c.undo')
     action = Action('s.save', '保存', '保存する。', reads=(value,), compensate=undo)
     pipeline = PipelineDeclaration('p.save', '保存', (value,), (), (action,))
-    @workflow(id='w.save', name='保存フロー')
+    @annotate(WorkflowDeclaration(id='w.save', name='保存フロー'))
     class Flow:
         event = trigger('t.save', '保存操作', role, ((value, 'value'),))
         save = bind('b.save', pipeline, (event,), (('system', role),))

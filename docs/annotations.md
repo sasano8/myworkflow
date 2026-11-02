@@ -22,8 +22,10 @@ def notify(ctx: Context) -> None:
 - `declaration(target)` で注釈を読みます。既存の宣言オブジェクトを渡した場合は、そのまま返します。
 - Action・PipelineDeclaration等は型付き注釈として再利用します。Actionの名前・概要を省略した場合は、注釈先の関数名・docstringをコンパイル時に使います。
 - パイプラインのstepsには注釈付き関数を参照できます。`registry.register(function)` で同じ関数を実装へ登録し、IDを転記しません。
-- `@workflow` も `WorkflowDeclaration` を `__myworkflow__` へ取り付ける補助です。クラスの名前付き属性、または関数に付けた `WorkflowDeclaration(..., members=(...))` で状態・配置・遷移を列挙します。
+- ワークフローも `@annotate(WorkflowDeclaration(...))` を使います。クラスの名前付き属性、または関数に付けた `members=(...)` で状態・配置・遷移を列挙します。専用の省略デコレーターは提供しません。
 - 宣言収集は関数本体を実行しません。標準Engineはパイプラインのstepsを実行し、注釈先のパイプライン／ワークフロー関数本体は呼びません。通常のPythonとして直接呼び出すことはできます。
+
+[購買の処理関数](../examples/apps/purchase/handlers.py)は正本の宣言を参照して注釈を付け、定義後にRegistryへ登録します。生成骨格は同じ `annotate` とID参照の `Operation` を使い、未実装関数は成功扱いにしません。
 
 [承認サンプル](../examples/feature_demos/approval_values/application.py)に、関数注釈と既存のクラス形式を組み合わせた例があります。実行・排他・補償・状態の保証は、接続した各機能の契約に従います。
 

@@ -5,7 +5,7 @@ from myworkflow import Artifact, Role, annotate
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.storage.artifacts import ArtifactWrite
-from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, workflow
+from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, WorkflowDeclaration
 from myworkflow.executable import Context, Engine, Registry
 from myworkflow.compiler.pipelines import Action, PipelineDeclaration
 from myworkflow.runtime.transitions import GuardContext, TransitionRuntime
@@ -15,6 +15,8 @@ from examples.feature_demos.approval_values.value_objects import application_ide
 application_id = Artifact('a.guarded_id', '申請ID', 'application_id', 'str', value_object=application_identifier)
 reviewer = Role('role.guarded_reviewer', '審査責任者', '承認者')
 system = Role('role.guarded_system', '業務システム', 'システム')
+
+
 @annotate(Action('s.guarded_approve', '承認変更の作成',
                  extensions={'ui': {'label': '承認する'}}))
 def approve(ctx: Context) -> None:
@@ -33,7 +35,7 @@ def may_approve(ctx: GuardContext) -> bool:
     return ctx.application['owner'] != ctx.actor and ctx.application['amount'] > 0
 
 
-@workflow(id='w.guarded_approval', name='トランジション契約に従う申請承認')
+@annotate(WorkflowDeclaration(id='w.guarded_approval', name='トランジション契約に従う申請承認'))
 class Approval:
     waiting = state('state.guarded_waiting', '承認待ち', initial=True)
     approved = state('state.guarded_approved', '承認済み')

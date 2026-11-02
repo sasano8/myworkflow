@@ -2,7 +2,7 @@
 
 Use objects to connect declarations. Stable IDs only identify exported contracts.
 """
-from myworkflow.contracts.annotations import Extensible, annotate, declaration
+from myworkflow.contracts.annotations import Extensible, declaration
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -78,10 +78,6 @@ state = StateDeclaration
 trigger = TriggerDeclaration
 bind = Placement
 transition = TransitionDeclaration
-
-
-def workflow(*, id: str, name: str, members=(), extensions=None):
-    return annotate(WorkflowDeclaration(id, name, members, extensions={} if extensions is None else extensions))
 
 
 def _fail(where, message):

@@ -90,7 +90,7 @@ def test_missing_generated_connection_fails():
     def broken_generator(spec, directory):
         initialize(spec, directory)
         path = directory / 'handlers.py'
-        path.write_text(path.read_text().replace("@registry.implements('c.delete-a')", '# missing registration'))
+        path.write_text(path.read_text().replace('registry.register(cdeletea)', '# missing registration'))
     report, _ = run_case(FIXTURE / 'case.json', generator=broken_generator)
     assert not report['passed']
     assert report['metrics']['skeleton']['missing'] == ['c.delete-a']
