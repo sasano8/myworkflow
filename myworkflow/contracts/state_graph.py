@@ -1,4 +1,5 @@
 """State graph declarations; optional execution is provided by TransitionRuntime."""
+from myworkflow.contracts.annotations import Extensible, extension_fields
 from dataclasses import dataclass
 from collections.abc import Callable
 from inspect import isfunction
@@ -8,13 +9,13 @@ from myworkflow.contracts.models import Binding, ContractCatalog, Trigger, Workf
 
 
 @dataclass(frozen=True)
-class State:
+class State(Extensible):
     id: str
     name: str
 
 
 @dataclass(frozen=True)
-class Transition:
+class Transition(Extensible):
     id: str
     name: str
     source: State
@@ -26,7 +27,7 @@ class Transition:
 
 
 @dataclass(frozen=True)
-class StateGraph:
+class StateGraph(Extensible):
     """Static workflow view. A target is promised only after successful completion.
 
     This model alone neither executes guards nor updates persisted business state.
@@ -76,16 +77,16 @@ class StateGraph:
         if missing:
             raise ContractError(f'{self.workflow.id}: unreachable states: {missing}')
 
-    def to_dict(self, catalog: ContractCatalog) -> dict:
+    def to_dict(self, catalog: ContractCatalog, *, extension_encoder=None) -> dict:
         """Normalized comparison/export form; symbolic references become stable IDs."""
         self.validate(catalog)
         return {
-            'schema_version': 1,
+            **extension_fields(self, extension_encoder), 'schema_version': 1,
             'workflow': self.workflow.id,
             'initial': self.initial.id,
-            'states': [{'id': s.id, 'name': s.name} for s in self.states],
+            'states': [{'id': s.id, 'name': s.name, **extension_fields(s, extension_encoder)} for s in self.states],
             'transitions': [{
-                'id': t.id, 'name': t.name, 'source': t.source.id, 'target': t.target.id,
+                **extension_fields(t, extension_encoder), 'id': t.id, 'name': t.name, 'source': t.source.id, 'target': t.target.id,
                 'binding': t.binding.id, 'pipeline': t.binding.pipeline_id,
                 'trigger': t.trigger.id, 'actor': t.trigger.actor_role_id,
                 'condition': t.condition,

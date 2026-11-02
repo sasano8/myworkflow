@@ -25,7 +25,8 @@ class Program:
         def immutable(value, path):
             if is_dataclass(value) and not isinstance(value, type):
                 for field in fields(value):
-                    immutable(getattr(value, field.name), path + '.' + field.name)
+                    if field.name != 'extensions':
+                        immutable(getattr(value, field.name), path + '.' + field.name)
             elif isinstance(value, tuple):
                 for index, item in enumerate(value):
                     immutable(item, f'{path}[{index}]')

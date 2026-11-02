@@ -1,7 +1,7 @@
 """A declared transition enforces plain status updates and optimistic final commit."""
 from pathlib import Path
 
-from myworkflow import Artifact, Role
+from myworkflow import Artifact, Role, annotate
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.storage.artifacts import ArtifactWrite
@@ -15,9 +15,18 @@ from examples.feature_demos.approval_values.value_objects import application_ide
 application_id = Artifact('a.guarded_id', '申請ID', 'application_id', 'str', value_object=application_identifier)
 reviewer = Role('role.guarded_reviewer', '審査責任者', '承認者')
 system = Role('role.guarded_system', '業務システム', 'システム')
-record_approval = Action('s.guarded_approve', '承認変更の作成',
-                         '申請者本人の承認を拒否し、承認者と承認済みの状態を変更予定に記録する。')
-approval = PipelineDeclaration('p.guarded_approve', '申請承認', (application_id,), (), (record_approval,))
+@annotate(Action('s.guarded_approve', '承認変更の作成',
+                 extensions={'ui': {'label': '承認する'}}))
+def approve(ctx: Context) -> None:
+    """申請者本人の承認を拒否し、承認者と承認済みの状態を変更予定に記録する。"""
+    application = ctx.changes.subject
+    ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.id)
+    ctx.add_message('承認変更を作成しました')
+
+
+@annotate(PipelineDeclaration('p.guarded_approve', '申請承認', (application_id,), (), (approve,)))
+def approval():
+    """The compiler reads metadata without executing this function."""
 
 
 def may_approve(ctx: GuardContext) -> bool:
@@ -39,12 +48,7 @@ compiled = compile_workflows(Approval, artifacts=(application_id,),
 registry = Registry()
 
 
-@registry.implements(record_approval)
-def approve(ctx: Context) -> None:
-    application = ctx.changes.subject
-    ctx.changes.update(application, approved_by=ctx.actor, status=Approval.approved.id)
-    ctx.add_message('承認変更を作成しました')
-
+registry.register(approve)
 
 def seed(coordinator, identity='example'):
     coordinator.prepare(f'seed:{identity}', (

@@ -43,7 +43,7 @@ def test_invalid_changes_fail_before_prepare_and_preserve_version(tmp_path):
     def invalid(ctx: Context) -> None:
         sample.approve(ctx)
         ctx.changes.update(ctx.changes.subject, amount=-100)
-    handlers.replace(sample.record_approval, invalid)
+    handlers.replace(sample.approve, invalid)
     runner = sample.engine(provider, tmp_path / 'runs.db', handlers=handlers)
     with pytest.raises(ExecutionFailed, match='invalid value'):
         runner.invoke_or_raise(sample.Approval.execute, sample.Approval.requested, {'id': 'example'},

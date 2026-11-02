@@ -82,7 +82,7 @@ def test_exactly_one_initial_state(count):
     (lambda f: setattr(f, 'finish', replace(f.finish, binding=replace(f.task))), 'binding must reference'),
     (lambda f: setattr(f, 'finish', replace(f.finish, trigger=replace(f.event))), 'trigger must reference'),
     (lambda f: setattr(f, 'task', replace(f.task, triggers=())), 'distinct trigger'),
-    (lambda f: setattr(f, 'task', replace(f.task, triggers=[f.event])), 'tuple of TriggerDeclaration'),
+    (lambda f: setattr(f, 'task', replace(f.task, triggers=[f.event])), 'triggers must be a tuple'),
     (lambda f: setattr(f, 'task', replace(f.task, pipeline='p.test')), 'Pipeline reference'),
     (lambda f: setattr(f, 'task', replace(f.task, roles=(('system', 'role.test'),))), 'Role reference'),
     (lambda f: setattr(f, 'task', replace(f.task, next_workflow=minimal())), 'included in compilation'),
@@ -105,12 +105,10 @@ def test_artifact_mapping_rejects_copied_or_string_reference():
 
 
 def test_class_requirements_and_inheritance():
-    with pytest.raises(ContractError, match='decorated'):
+    with pytest.raises(ContractError, match='annotation'):
         compile_workflows(type('Undecorated', (), {}))
-    with pytest.raises(ContractError, match='class'):
-        workflow(id='w.bad', name='不正')(lambda: None)
     with pytest.raises(ContractError, match='inheritance'):
-        workflow(id='w.child', name='継承')(type('Child', (minimal(),), {}))
+        compile_workflows(workflow(id='w.child', name='継承')(type('Child', (minimal(),), {})))
     with pytest.raises(ContractError, match='duplicate class'):
         flow = minimal()
         compile_workflows(flow, flow)
@@ -119,7 +117,7 @@ def test_class_requirements_and_inheritance():
 def test_cross_workflow_link_and_global_state_ids():
     following = minimal()
     starting = minimal()
-    starting.__workflow_options__ = replace(starting.__workflow_options__, id='w.before')
+    starting.__myworkflow__ = replace(starting.__myworkflow__, id='w.before')
     # Independent names/IDs, but one shared pipeline and role declaration for reuse.
     starting.start = state('state.before_start', '開始', initial=True)
     starting.end = state('state.before_end', '完了')
@@ -182,7 +180,7 @@ def test_typed_catalog_export_preserves_lock_metadata_and_compensation():
 
 def test_different_objects_sharing_pipeline_id_are_rejected():
     first, second = minimal(), minimal()
-    second.__workflow_options__ = replace(second.__workflow_options__, id='w.second')
+    second.__myworkflow__ = replace(second.__myworkflow__, id='w.second')
     with pytest.raises(ContractError, match='different objects share'):
         compile_workflows(first, second)
 

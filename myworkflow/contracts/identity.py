@@ -10,6 +10,8 @@ def execution_id(*parts):
 def definition_id(value):
     """Resolve a Python declaration reference at an execution/registration boundary."""
     from myworkflow.contracts.errors import ContractError
+    from myworkflow.contracts.annotations import declaration
+    value = declaration(value)
     identity = value if isinstance(value, str) else getattr(value, 'id', None)
     if not isinstance(identity, str) or not identity:
         raise ContractError('Expected a stable ID or named declaration')

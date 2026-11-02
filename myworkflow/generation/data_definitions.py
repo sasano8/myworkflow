@@ -4,15 +4,15 @@ from myworkflow.contracts.value_objects import validate_definitions
 from myworkflow._internal.markdown import escape
 
 
-def data_definitions(catalog):
+def data_definitions(catalog, *, extension_encoder=None):
     validate_definitions(catalog.value_objects)
-    return {'schema_version': 1, 'value_objects': [d.definition() for d in catalog.value_objects],
+    return {'schema_version': 1, 'value_objects': [d.definition(extension_encoder=extension_encoder) for d in catalog.value_objects],
             'artifacts': [{'id': a.id, 'name': a.name, 'value_object': a.value_object.id}
                           for a in catalog.artifacts if a.value_object is not None]}
 
 
-def data_definitions_source(catalog):
-    return json.dumps(data_definitions(catalog), ensure_ascii=False, indent=2, allow_nan=False) + '\n'
+def data_definitions_source(catalog, *, extension_encoder=None):
+    return json.dumps(data_definitions(catalog, extension_encoder=extension_encoder), ensure_ascii=False, indent=2, allow_nan=False) + '\n'
 
 
 def _display(value):
@@ -111,8 +111,8 @@ def _field_rows(schema):
         yield from walk(schema, '(値全体)', '必須')
 
 
-def render_data_definitions(catalog):
-    document = data_definitions(catalog)
+def render_data_definitions(catalog, *, extension_encoder=None):
+    document = data_definitions(catalog, extension_encoder=extension_encoder)
     lines = ['# データ定義', '',
              '1項目につき1行で表示する。詳細な型・対応・完全なSchemaは[JSON定義](data-definitions.json)を参照。',
              '独自検証はJSON Schemaだけでは全条件を表せないため、補足ルールと受入テストで確認する。', '',

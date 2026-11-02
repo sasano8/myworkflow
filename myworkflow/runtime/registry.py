@@ -33,6 +33,10 @@ class Registry:
             return fn
         return register
 
+    def register(self, fn):
+        """Register an annotated implementation without repeating its declaration."""
+        return self.implements(fn)(fn)
+
     def replace(self, identity, fn):
         identity = definition_id(identity)
         if identity not in self._handlers:

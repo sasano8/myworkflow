@@ -1,10 +1,11 @@
 """Compatibility dictionary export for an already compiled catalog."""
+from myworkflow.contracts.annotations import extension_fields
 from myworkflow.contracts.models import ContractCatalog, Lock
 
 
 def catalog_to_spec(catalog: ContractCatalog) -> dict:
     """Serialize references; this export is never the typed declarations' source."""
-    return {
+    result = {
         **({'value_objects': [d.definition() for d in catalog.value_objects]} if catalog.value_objects else {}),
         'roles': [{'id': r.id, 'name': r.name, 'display_name': r.display_name} for r in catalog.roles],
         'artifacts': [{'id': a.id, 'name': a.name, 'key': a.key, 'type': a.type, **({'value_object': a.value_object.id} if a.value_object else {})} for a in catalog.artifacts],
@@ -32,3 +33,16 @@ def catalog_to_spec(catalog: ContractCatalog) -> dict:
             } for b in w.bindings],
         } for w in catalog.workflows],
     }
+    for entities, records in ((catalog.roles, result['roles']), (catalog.artifacts, result['artifacts']),
+                              (catalog.pipelines, result['pipelines']), (catalog.workflows, result['workflows'])):
+        for entity, record in zip(entities, records, strict=True):
+            record.update(extension_fields(entity))
+    for pipeline, record in zip(catalog.pipelines, result['pipelines'], strict=True):
+        for step, data in zip(pipeline.steps, record['steps'], strict=True):
+            data.update(extension_fields(step))
+    for workflow, record in zip(catalog.workflows, result['workflows'], strict=True):
+        for binding, data in zip(workflow.bindings, record['bindings'], strict=True):
+            data.update(extension_fields(binding))
+            for trigger, item in zip(binding.triggers, data['triggers'], strict=True):
+                item.update(extension_fields(trigger))
+    return {**result, **extension_fields(catalog)}

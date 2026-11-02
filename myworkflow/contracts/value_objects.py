@@ -1,4 +1,5 @@
 """Named Pydantic contracts and their independent, deterministic data definitions."""
+from myworkflow.contracts.annotations import Extensible, extension_fields
 from dataclasses import dataclass
 import json
 import re
@@ -16,7 +17,7 @@ class ValueModel(BaseModel):
 
 
 @dataclass(frozen=True)
-class ValueObject:
+class ValueObject(Extensible):
     id: str
     name: str
     model: type[BaseModel]
@@ -56,7 +57,7 @@ class ValueObject:
         except (TypeError, ValueError) as exc:
             raise ContractError(f'{self.id}: invalid value ({exc})') from exc
 
-    def definition(self):
+    def definition(self, *, extension_encoder=None):
         self.check()
         validators = []
         visited = set()
@@ -79,7 +80,7 @@ class ValueObject:
         aliases = {name: (field.validation_alias if isinstance(field.validation_alias, str)
                           else field.validation_alias.convert_to_aliases())
                    for name, field in self.model.model_fields.items() if field.validation_alias is not None}
-        return {'id': self.id, 'name': self.name, 'description': self.description,
+        return {**extension_fields(self, extension_encoder), 'id': self.id, 'name': self.name, 'description': self.description,
                 'python_type': f'{self.model.__module__}:{self.model.__qualname__}',
                 'rules': list(self.rules), 'validators': validators,
                 **({'input_aliases': aliases} if aliases else {}),

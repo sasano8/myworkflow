@@ -32,7 +32,7 @@ def invoke(runner, *, actor='bob', roles=None, run_id='approve'):
 
 def change_handler(coordinator, tmp_path, fn):
     handlers = sample.registry.fork()
-    handlers.replace(sample.record_approval, fn)
+    handlers.replace(sample.approve, fn)
     return sample.engine(coordinator, tmp_path / 'runs.sqlite', handlers=handlers)
 
 

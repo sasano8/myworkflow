@@ -1,17 +1,18 @@
 """Business contracts. Declarations describe behavior; they do not execute it."""
+from myworkflow.contracts.annotations import Extensible
 from dataclasses import dataclass
 from myworkflow.contracts.value_objects import ValueObject
 
 
 @dataclass(frozen=True)
-class Role:
+class Role(Extensible):
     id: str
     name: str  # formal business name
     display_name: str
 
 
 @dataclass(frozen=True)
-class Artifact:
+class Artifact(Extensible):
     id: str
     name: str
     key: str = ""
@@ -26,7 +27,7 @@ class Use:
 
 
 @dataclass(frozen=True)
-class Step:
+class Step(Extensible):
     id: str
     name: str
     summary: str
@@ -41,7 +42,7 @@ class Step:
 
 
 @dataclass(frozen=True)
-class Lock:
+class Lock(Extensible):
     id: str
     name: str
     keys: tuple[str, ...]  # artifact IDs already in context
@@ -65,7 +66,7 @@ class Lock:
 
 
 @dataclass(frozen=True)
-class Pipeline:
+class Pipeline(Extensible):
     id: str
     name: str
     inputs: tuple[str, ...]
@@ -75,7 +76,7 @@ class Pipeline:
 
 
 @dataclass(frozen=True)
-class Trigger:
+class Trigger(Extensible):
     id: str
     name: str
     input_mapping: tuple[tuple[str, str], ...]
@@ -85,7 +86,7 @@ class Trigger:
 
 
 @dataclass(frozen=True)
-class Binding:
+class Binding(Extensible):
     id: str
     pipeline_id: str
     triggers: tuple[Trigger, ...]
@@ -94,14 +95,14 @@ class Binding:
 
 
 @dataclass(frozen=True)
-class Workflow:
+class Workflow(Extensible):
     id: str
     name: str
     bindings: tuple[Binding, ...]
 
 
 @dataclass(frozen=True)
-class ContractCatalog:
+class ContractCatalog(Extensible):
     """業務契約カタログ: shared business declarations and value definitions."""
     artifacts: tuple[Artifact, ...]
     pipelines: tuple[Pipeline, ...]

@@ -1,6 +1,8 @@
 """Compile Python declarations into a deterministic IR and reviewable target outputs."""
 from myworkflow.generation.documents import document_program
 from dataclasses import dataclass
+from collections.abc import Callable
+from myworkflow.contracts.state_graph import StateGraph
 import hashlib
 import inspect
 import json
@@ -23,6 +25,8 @@ class BuildConfig:
     compiled: CompiledWorkflows
     registry: Registry
     required_features: tuple[str, ...] = ()
+    document_renderer: Callable[[Program, tuple[StateGraph, ...], Registry], str] | None = None
+    extension_encoder: Callable[[object], object] | None = None
 
 
 class BuildError(ValueError):
@@ -63,6 +67,9 @@ def compile_outputs(config: BuildConfig, *, target: str, workflows: tuple[str, .
         raise BuildError(f'Unknown target: {target}')
     if not isinstance(config, BuildConfig):
         raise BuildError('Build module must expose BUILD: BuildConfig')
+    for name in ('document_renderer', 'extension_encoder'):
+        if getattr(config, name) is not None and not callable(getattr(config, name)):
+            raise BuildError(f'{name} must be callable')
     if not isinstance(config.required_features, tuple) or any(not isinstance(f, str) for f in config.required_features):
         raise BuildError('required_features must be a tuple of feature names')
     unsupported = set(config.required_features) - {'python_pipeline'}
@@ -94,7 +101,7 @@ def compile_outputs(config: BuildConfig, *, target: str, workflows: tuple[str, .
     if errors:
         raise BuildError('\n'.join(errors))
     used_pipelines = {b.pipeline_id for w in selected for b in w.bindings}
-    model = ContractCatalog(original.artifacts, tuple(p for p in original.pipelines if p.id in used_pipelines), selected, original.roles, original.value_objects)
+    model = ContractCatalog(original.artifacts, tuple(p for p in original.pipelines if p.id in used_pipelines), selected, original.roles, original.value_objects, extensions=original.extensions)
     program = Program.from_catalog(model)
     program.check(config.registry)
     for graph in graphs:
@@ -102,16 +109,21 @@ def compile_outputs(config: BuildConfig, *, target: str, workflows: tuple[str, .
     implementations = {identity: f'{fn.__module__}:{fn.__qualname__}'
                        for identity, fn in sorted(config.registry.handlers.items())
                        if identity in program.implementation_ids}
-    ir = {'schema_version': 1, 'business': export_business(program),
-          'state_graphs': [g.to_dict(model) for g in graphs], 'implementations': implementations}
-    documentation = document_program(program, config.registry)
-    for graph in graphs:
-        documentation += '\n' + render_business_flow(graph, model) + '\n' + render_state_graph(graph, model)
+    ir = {'schema_version': 1, 'business': export_business(program, extension_encoder=config.extension_encoder),
+          'state_graphs': [g.to_dict(model, extension_encoder=config.extension_encoder) for g in graphs], 'implementations': implementations}
+    if config.document_renderer is None:
+        documentation = document_program(program, config.registry)
+        for graph in graphs:
+            documentation += '\n' + render_business_flow(graph, model) + '\n' + render_state_graph(graph, model)
+    else:
+        documentation = config.document_renderer(program, graphs, config.registry)
+        if not isinstance(documentation, str):
+            raise BuildError('document_renderer must return a string')
     outputs = {'ir.json': _json(ir), 'requirements.md': documentation, 'interfaces.py': interfaces_source(program)}
     if model.value_objects:
         from myworkflow.generation.data_definitions import data_definitions_source, render_data_definitions
-        outputs['data-definitions.json'] = data_definitions_source(model)
-        outputs['data-definitions.md'] = render_data_definitions(model)
+        outputs['data-definitions.json'] = data_definitions_source(model, extension_encoder=config.extension_encoder)
+        outputs['data-definitions.md'] = render_data_definitions(model, extension_encoder=config.extension_encoder)
     if target == 'kestra':
         manifest = {'format': 'myworkflow.kestra.preview/v1', 'target': 'kestra', 'deployable': False,
                     'execution_model': 'application-supplied-python-pipeline', 'ir': 'ir.json', 'workflows': []}

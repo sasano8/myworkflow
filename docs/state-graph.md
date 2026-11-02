@@ -1,6 +1,6 @@
 # 状態・遷移の宣言
 
-[宣言コード](../examples/feature_demos/declarative_review/contract.py)と[生成概要](../examples/feature_demos/declarative_review/docs/requirements.md)を参照してください。パイプラインを配置し、その配置・トリガーを状態間のトランジションへ結び付けます。
+[宣言コード](../examples/feature_demos/declarative_review/contract.py)と[生成概要](../examples/feature_demos/declarative_review/docs/requirements.md)を参照してください。[共通の注釈プロトコル](annotations.md)を使ってパイプラインを配置し、その配置・トリガーを状態間のトランジションへ結び付けます。
 
 ```sh
 python -m examples.feature_demos.declarative_review

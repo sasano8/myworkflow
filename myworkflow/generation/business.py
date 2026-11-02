@@ -1,4 +1,5 @@
 """Machine-readable business output; generated from declarations, never Program.spec."""
+from myworkflow.contracts.annotations import extension_fields
 from myworkflow.contracts.models import Lock
 from myworkflow.contracts.results import DEFAULT_ERROR_CODE
 from myworkflow.contracts.names import class_name
@@ -13,12 +14,12 @@ COMPLETION = {
 SECTIONS = ('roles', 'artifacts', 'pipelines', 'steps', 'workflows', 'bindings', 'triggers')
 
 
-def export_business(program):
+def export_business(program, *, extension_encoder=None):
     model = program.model
     from copy import deepcopy
     result = {'schema_version': 2, 'completion': deepcopy(COMPLETION), **{name: {} for name in SECTIONS}}
     if model.value_objects:
-        result['value_objects'] = {d.id: {k: v for k, v in d.definition().items() if k != 'id'} for d in model.value_objects}
+        result['value_objects'] = {d.id: {k: v for k, v in d.definition(extension_encoder=extension_encoder).items() if k != 'id'} for d in model.value_objects}
     for role in model.roles:
         result['roles'][role.id] = {'name': role.name, 'display_name': role.display_name}
     for artifact in model.artifacts:
@@ -46,14 +47,18 @@ def export_business(program):
             for trigger in binding.triggers:
                 result['triggers'][trigger.id] = {'name': trigger.name, 'mapping': dict(trigger.input_mapping),
                     'role': trigger.actor_role_id, 'after': trigger.after, 'wait': trigger.wait}
-    return result
+    entities = {e.id: e for e in model.entities}
+    for section in SECTIONS:
+        for identity, fields in result.get(section, {}).items():
+            fields.update(extension_fields(entities[identity], extension_encoder))
+    return {**result, **extension_fields(model, extension_encoder)}
 
 
 def business_to_spec(document):
     """Convert the reviewed output format into the existing interface generator input."""
     if document.get('schema_version') != 2 or type(document.get('schema_version')) is not int:
         raise ValueError('Unsupported business document schema')
-    if set(document) != {'schema_version', 'completion', *SECTIONS, *(['value_objects'] if 'value_objects' in document else [])} or any(not isinstance(document[k], dict) for k in SECTIONS):
+    if set(document) != {'schema_version', 'completion', *SECTIONS, *(key for key in ('value_objects', 'extensions') if key in document)} or any(not isinstance(document[k], dict) for k in SECTIONS):
         raise ValueError('Business document must contain exactly the supported sections')
     if 'value_objects' in document and not isinstance(document['value_objects'], dict):
         raise ValueError('value_objects must be an object')
@@ -81,6 +86,6 @@ def business_to_spec(document):
     for section, used in [('steps', used_steps), ('bindings', used_bindings), ('triggers', used_triggers)]:
         if set(used) != set(document[section]) or len(used) != len(set(used)):
             raise ValueError(f'{section}: unreferenced or multiply owned definitions')
-    return {**({'value_objects': list(declarations('value_objects'))} if 'value_objects' in document else {}),
+    return {**({'extensions': document['extensions']} if 'extensions' in document else {}), **({'value_objects': list(declarations('value_objects'))} if 'value_objects' in document else {}),
             'roles': list(declarations('roles')), 'artifacts': list(declarations('artifacts')),
             'pipelines': pipelines, 'workflows': workflows}
