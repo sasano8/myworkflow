@@ -37,7 +37,7 @@ def test_generated_documents_are_grouped_by_catalog_and_local_links_resolve():
     directories = {str(Path(name).parent.parent if Path(name).parent.name == 'workflows' else Path(name).parent)
                    for name in generated if name != 'examples/apps/purchase/interfaces.py'}
     assert directories == {'examples/apps/purchase/docs', 'examples/feature_demos/approval_values/docs',
-                           'examples/feature_demos/declarative_review/docs', 'examples/apps/tickets/docs', 'examples/feature_demos/prepared_approval/docs'}
+                           'examples/feature_demos/declarative_review/docs', 'examples/apps/tickets/docs', 'examples/feature_demos/prepared_approval/docs', 'examples/feature_demos/manual_receipt/docs'}
     for directory in directories:
         assert directory + '/README.md' in generated
     for name, content in generated.items():
@@ -61,7 +61,7 @@ def test_examples_separate_business_apps_from_feature_demos():
     root = ROOT / 'examples'
     assert {path.name for path in root.glob('*.py')} == {'__init__.py'}
     groups = {'apps': ('purchase', 'tickets'),
-              'feature_demos': ('approval_values', 'declarative_review', 'prepared_approval')}
+              'feature_demos': ('approval_values', 'declarative_review', 'prepared_approval', 'manual_receipt')}
     for group, names in groups.items():
         for name in names:
             directory = root / group / name

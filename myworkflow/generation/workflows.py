@@ -5,7 +5,7 @@ from myworkflow._internal.markdown import escape
 from myworkflow.generation.documents import describe_step
 
 
-def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None):
+def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None, notice=None):
     catalog.validate()
     for graph in graphs:
         graph.validate(catalog)
@@ -14,6 +14,9 @@ def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None):
     paths = {w.id: 'workflows/' + quote(w.id, safe='') + '.md' for w in catalog.workflows}
     names = {a.id: a.name for a in catalog.artifacts}
     shared = ['# 共有定義', '', '[ワークフロー一覧](workflows.md)', '']
+
+    if notice:
+        shared.extend([escape(notice), ""])
 
     def anchor(identity):
         return '<a id="' + quote(identity, safe='') + '"></a>'
@@ -49,6 +52,8 @@ def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None):
                            '生成：' + ('、'.join(escape(i) for i in step.writes) or 'なし'), '',
                            '操作：' + ('、'.join(escape(u.operation + "：" + u.artifact_id) for u in step.uses) or 'なし'), ''])
     index = ['# ワークフロー一覧', '', '[共有定義](shared-definitions.md)', '', '| 固定ID | ワークフロー | 呼び出すロール | 配置数 |', '| --- | --- | --- | --- |']
+    if notice:
+        index[2:2] = [escape(notice), ""]
     result = {}
     placed = set()
     matched = set()
@@ -60,6 +65,8 @@ def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None):
         ) or '未定義'
         index.append(f'| {escape(workflow.id)} | [{escape(workflow.name)}]({paths[workflow.id]}) | {callers} | {len(workflow.bindings)} |')
         lines = [f'# {escape(workflow.name)}', '', f'固定ID：{escape(workflow.id)}', '', '[ワークフロー一覧](../workflows.md)', '']
+        if notice:
+            lines.extend([escape(notice), ""])
         related = {workflow.id}
         roles, artifacts, processing, connections = set(), set(), [], []
         for binding in workflow.bindings:

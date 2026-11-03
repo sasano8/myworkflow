@@ -69,3 +69,28 @@ def test_index_callers_come_from_triggers_and_link_to_sample_roles():
     empty = replace(compiled.catalog, workflows=(Workflow('w.empty', '未定義の起動', ()),))
     row = next(line for line in workflow_documents(empty)['workflows.md'].splitlines() if line.startswith('| w.empty |'))
     assert '| 未定義 | 0 |' in row
+
+
+def test_manual_receipt_documents_only_human_callers_and_workers():
+    from examples.feature_demos.manual_receipt import contract as manual
+    manual.catalog.validate()
+    manual.graph.validate(manual.catalog)
+    docs = workflow_documents(manual.catalog, graphs=(manual.graph,), notice=manual.DOCUMENTATION_NOTICE)
+    index = docs['workflows.md']
+    row = next(line for line in index.splitlines() if line.startswith('| w.manual_receipt |'))
+    assert '[申請者](shared-definitions.md#role.mail_requester)' in row
+    assert 'role.mail_clerk' not in row
+    assert {r.id for r in manual.catalog.roles} == {'role.mail_requester', 'role.mail_clerk'}
+    binding = manual.workflow.bindings[0]
+    for step in manual.receipt.steps:
+        assert dict(binding.role_mapping)[step.actor] == manual.clerk.id
+    page = docs['workflows/w.manual_receipt.md']
+    assert 'state.mail_registered' in page
+    assert 'role.mail_clerk' in page
+    assert 's.mail_receive' in page
+    assert 's.mail_record' in page
+    assert '## 受入条件\n\n未定義。' in page
+    for text in docs.values():
+        assert manual.DOCUMENTATION_NOTICE in text
+    assert not hasattr(manual, 'registry')
+    assert not hasattr(manual, 'BUILD')

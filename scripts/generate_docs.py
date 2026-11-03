@@ -54,6 +54,9 @@ def outputs():
         data_link = 'data-definitions.md' if directory + '/data-definitions.md' in result else None
         for name, text in workflow_documents(catalog, graphs=graphs, cases=cases, data_link=data_link).items():
             result[directory + '/' + name] = text
+    from examples.feature_demos.manual_receipt.contract import catalog as manual_catalog, graph as manual_graph, DOCUMENTATION_NOTICE
+    for name, text in workflow_documents(manual_catalog, graphs=(manual_graph,), notice=DOCUMENTATION_NOTICE).items():
+        result['examples/feature_demos/manual_receipt/docs/' + name] = text
     labels = {
         'workflows.md': 'ワークフロー一覧・未配置の定義',
         'shared-definitions.md': '処理・ロール・データの共有定義',
@@ -71,9 +74,10 @@ def outputs():
         'examples/feature_demos/declarative_review/docs': '申請審査',
         'examples/feature_demos/prepared_approval/docs': 'アーティファクトの準備・確定',
         'examples/apps/tickets/docs': 'チケット発行',
+        'examples/feature_demos/manual_receipt/docs': 'メールで届いた申請書の人手受付',
     }
     source_files = {'purchase': 'contract.py', 'tickets': 'contract.py', 'declarative_review': 'contract.py',
-                    'approval_values': 'application.py', 'prepared_approval': 'application.py'}
+                    'approval_values': 'application.py', 'prepared_approval': 'application.py', 'manual_receipt': 'contract.py'}
     for directory, name in catalogs.items():
         files = sorted(Path(file).name for file in result if str(Path(file).parent) == directory)
         purpose = '業務アプリのサンプル' if directory.startswith('examples/apps/') else '機能単位の技術検証'
