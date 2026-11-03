@@ -1,7 +1,7 @@
 """Canonical symbolic purchase declarations. SPEC is a generated compatibility snapshot."""
 from myworkflow import annotate, Artifact, Role
 from myworkflow.compiler.declarations import bind, compile_workflows, trigger, WorkflowDeclaration
-from myworkflow.compiler.pipelines import Action, Mutex, Operation, PipelineDeclaration
+from myworkflow.compiler.pipelines import StepDeclaration, Mutex, Operation, PipelineDeclaration
 from examples.apps.purchase import value_objects as vo
 
 requester = Role('role.requester', '購買依頼部門の担当者', '申請者')
@@ -24,7 +24,7 @@ delete_quote_a = Operation('c.delete-a')
 delete_quote_b = Operation('c.delete-b')
 
 submit_lock = Mutex('s.submit-lock', '申請単位の排他', (application_id,))
-save_application = Action(
+save_application = StepDeclaration(
     's.submit', '申請保存', '正の金額と取引先を確認し、申請者に紐づく承認待ちの申請を保存する。',
     reads=(application_id, vendor, amount),
     writes=(application_status,),
@@ -36,18 +36,18 @@ submit_application = PipelineDeclaration(
 )
 
 upload_lock = Mutex('s.upload-lock', '申請単位の排他', (application_id,))
-check_attachment = Action(
+check_attachment = StepDeclaration(
     's.check-upload', '添付可否確認', '申請者本人であり、申請が承認待ちであることを確認する。',
     reads=(application_id,),
 )
-save_quote_a = Action(
+save_quote_a = StepDeclaration(
     's.put-a', '見積書A保存', '今回の実行専用キーで見積書Aを保存する。',
     reads=(application_id, quote_a),
     uses=((quote_a, '参照'),),
     compensate=delete_quote_a,
     attempts=2,
 )
-save_quote_b = Action(
+save_quote_b = StepDeclaration(
     's.put-b', '見積書B保存', '見積書Bを保存し、両方の添付情報を申請に紐づける。',
     reads=(application_id, quote_b),
     writes=(attachment_receipt,),
@@ -61,18 +61,18 @@ upload_quotes = PipelineDeclaration(
 )
 
 approval_lock = Mutex('s.approve-lock', '申請単位の排他', (application_id,))
-check_approval = Action(
+check_approval = StepDeclaration(
     's.check-approval', '承認対象確認', '承認待ちかつ申請者と承認者が別人であることを確認する。',
     reads=(application_id,),
 )
-approve_application = Action(
+approve_application = StepDeclaration(
     's.approve', '承認', '承認済みに更新する。',
     reads=(application_id,),
     writes=(application_status,),
     uses=((application_status, 'DB更新'),),
     when=(decision, True),
 )
-reject_application = Action(
+reject_application = StepDeclaration(
     's.reject', '却下', '却下済みに更新する。発注は行わない。',
     reads=(application_id,),
     writes=(application_status,),
@@ -84,7 +84,7 @@ record_decision = PipelineDeclaration(
     (approval_lock, check_approval, approve_application, reject_application), reply=True,
 )
 
-check_handoff = Action(
+check_handoff = StepDeclaration(
     's.dispatch', '引継ぎ条件確認', '承認済みの購買申請IDを次ワークフローへ引き継ぐ。',
     reads=(application_id,),
 )
@@ -94,20 +94,20 @@ dispatch_order = PipelineDeclaration(
 )
 
 order_lock = Mutex('s.order-lock', '申請単位の排他', (application_id,))
-check_eligibility = Action(
+check_eligibility = StepDeclaration(
     's.eligibility', '発注条件照会', '承認済み、見積書2件あり、未発注であることを確認する。',
     reads=(application_id,),
     writes=(eligible,),
     uses=((eligible, '保持'),),
 )
-confirm_order = Action(
+confirm_order = StepDeclaration(
     's.confirm', '発注確定', '発注作成と申請の発注確定済みへの更新を同一DBトランザクションで行う。',
     reads=(application_id,),
     writes=(order_id,),
     uses=((order_id, 'DB作成'), (application_status, 'DB更新')),
     when=(eligible, True),
 )
-reject_order = Action(
+reject_order = StepDeclaration(
     's.stop', '発注拒否', '発注条件を満たさなければエラーとして終了し、発注しない。',
     reads=(application_id,),
     when=(eligible, False),

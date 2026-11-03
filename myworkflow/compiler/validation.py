@@ -25,8 +25,8 @@ def validate_names(program):
             expected = {'str': 'string', 'int': 'integer', 'bool': 'boolean', 'float': 'number', 'dict': 'object'}[a.type]
             if schema_type != expected:
                 raise ContractError(f'{a.id}: value object JSON type must match {a.type}')
-    handler_ids = [s.id for s in program.actions]
-    compensation_ids = {s.compensate for s in program.actions if s.compensate}
+    handler_ids = [s.id for s in program.processing_steps]
+    compensation_ids = {s.compensate for s in program.processing_steps if s.compensate}
     if compensation_ids & {e.id for e in program.model.entities} or any(not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]*", i) for i in compensation_ids):
         raise ContractError("Compensation IDs must be valid and distinct from entity IDs")
     function_names = [class_name(i).lower() for i in handler_ids + sorted(compensation_ids)]

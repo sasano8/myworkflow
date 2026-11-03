@@ -1,5 +1,6 @@
 """Deterministic business documentation."""
 from myworkflow._internal.markdown import escape
+from myworkflow.contracts.handlers import HandlerContract
 from myworkflow.contracts.models import ContractCatalog, Lock
 
 def render(catalog: ContractCatalog) -> str:
@@ -30,8 +31,9 @@ def render(catalog: ContractCatalog) -> str:
             lines.extend([f"### {wi:03}-{bi:05} {cell(p.name)}", "",
                           "| 連番 | トリガー | 実行者 | ステップ名 | 処理概要 | 入出力 | アーティファクト操作 | 固定ID |",
                           "| --- | --- | --- | --- | --- | --- | --- | --- |"])
-            triggers = b.triggers
-            for ti, t in enumerate(triggers, 1):
+            handlers = tuple(HandlerContract(b, p, t) for t in b.triggers)
+            for ti, handler in enumerate(handlers, 1):
+                t = handler.trigger
                 summary = ""
                 if t.after:
                     summary += f"先行配置：{t.after}。"
@@ -40,7 +42,7 @@ def render(catalog: ContractCatalog) -> str:
                 summary += "入力元：" + ("、".join(f"{artifacts[target]} ← {source}" for target, source in t.input_mapping) or "なし")
                 fixed_id = identity + "/request" + (f"/{t.id}" if ti > 1 else "")
                 values = (f"{wi:03}-{bi:05}-00000", f"トリガー{ti}：{t.name}", roles[t.actor_role_id], "受付", summary,
-                          "入力：" + (names(p.inputs) or "なし"), "—", fixed_id)
+                          "入力：" + (names(handler.request) or "なし"), "—", fixed_id)
                 lines.append("| " + " | ".join(map(cell, values)) + " |")
             rows = []
             for s in p.steps:
@@ -49,10 +51,11 @@ def render(catalog: ContractCatalog) -> str:
                 else:
                     uses = "／".join(f"{u.operation}：{artifacts[u.artifact_id]}" for u in s.uses) or "—"
                     rows.append((s.name, describe_step(s, artifacts), "—", uses, identity + "/" + s.id))
-            ending = "終了コードとメッセージを返す。" if p.reply else "処理を完了する。応答は返さない。"
+            replies = handlers[0].response is not None
+            ending = "終了コードとメッセージを返す。" if replies else "処理を完了する。応答は返さない。"
             if b.next_workflow_id:
                 ending += f"次ワークフロー起動：{workflows[b.next_workflow_id]}。"
-            rows.append(("結果返却" if p.reply else "完了", ending, "出力：" + ("終了コード・メッセージ" if p.reply else "なし（応答不要）"), ("保持：" + names(p.outputs)) if p.outputs else "—", identity + "/response"))
+            rows.append(("結果返却" if replies else "完了", ending, "出力：" + ("終了コード・メッセージ" if replies else "なし（応答不要）"), ("保持：" + names(p.outputs)) if p.outputs else "—", identity + "/response"))
             for si, (name, overview, io, uses, fixed_id) in enumerate(rows, 1):
                 number = f"{wi:03}-{bi:05}-{si:05}"
                 slot = p.steps[si - 1].actor if si <= len(p.steps) else "system"

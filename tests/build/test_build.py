@@ -18,7 +18,7 @@ from myworkflow.build import BuildConfig, BuildError, build, compile_outputs
 from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, WorkflowDeclaration
 from myworkflow.contracts.errors import ContractError
 from myworkflow.executable import Context, Registry
-from myworkflow.compiler.pipelines import Action, Mutex, Operation, PipelineDeclaration
+from myworkflow.compiler.pipelines import StepDeclaration, Mutex, Operation, PipelineDeclaration
 from myworkflow.generation.business import export_business
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -108,7 +108,7 @@ def symbolic_example(*, with_states=False, with_after=False):
     value = Artifact('a.value', '値', 'value', 'str')
     role = Role('role.operator', '担当者', '担当者')
     undo = Operation('c.undo')
-    action = Action('s.save', '保存', '保存する。', reads=(value,), compensate=undo)
+    action = StepDeclaration('s.save', '保存', '保存する。', reads=(value,), compensate=undo)
     pipeline = PipelineDeclaration('p.save', '保存', (value,), (), (action,))
     @annotate(WorkflowDeclaration(id='w.save', name='保存フロー'))
     class Flow:

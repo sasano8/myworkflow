@@ -19,7 +19,7 @@ raise BusinessError(10, '発注条件を満たしていません', level='warnin
 
 ## 呼出しとアーティファクト
 
-`invoke` は受付認可付き、`run_internal`（互換名run）は内部用です。`invoke_or_raise`・`run_or_raise` は例外を伝播し、Temporal等の接続や障害試験で使います。成功時はいずれも同じPipelineResultです。
+[ハンドラー](handlers.md)が受付と結果の接続を担います。`invoke` は受付認可付き、`run_internal`（互換名run）は内部用です。`invoke_or_raise`・`run_or_raise` は例外を伝播し、Temporal等の接続や障害試験で使います。成功時はいずれも同じPipelineResultです。
 
 Pipeline.outputsは、完了時に存在・型を検査する成果物IDです。レスポンス項目ではなく、DB保存まで保証しません。後続処理へ渡す業務IDは入力・DB・ストレージ等から明示的に渡します。生成ResponseはPipelineResultの別名で、古い業務データ入りの型はEngine構築時に拒否します。
 

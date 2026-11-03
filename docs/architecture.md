@@ -24,3 +24,5 @@ flowchart LR
 [注釈](annotations.md)の共通入口は `__myworkflow__` です。Python宣言はオブジェクト参照、コンパイル後のモデルは固定IDで接続します。内部モデルのアクセスは属性へ統一し、辞書形式は読込み・書出しの境界で扱います。`Program.spec` は独立した互換スナップショットで、変更しても契約は変わりません。`Catalog` は `ContractCatalog` の互換名です。
 
 EngineはExecutionStore・LockProviderを受け取ります。業務DBや特定アプリのSQLを直接呼びません。保存の保証と復旧判断は[実行保証](execution-design.md)、[確定境界](artifact-jobs.md)、[遷移実行](transition-execution.md)に集約しています。
+
+受付・結果返却は[Handler](handlers.md)へ分離し、Pipelineとは合成で接続します。両者の共通基底は注釈用のExtensibleだけで、ハンドラーにステップ列を要求しません。

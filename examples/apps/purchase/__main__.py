@@ -8,7 +8,7 @@ from examples.apps.purchase import contract as c
 from examples.apps.purchase.handlers import registry
 from examples.apps.purchase import interfaces
 from examples.apps.purchase.services import Services
-from myworkflow.executable import Engine, Principal, Program
+from myworkflow.executable import Engine, Principal
 
 program = c.program
 
@@ -26,11 +26,11 @@ def main():
         applicant = Principal('alice', frozenset({c.requester.id}))
         approver = Principal('bob', frozenset({c.approver.id}))
         system = Principal('scheduler', frozenset({c.system.id}))
-        print(engine.invoke(c.PurchaseApproval.submit, c.PurchaseApproval.submission, {'id': 'purchase-001', 'vendor': 'サンプル商事', 'amount': 10000}, applicant, run_id='submit-001'))
-        print(engine.invoke(c.PurchaseAttachment.upload, c.PurchaseAttachment.attachment_received, {'id': 'purchase-001', 'file_a': '見積書A本文', 'file_b': '見積書B本文'}, applicant, run_id='upload-001'))
-        print(engine.invoke(c.PurchaseApproval.approve, c.PurchaseApproval.approval_received, {'id': 'purchase-001', 'decision': True}, approver, run_id='approve-001'))
-        engine.invoke(c.PurchaseApproval.dispatch, c.PurchaseApproval.scheduled, {'id': 'purchase-001'}, system, run_id='dispatch-001')
-        engine.invoke(c.PurchaseExecution.confirm, c.PurchaseExecution.confirmation_requested, {'id': 'purchase-001'}, system, run_id='confirm-001')
+        print(engine.handler(c.PurchaseApproval.submit, c.PurchaseApproval.submission).handle({'id': 'purchase-001', 'vendor': 'サンプル商事', 'amount': 10000}, applicant, run_id='submit-001'))
+        print(engine.handler(c.PurchaseAttachment.upload, c.PurchaseAttachment.attachment_received).handle({'id': 'purchase-001', 'file_a': '見積書A本文', 'file_b': '見積書B本文'}, applicant, run_id='upload-001'))
+        print(engine.handler(c.PurchaseApproval.approve, c.PurchaseApproval.approval_received).handle({'id': 'purchase-001', 'decision': True}, approver, run_id='approve-001'))
+        engine.handler(c.PurchaseApproval.dispatch, c.PurchaseApproval.scheduled).handle({'id': 'purchase-001'}, system, run_id='dispatch-001')
+        engine.handler(c.PurchaseExecution.confirm, c.PurchaseExecution.confirmation_requested).handle({'id': 'purchase-001'}, system, run_id='confirm-001')
         print(services.application('purchase-001')['status'])
 
 

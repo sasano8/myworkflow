@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from myworkflow.contracts.errors import ContractError
 from myworkflow.contracts.models import Artifact, Binding, ContractCatalog, Pipeline, Role, Trigger, Workflow
-from myworkflow.compiler.pipelines import Action, Operation, PipelineDeclaration, compile_pipeline
+from myworkflow.compiler.pipelines import StepDeclaration, Operation, PipelineDeclaration, compile_pipeline
 from myworkflow.compiler.program import Program
 from myworkflow.contracts.state_graph import State, StateGraph, Transition
 from myworkflow.contracts.value_objects import ValueObject, validate_definitions
@@ -245,7 +245,7 @@ def compile_workflows(*declarations: Callable, artifacts: tuple[Artifact, ...] =
         if isinstance(pipeline, PipelineDeclaration):
             for selected in pipeline.steps:
                 step = declaration(selected)
-                if isinstance(step, Action) and step.compensate is not None:
+                if isinstance(step, StepDeclaration) and step.compensate is not None:
                     collect(operations, step.compensate, Operation, step.id)
         lowered[identity] = compile_pipeline(pipeline, artifacts) if isinstance(pipeline, PipelineDeclaration) else pipeline
     catalog = ContractCatalog(artifacts, tuple(lowered.values()), tuple(workflows), tuple(roles.values()), tuple(definitions.values()))

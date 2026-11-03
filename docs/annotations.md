@@ -4,23 +4,25 @@
 
 ```python
 from myworkflow import annotate
-from myworkflow.compiler.pipelines import Action
+from myworkflow.compiler.pipelines import StepDeclaration
 from myworkflow.runtime import Context
 
-@annotate(Action('s.notify', extensions={'ui': {'label': '通知する'}}))
+@annotate(StepDeclaration('s.notify', extensions={'ui': {'label': '通知する'}}))
 def notify(ctx: Context) -> None:
     """処理状況を通知する。"""
     ctx.add_message('処理しました')
 
-# notify.__myworkflow__ = Action(...) と同じ取り付け方
+# notify.__myworkflow__ = StepDeclaration(...) と同じ取り付け方
 ```
 
 `annotate` はIDを持つ独自クラスのインスタンスも扱えます。関数の引数・戻り値をコアで制限しません。標準の実行Registryへ接続するときにだけ `(ctx: Context) -> None` を検証します。
 
+処理単位の宣言名はStepDeclaration、コンパイル後のモデル名はStepです。旧Action名は使用しません。既存のJSON形式にあるkind="action"は互換タグとして維持します。
+
 ## 宣言・接続・実行
 
 - `declaration(target)` で注釈を読みます。既存の宣言オブジェクトを渡した場合は、そのまま返します。
-- Action・PipelineDeclaration等は型付き注釈として再利用します。Actionの名前・概要を省略した場合は、注釈先の関数名・docstringをコンパイル時に使います。
+- StepDeclaration・PipelineDeclaration等は型付き注釈として再利用します。StepDeclarationの名前・概要を省略した場合は、注釈先の関数名・docstringをコンパイル時に使います。
 - パイプラインのstepsには注釈付き関数を参照できます。`registry.register(function)` で同じ関数を実装へ登録し、IDを転記しません。
 - ワークフローも `@annotate(WorkflowDeclaration(...))` を使います。クラスの名前付き属性、または関数に付けた `members=(...)` で状態・配置・遷移を列挙します。専用の省略デコレーターは提供しません。
 - 宣言収集は関数本体を実行しません。標準Engineはパイプラインのstepsを実行し、注釈先のパイプライン／ワークフロー関数本体は呼びません。通常のPythonとして直接呼び出すことはできます。

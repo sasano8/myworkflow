@@ -11,7 +11,7 @@ python -m myworkflow build --config examples.apps.purchase.build --target kestra
 
 | 出力 | 内容 |
 | --- | --- |
-| ir.json | schema_version=1。業務形式v2、状態グラフ、終了結果、実装対応 |
+| ir.json | schema_version=1。業務形式v2、ハンドラーの入出力契約、状態グラフ、終了結果、実装対応 |
 | requirements.md | 概要・実装対応。状態宣言があれば図と表も含む |
 | interfaces.py | Requestと共通Responseの別名 |
 | data-definitions.md / .json | ValueObjectがある場合の別ファイル出力 |

@@ -110,6 +110,7 @@ def compile_outputs(config: BuildConfig, *, target: str, workflows: tuple[str, .
                        for identity, fn in sorted(config.registry.handlers.items())
                        if identity in program.implementation_ids}
     ir = {'schema_version': 1, 'business': export_business(program, extension_encoder=config.extension_encoder),
+          'handlers': [program.handler(b.id, t.id).to_dict() for b in program.bindings.values() for t in b.triggers],
           'state_graphs': [g.to_dict(model, extension_encoder=config.extension_encoder) for g in graphs], 'implementations': implementations}
     if config.document_renderer is None:
         documentation = document_program(program, config.registry)

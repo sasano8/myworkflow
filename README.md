@@ -9,6 +9,7 @@ Python 3.14向けの、業務契約からインターフェース・実装骨格
 | 概念 | 役割 |
 | --- | --- |
 | ワークフロー | 人の操作・待機・引継ぎを含む意味のある業務のまとまり |
+| ハンドラー | 外部の入出力契約とパイプラインを接続する |
 | パイプライン | 入力と処理順序を定義する再利用単位。終了コード・メッセージを返す |
 | ステップ | Contextを受け取る処理。読書き、分岐、再試行、補償を宣言する |
 | Binding・Trigger | 業務内への配置と起動条件。入力元・実行ロールを処理本体から分離する |
@@ -49,7 +50,7 @@ python -m myworkflow build --config examples.apps.purchase.build --target tempor
 | 依存方向・公開入口 | [構成](docs/architecture.md) |
 | 宣言・状態表・業務フロー図 | [状態グラフ](docs/state-graph.md) |
 | 値の制約と出力 | [ValueObject](docs/value-objects.md) |
-| 実行・終了結果・確定 | [実行保証](docs/execution-design.md)・[終了結果](docs/pipeline-results.md)・[遷移実行](docs/transition-execution.md) |
+| 実行・終了結果・確定 | [接続層](docs/handlers.md)・[実行保証](docs/execution-design.md)・[終了結果](docs/pipeline-results.md)・[遷移実行](docs/transition-execution.md) |
 | 保存・楽観ロック・保持方針 | [アーティファクト](docs/artifact-jobs.md) |
 | 生成・ビルド | [pre-commit](docs/generated-documents.md)・[ビルド](docs/build.md) |
 | 継続品質・評価 | [コード統計](docs/quality/README.md)・[往復品質](docs/requirements-quality.md)・[受入評価](docs/acceptance-evaluation.md)・[PoC評価](docs/poc-evaluation.md) |

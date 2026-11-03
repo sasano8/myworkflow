@@ -7,7 +7,7 @@ from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.storage.artifacts import ArtifactWrite
 from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, WorkflowDeclaration
 from myworkflow.executable import Context, Engine, Registry
-from myworkflow.compiler.pipelines import Action, PipelineDeclaration
+from myworkflow.compiler.pipelines import StepDeclaration, PipelineDeclaration
 from myworkflow.runtime.transitions import GuardContext, TransitionRuntime
 
 from examples.feature_demos.approval_values.value_objects import application_identifier, approval_application, purchase_amount, delivery_period
@@ -17,7 +17,7 @@ reviewer = Role('role.guarded_reviewer', '審査責任者', '承認者')
 system = Role('role.guarded_system', '業務システム', 'システム')
 
 
-@annotate(Action('s.guarded_approve', '承認変更の作成',
+@annotate(StepDeclaration('s.guarded_approve', '承認変更の作成',
                  extensions={'ui': {'label': '承認する'}}))
 def approve(ctx: Context) -> None:
     """申請者本人の承認を拒否し、承認者と承認済みの状態を変更予定に記録する。"""

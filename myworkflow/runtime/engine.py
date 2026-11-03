@@ -1,10 +1,11 @@
 from collections.abc import MutableMapping
 from contextlib import ExitStack
 from copy import deepcopy
-from dataclasses import asdict, dataclass, is_dataclass
+from dataclasses import asdict, is_dataclass
 from typing import get_type_hints
 from myworkflow.contracts.errors import ContractError, RetryableError, ExecutionFailed
 from myworkflow.runtime.context import Context
+from myworkflow.runtime.handlers import Handler, Principal
 from myworkflow.runtime.transitions import TransitionRuntime
 from myworkflow.contracts.names import class_name
 from myworkflow.runtime.compensation import CompensationStack
@@ -13,12 +14,6 @@ from myworkflow.contracts.identity import definition_id
 from myworkflow.runtime.ports import ExecutionStore, LockProvider, RunStatus
 
 from myworkflow.contracts.value_objects import PRIMITIVES as TYPES
-
-@dataclass(frozen=True)
-class Principal:
-    id: str
-    roles: frozenset[str]
-
 
 class Engine:
     def __init__(self, program, registry, services, interfaces=None, *, locks: LockProvider | None = None, store: ExecutionStore | None = None, transitions: TransitionRuntime | None = None):
@@ -48,15 +43,11 @@ class Engine:
         except Exception as exc:
             return PipelineResult.from_exception(exc)
 
+    def handler(self, binding_id, trigger_id) -> Handler:
+        return Handler(self.program, self.program.handler(binding_id, trigger_id), self._run_or_raise)
+
     def invoke_or_raise(self, binding_id, trigger_id, payload, principal, *, run_id) -> PipelineResult:
-        b = self.program.binding(binding_id)
-        t = self.program.trigger(b.id, trigger_id)
-        if t.actor_role_id not in principal.roles:
-            raise PermissionError(f'{t.id}: {principal.id} lacks {t.actor_role_id}')
-        if set(payload) != {source for _, source in t.input_mapping}:
-            raise ContractError(f"{t.id}: payload fields do not match mapping")
-        values = {self.program.artifacts[a].key: payload[source] for a, source in t.input_mapping}
-        return self._run_or_raise(b.pipeline_id, values, actor=principal.id, run_id=run_id, binding_id=b.id, trigger_id=t.id)
+        return self.handler(binding_id, trigger_id).invoke_or_raise(payload, principal, run_id=run_id)
 
     def run(self, pipeline_id, request, *, actor, run_id) -> PipelineResult:
         try:

@@ -50,8 +50,8 @@ class Program:
         self.plans = MappingProxyType({p.id: p for p in self.model.pipelines})
         self.bindings = MappingProxyType({b.id: b for w in self.model.workflows for b in w.bindings})
         self.steps = MappingProxyType({s.id: s for p in self.model.pipelines for s in p.steps})
-        self.actions = tuple(s for s in self.steps.values() if isinstance(s, Step))
-        self.implementation_ids = frozenset(identity for s in self.actions for identity in (s.id, s.compensate) if identity)
+        self.processing_steps = tuple(s for s in self.steps.values() if isinstance(s, Step))
+        self.implementation_ids = frozenset(identity for s in self.processing_steps for identity in (s.id, s.compensate) if identity)
         self.validate()
 
     @property
@@ -88,6 +88,11 @@ class Program:
             if trigger.id == trigger_id:
                 return trigger
         raise ContractError(f'{binding_id}: unknown trigger {trigger_id}')
+
+    def handler(self, binding_id, trigger_id):
+        from myworkflow.contracts.handlers import HandlerContract
+        binding = self.binding(binding_id)
+        return HandlerContract(binding, self.plans[binding.pipeline_id], self.trigger(binding.id, trigger_id))
 
     def payload(self, binding_id, trigger_id, values):
         """Map context keys to an ingress payload using the declared trigger."""

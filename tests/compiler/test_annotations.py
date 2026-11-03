@@ -9,7 +9,7 @@ import pytest
 from myworkflow import Artifact, Role, annotate, declaration
 from myworkflow.build import BuildConfig, compile_outputs
 from myworkflow.compiler.declarations import WorkflowDeclaration, bind, compile_workflows, state, transition, trigger
-from myworkflow.compiler.pipelines import Action, PipelineDeclaration
+from myworkflow.compiler.pipelines import StepDeclaration, PipelineDeclaration
 from myworkflow.compiler.program import Program
 from myworkflow.contracts.errors import ContractError
 from myworkflow.generation.business import business_to_spec, export_business
@@ -23,7 +23,7 @@ def annotated_flow(extensions=None):
     value = Artifact('a.value', '入力値', 'value', extensions={'ui': {'widget': 'text'}})
     raw = extensions if extensions is not None else {'ui': {'label': '保存', 'tags': ['customer']}}
 
-    @annotate(Action('s.save', reads=(value,), writes=(value,), extensions=raw))
+    @annotate(StepDeclaration('s.save', reads=(value,), writes=(value,), extensions=raw))
     def save(ctx: Context) -> None:
         """入力値を大文字にして保持する。"""
         events.append(ctx.values['value'])
@@ -129,7 +129,7 @@ def test_opaque_extensions_need_an_explicit_encoder_and_can_drive_custom_documen
 @pytest.mark.parametrize('extensions', [[], {1: 'not a string key'}])
 def test_invalid_extension_containers_are_rejected(extensions):
     with pytest.raises(ContractError):
-        Action('s.bad', extensions=extensions)
+        StepDeclaration('s.bad', extensions=extensions)
 
 
 def test_value_definitions_and_catalog_extensions_survive_explicit_registry_loading():
@@ -150,12 +150,12 @@ def test_cyclic_extension_containers_fail_at_declaration_time():
     cycle = {}
     cycle['self'] = cycle
     with pytest.raises(ContractError, match='acyclic'):
-        Action('s.cycle', extensions=cycle)
+        StepDeclaration('s.cycle', extensions=cycle)
 
 
 def test_plain_declarations_do_not_use_the_dataclass_signature_as_a_business_summary():
     compiled, registry, refs = annotated_flow()
-    refs.pipeline.__myworkflow__ = replace(declaration(refs.pipeline), steps=(Action('s.undocumented', '説明なし'),))
+    refs.pipeline.__myworkflow__ = replace(declaration(refs.pipeline), steps=(StepDeclaration('s.undocumented', '説明なし'),))
     with pytest.raises(ContractError, match='business summary'):
         compile_workflows(refs.flow, artifacts=compiled.catalog.artifacts)
 
@@ -169,7 +169,7 @@ def test_custom_encoders_cannot_silently_change_keys_or_recurse_forever(encoder)
 
 def test_standard_dataclass_conversion_still_supports_extension_metadata():
     from dataclasses import asdict
-    action = Action('s.export', extensions={'ui': {'tags': ['customer']}})
+    action = StepDeclaration('s.export', extensions={'ui': {'tags': ['customer']}})
     exported = json.loads(json.dumps(asdict(action)))
     assert exported['extensions'] == {'ui': {'tags': ['customer']}}
     with pytest.raises(TypeError):

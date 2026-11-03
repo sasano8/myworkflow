@@ -14,7 +14,7 @@ class Operation:
 
 
 @dataclass(frozen=True)
-class Action(Extensible):
+class StepDeclaration(Extensible):
     id: str
     name: str = ""
     summary: str = ""
@@ -42,7 +42,7 @@ class PipelineDeclaration(Extensible):
     name: str
     inputs: tuple[Artifact, ...]
     produces: tuple[Artifact, ...]
-    steps: tuple[Action | Mutex | Callable, ...]
+    steps: tuple[StepDeclaration | Mutex | Callable, ...]
     reply: bool = True
 
 
@@ -64,7 +64,7 @@ def compile_pipeline(pipeline: PipelineDeclaration, artifacts: tuple[Artifact, .
         if isinstance(step, Mutex):
             steps.append(Lock(step.id, step.name, refs(step.keys, step.id), namespace=step.namespace,
                               timeout=step.timeout, extensions=step.extensions, conflict='待機' if step.timeout else '拒否'))
-        elif isinstance(step, Action):
+        elif isinstance(step, StepDeclaration):
             reads, writes = refs(step.reads, step.id), refs(step.writes, step.id)
             if not isinstance(step.uses, tuple):
                 raise ContractError(f'{step.id}: uses must be a tuple')
@@ -86,6 +86,6 @@ def compile_pipeline(pipeline: PipelineDeclaration, artifacts: tuple[Artifact, .
             steps.append(Step(step.id, step.name or getattr(target, '__name__', ''), step.summary or (getdoc(target) if callable(target) else '') or '', tuple(uses), step.actor, reads, writes,
                               condition, step.attempts, compensation.id if compensation else None, extensions=step.extensions))
         else:
-            raise ContractError(f'{pipeline.id}: steps must reference Action or Mutex')
+            raise ContractError(f'{pipeline.id}: steps must reference StepDeclaration or Mutex')
     return Pipeline(pipeline.id, pipeline.name, refs(pipeline.inputs, pipeline.id),
                     refs(pipeline.produces, pipeline.id), tuple(steps), pipeline.reply, extensions=pipeline.extensions)

@@ -38,7 +38,7 @@ class Step(Extensible):
     when: tuple[str, bool] | None = None
     attempts: int = 1
     compensate: str | None = None
-    kind: str = "action"
+    kind: str = "action"  # compatibility tag in the serialized contract, not a separate business concept
 
 
 @dataclass(frozen=True)
