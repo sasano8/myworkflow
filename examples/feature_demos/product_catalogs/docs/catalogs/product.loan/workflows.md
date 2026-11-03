@@ -1,6 +1,6 @@
 # ワークフロー一覧
 
-ルート：同一組織の商品別業務（org.example）／要求カタログ：融資商品（product.loan）。固定IDはこの要求カタログ内で解決します。
+ルート：サンプル銀行（org.example）／要求カタログ：融資商品（product.loan）。固定IDはこの要求カタログ内で解決します。
 
 [共有定義](shared-definitions.md)
 

@@ -44,7 +44,7 @@ CIも同じ `--check` を使います。出力一致は意味の正しさの証�
 ```python
 insurance = ContractCatalog(..., id='product.insurance', name='保険商品')
 loan = ContractCatalog(..., id='product.loan', name='融資商品')
-root = RootCatalog('org.example', '同一組織の商品別業務', (insurance, loan))
+root = RootCatalog('org.example', 'サンプル銀行', (insurance, loan))
 workflow = root.workflow('product.insurance', 'w.main')
 ```
 
@@ -53,3 +53,5 @@ workflow = root.workflow('product.insurance', 'w.main')
 ルートは一覧と参照先をまとめ、子カタログを独立して検証します。子カタログのIDと名前は必須です。従来の単一カタログはID・名前を省略したまま利用できます。`compile_workflows` でも `catalog_id`・`catalog_name` を指定でき、互換specとビルドの業務IRは指定した識別情報を保持します。
 
 生成文書は `catalogs.md` から `catalogs/<要求カタログID>/workflows.md` と専用詳細へ進みます。要求カタログは個別にProgram・Engineへ渡します。ルートは実行エンジンや永続化の境界ではなく、ワーカー・キュー・DB・権限による分離は別途設定します。
+
+[銀行の概要](../examples/feature_demos/product_catalogs/docs/overview.md) は、ルートを銀行、子の要求カタログを商品とする例の入口です。対象業務・商品構成・共通担当・未定義の範囲を示し、各商品の詳細へリンクします。概要はサンプルの `root.py` から生成します。

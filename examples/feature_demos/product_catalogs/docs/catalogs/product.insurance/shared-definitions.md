@@ -2,7 +2,7 @@
 
 [ワークフロー一覧](workflows.md)
 
-ルート：同一組織の商品別業務（org.example）／要求カタログ：保険商品（product.insurance）。固定IDはこの要求カタログ内で解決します。
+ルート：サンプル銀行（org.example）／要求カタログ：保険商品（product.insurance）。固定IDはこの要求カタログ内で解決します。
 
 <a id="role.operator"></a>
 ## role.operator：商品運用部の業務担当者
