@@ -1,6 +1,6 @@
 """Canonical symbolic purchase declarations. SPEC is a generated compatibility snapshot."""
-from myworkflow import annotate, Artifact, Role
-from myworkflow.compiler.declarations import bind, compile_workflows, trigger, WorkflowDeclaration
+from myworkflow import Artifact, Role, workflow
+from myworkflow.compiler.declarations import bind, compile_workflows, trigger
 from myworkflow.compiler.pipelines import StepDeclaration, Mutex, Operation, PipelineDeclaration
 from examples.apps.purchase import value_objects as vo
 
@@ -117,17 +117,17 @@ confirm_purchase = PipelineDeclaration(
     (order_lock, check_eligibility, confirm_order, reject_order), reply=False,
 )
 
-@annotate(WorkflowDeclaration(id='w.execution', name='承認済み購買申請の発注確定'))
+@workflow(id='w.execution', name='承認済み購買申請の発注確定')
 class PurchaseExecution:
     confirmation_requested = trigger('t.confirm', '承認ワークフローから起動', system, ((application_id, 'id'),))
     confirm = bind('b.confirm', confirm_purchase, (confirmation_requested,), (('system', system),))
 
-@annotate(WorkflowDeclaration(id='w.attach', name='購買申請への見積書添付'))
+@workflow(id='w.attach', name='購買申請への見積書添付')
 class PurchaseAttachment:
     attachment_received = trigger('t.upload', '申請者が見積書2件をアップロード', requester, ((application_id, 'id'), (quote_a, 'file_a'), (quote_b, 'file_b')))
     upload = bind('b.upload', upload_quotes, (attachment_received,), (('system', system),))
 
-@annotate(WorkflowDeclaration(id='w.approval', name='購買申請の受付・承認'))
+@workflow(id='w.approval', name='購買申請の受付・承認')
 class PurchaseApproval:
     submission = trigger('t.submit', '申請者がFEで申請', requester, ((application_id, 'id'), (vendor, 'vendor'), (amount, 'amount')))
     submit = bind('b.submit', submit_application, (submission,), (('system', system),))

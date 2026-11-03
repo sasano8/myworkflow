@@ -3,11 +3,11 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
-from myworkflow import annotate, Artifact, BusinessError, Pipeline, Role, Step
+from myworkflow import annotate, Artifact, BusinessError, Pipeline, Role, Step, workflow
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.storage.artifacts import ArtifactCoordinator, ArtifactWrite
-from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, WorkflowDeclaration
+from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger
 from myworkflow.executable import Context, Engine, Registry
 
 application_id = Artifact('a.staged_id', '申請ID', 'application_id', 'str')
@@ -26,7 +26,7 @@ approval = Pipeline('p.staged_approval', '申請の承認確定', (application_i
 ))
 
 
-@annotate(WorkflowDeclaration(id='w.staged_approval', name='申請の準備と承認確定'))
+@workflow(id='w.staged_approval', name='申請の準備と承認確定')
 class PreparedApproval:
     pending = state('state.staged_pending', '承認待ち', initial=True)
     approved = state('state.staged_approved', '承認済み')

@@ -1,13 +1,12 @@
 """A declared transition enforces plain status updates and optimistic final commit."""
 from pathlib import Path
 
-from myworkflow import Artifact, Role, annotate
+from myworkflow import Artifact, Role, pipeline, step, workflow
 from myworkflow.adapters.local_artifacts import TemporaryArtifactCoordinator
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.storage.artifacts import ArtifactWrite
-from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger, WorkflowDeclaration
+from myworkflow.compiler.declarations import bind, compile_workflows, state, transition, trigger
 from myworkflow.executable import Context, Engine, Registry
-from myworkflow.compiler.pipelines import StepDeclaration, PipelineDeclaration
 from myworkflow.runtime.transitions import GuardContext, TransitionRuntime
 
 from examples.feature_demos.approval_values.value_objects import application_identifier, approval_application, purchase_amount, delivery_period
@@ -17,8 +16,7 @@ reviewer = Role('role.guarded_reviewer', '審査責任者', '承認者')
 system = Role('role.guarded_system', '業務システム', 'システム')
 
 
-@annotate(StepDeclaration('s.guarded_approve', '承認変更の作成',
-                 extensions={'ui': {'label': '承認する'}}))
+@step(id='s.guarded_approve', name='承認変更の作成', extensions={'ui': {'label': '承認する'}})
 def approve(ctx: Context) -> None:
     """申請者本人の承認を拒否し、承認者と承認済みの状態を変更予定に記録する。"""
     application = ctx.changes.subject
@@ -26,7 +24,7 @@ def approve(ctx: Context) -> None:
     ctx.add_message('承認変更を作成しました')
 
 
-@annotate(PipelineDeclaration('p.guarded_approve', '申請承認', (application_id,), (), (approve,)))
+@pipeline(id='p.guarded_approve', name='申請承認', inputs=(application_id,), produces=(), steps=(approve,))
 def approval():
     """The compiler reads metadata without executing this function."""
 
@@ -35,7 +33,7 @@ def may_approve(ctx: GuardContext) -> bool:
     return ctx.application['owner'] != ctx.actor and ctx.application['amount'] > 0
 
 
-@annotate(WorkflowDeclaration(id='w.guarded_approval', name='トランジション契約に従う申請承認'))
+@workflow(id='w.guarded_approval', name='トランジション契約に従う申請承認')
 class Approval:
     waiting = state('state.guarded_waiting', '承認待ち', initial=True)
     approved = state('state.guarded_approved', '承認済み')
