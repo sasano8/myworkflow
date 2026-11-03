@@ -6,7 +6,7 @@ from pathlib import PurePosixPath
 from urllib.parse import unquote
 
 from examples.feature_demos.declarative_review.contract import compiled
-from myworkflow import Pipeline, Role
+from myworkflow import Pipeline, Role, Workflow
 from myworkflow.generation.workflows import workflow_documents
 
 
@@ -49,3 +49,23 @@ def test_unplaced_definitions_and_exact_acceptance_targets_are_visible():
     assert 'case.orphan' not in page
     assert '## 状態・遷移\n\n未定義。' in page
     assert docs == workflow_documents(catalog, cases=cases)
+
+
+def test_index_callers_come_from_triggers_and_link_to_sample_roles():
+    docs = workflow_documents(compiled.catalog)
+    row = next(line for line in docs['workflows.md'].splitlines() if line.startswith('| w.review |'))
+    assert '| 呼び出すロール |' in docs['workflows.md']
+    assert row.count('[申請者](shared-definitions.md#role.requester)') == 1
+    assert row.count('[承認者](shared-definitions.md#role.approver)') == 1
+    assert 'role.system' not in row  # Internal step executor is not a caller.
+    assert row.index('role.requester') < row.index('role.approver')
+
+    from examples.apps.purchase.contract import program
+    purchase = workflow_documents(program.model)['workflows.md']
+    approval = next(line for line in purchase.splitlines() if line.startswith('| w.approval |'))
+    assert '[システム](shared-definitions.md#role.system)' in approval
+    assert '[発注担当者](shared-definitions.md#role.buyer)' in approval
+
+    empty = replace(compiled.catalog, workflows=(Workflow('w.empty', '未定義の起動', ()),))
+    row = next(line for line in workflow_documents(empty)['workflows.md'].splitlines() if line.startswith('| w.empty |'))
+    assert '| 未定義 | 0 |' in row

@@ -48,12 +48,17 @@ def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None):
                            '参照：' + ('、'.join(escape(i) for i in step.reads) or 'なし'), '',
                            '生成：' + ('、'.join(escape(i) for i in step.writes) or 'なし'), '',
                            '操作：' + ('、'.join(escape(u.operation + "：" + u.artifact_id) for u in step.uses) or 'なし'), ''])
-    index = ['# ワークフロー一覧', '', '[共有定義](shared-definitions.md)', '', '| 固定ID | ワークフロー | 配置数 |', '| --- | --- | --- |']
+    index = ['# ワークフロー一覧', '', '[共有定義](shared-definitions.md)', '', '| 固定ID | ワークフロー | 呼び出すロール | 配置数 |', '| --- | --- | --- | --- |']
     result = {}
     placed = set()
     matched = set()
     for workflow in catalog.workflows:
-        index.append(f'| {escape(workflow.id)} | [{escape(workflow.name)}]({paths[workflow.id]}) | {len(workflow.bindings)} |')
+        caller_ids = {t.actor_role_id for b in workflow.bindings for t in b.triggers}
+        callers = '、'.join(
+            f'[{escape(r.display_name)}](shared-definitions.md#{quote(r.id, safe="")})'
+            for r in catalog.roles if r.id in caller_ids
+        ) or '未定義'
+        index.append(f'| {escape(workflow.id)} | [{escape(workflow.name)}]({paths[workflow.id]}) | {callers} | {len(workflow.bindings)} |')
         lines = [f'# {escape(workflow.name)}', '', f'固定ID：{escape(workflow.id)}', '', '[ワークフロー一覧](../workflows.md)', '']
         related = {workflow.id}
         roles, artifacts, processing, connections = set(), set(), [], []

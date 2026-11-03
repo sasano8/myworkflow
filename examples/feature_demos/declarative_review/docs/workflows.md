@@ -2,9 +2,9 @@
 
 [共有定義](shared-definitions.md)
 
-| 固定ID | ワークフロー | 配置数 |
-| --- | --- | --- |
-| w.review | [申請内容の審査と再申請](workflows/w.review.md) | 3 |
+| 固定ID | ワークフロー | 呼び出すロール | 配置数 |
+| --- | --- | --- | --- |
+| w.review | [申請内容の審査と再申請](workflows/w.review.md) | [申請者](shared-definitions.md#role.requester)、[承認者](shared-definitions.md#role.approver) | 3 |
 
 ## 未配置の共有定義
 
