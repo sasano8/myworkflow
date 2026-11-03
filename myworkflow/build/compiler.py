@@ -1,6 +1,6 @@
 """Compile Python declarations into a deterministic IR and reviewable target outputs."""
 from myworkflow.generation.documents import document_program
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from collections.abc import Callable
 from myworkflow.contracts.state_graph import StateGraph
 import hashlib
@@ -101,7 +101,7 @@ def compile_outputs(config: BuildConfig, *, target: str, workflows: tuple[str, .
     if errors:
         raise BuildError('\n'.join(errors))
     used_pipelines = {b.pipeline_id for w in selected for b in w.bindings}
-    model = ContractCatalog(original.artifacts, tuple(p for p in original.pipelines if p.id in used_pipelines), selected, original.roles, original.value_objects, extensions=original.extensions)
+    model = replace(original, pipelines=tuple(p for p in original.pipelines if p.id in used_pipelines), workflows=selected)
     program = Program.from_catalog(model)
     program.check(config.registry)
     for graph in graphs:

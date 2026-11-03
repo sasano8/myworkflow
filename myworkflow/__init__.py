@@ -6,12 +6,13 @@ if TYPE_CHECKING:
 
 from myworkflow.contracts.annotations import Annotated, annotate, declaration
 from myworkflow.contracts.handlers import HandlerContract
+from myworkflow.contracts.catalogs import RootCatalog
 from myworkflow.contracts.models import Artifact, Binding, Catalog, ContractCatalog, Lock, Pipeline, Role, Step, Trigger, Use, Workflow
 from myworkflow.contracts.value_objects import ValueModel, ValueObject
 from myworkflow.contracts.results import Message, MessageLevel, PipelineResult
 from myworkflow.contracts.errors import BusinessError, PipelineError
 
-__all__ = ["step", "pipeline", "workflow", "HandlerContract", "Annotated", "annotate", "declaration", "ValueModel", "ValueObject", "Message", "MessageLevel", "PipelineResult", "PipelineError", "BusinessError", "Artifact", "Binding", "ContractCatalog", "Catalog", "Lock", "Pipeline", "Role", "Step", "Trigger", "Use", "Workflow", "render"]
+__all__ = ["step", "pipeline", "workflow", "HandlerContract", "Annotated", "annotate", "declaration", "ValueModel", "ValueObject", "Message", "MessageLevel", "PipelineResult", "PipelineError", "BusinessError", "Artifact", "Binding", "ContractCatalog", "RootCatalog", "Catalog", "Lock", "Pipeline", "Role", "Step", "Trigger", "Use", "Workflow", "render"]
 
 
 def render(catalog: ContractCatalog) -> str:

@@ -119,7 +119,7 @@ def _workflow_members(declarations):
 
 def compile_workflows(*declarations: Callable, artifacts: tuple[Artifact, ...] = (),
                       pipelines: tuple[Pipeline | PipelineDeclaration, ...] = (), roles: tuple[Role, ...] = (),
-                      value_objects: tuple[ValueObject, ...] = ()) -> CompiledWorkflows:
+                      value_objects: tuple[ValueObject, ...] = (), catalog_id: str = "", catalog_name: str = "") -> CompiledWorkflows:
     """Compile attached declarations without executing annotated functions.
 
     No methods, properties, generators or handlers are invoked to discover nodes.
@@ -248,7 +248,7 @@ def compile_workflows(*declarations: Callable, artifacts: tuple[Artifact, ...] =
                 if isinstance(step, StepDeclaration) and step.compensate is not None:
                     collect(operations, step.compensate, Operation, step.id)
         lowered[identity] = compile_pipeline(pipeline, artifacts) if isinstance(pipeline, PipelineDeclaration) else pipeline
-    catalog = ContractCatalog(artifacts, tuple(lowered.values()), tuple(workflows), tuple(roles.values()), tuple(definitions.values()))
+    catalog = ContractCatalog(artifacts, tuple(lowered.values()), tuple(workflows), tuple(roles.values()), tuple(definitions.values()), id=catalog_id, name=catalog_name)
     program = Program.from_catalog(catalog)
     graph_ids = set()
     for graph in graphs:

@@ -70,7 +70,7 @@ def load_catalog(spec, *, value_objects=()):
                 bindings.append(Binding(b['id'], b['pipeline'], tuple(triggers),
                     tuple(b.get('role_mapping', {'system': 'role.system'}).items()), b.get('next_workflow'), extensions=b.get('extensions', {})))
             workflows.append(Workflow(w['id'], w['name'], tuple(bindings), extensions=w.get('extensions', {})))
-        model = ContractCatalog(artifacts, tuple(pipelines), tuple(workflows), roles, value_objects, extensions=spec.get('extensions', {}))
+        model = ContractCatalog(artifacts, tuple(pipelines), tuple(workflows), roles, value_objects, id=spec.get('id', ''), name=spec.get('name', ''), extensions=spec.get('extensions', {}))
         for entity in model.entities:
             if not isinstance(entity.id, str) or (hasattr(entity, 'name') and not isinstance(entity.name, str)):
                 raise ContractError(f'{location}: IDs and names must be strings')

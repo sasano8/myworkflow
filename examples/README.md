@@ -18,7 +18,7 @@
 | [feature_demos/approval_values](feature_demos/approval_values) | データ定義・ガード・遷移と確定 | [docs](feature_demos/approval_values/docs/README.md) |
 | [feature_demos/declarative_review](feature_demos/declarative_review) | 状態宣言・循環・図の出力 | [docs](feature_demos/declarative_review/docs/README.md) |
 | [feature_demos/prepared_approval](feature_demos/prepared_approval) | アーティファクトの準備・確定・復旧 | [docs](feature_demos/prepared_approval/docs/README.md) |
-
 | [feature_demos/manual_receipt](feature_demos/manual_receipt) | メール受信・申請書確認・台帳記入を人だけで行う業務の記述（自動実行なし） | [docs](feature_demos/manual_receipt/docs/README.md) |
+| [feature_demos/product_catalogs](feature_demos/product_catalogs) | ルート配下の要求カタログを商品別の名前空間として使う | [docs](feature_demos/product_catalogs/docs/README.md) |
 
 各例のdocsは `python -m scripts.generate_docs` またはpre-commit hookで生成する。実装する機能の保証範囲や残課題は、各生成物とリポジトリの設計文書で確認する。

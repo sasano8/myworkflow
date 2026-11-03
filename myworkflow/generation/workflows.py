@@ -7,6 +7,8 @@ from myworkflow.generation.documents import describe_step
 
 def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None, notice=None):
     catalog.validate()
+    if notice is None and catalog.id:
+        notice = f"要求カタログ：{catalog.name}（{catalog.id}）。固定IDはこの要求カタログ内で解決します。"
     for graph in graphs:
         graph.validate(catalog)
     pipelines = {p.id: p for p in catalog.pipelines}

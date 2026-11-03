@@ -6,6 +6,11 @@ from myworkflow.contracts.value_objects import validate_definitions
 
 
 def validate_catalog(catalog):
+    # Legacy standalone catalogs may omit identity; named catalogs require both fields.
+    if catalog.id != "" or catalog.name != "":
+        if (not isinstance(catalog.id, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]*", catalog.id)
+                or not isinstance(catalog.name, str) or not catalog.name.strip()):
+            raise ValueError("Catalog requires a valid ID and nonempty name")
     ids = [e.id for e in catalog.entities]
     if len(ids) != len(set(ids)) or any(not isinstance(i, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]*", i) for i in ids):
         raise ValueError("IDs must be unique, nonempty and contain no slash")

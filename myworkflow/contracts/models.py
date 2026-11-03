@@ -1,6 +1,6 @@
 """Business contracts. Declarations describe behavior; they do not execute it."""
 from myworkflow.contracts.annotations import Extensible
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from myworkflow.contracts.value_objects import ValueObject
 
 
@@ -109,6 +109,9 @@ class ContractCatalog(Extensible):
     workflows: tuple[Workflow, ...]
     roles: tuple[Role, ...] = ()
     value_objects: tuple[ValueObject, ...] = ()
+
+    id: str = field(default="", kw_only=True)
+    name: str = field(default="", kw_only=True)
 
     @property
     def entities(self):

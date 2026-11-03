@@ -6,6 +6,7 @@ from myworkflow.contracts.models import ContractCatalog, Lock
 def catalog_to_spec(catalog: ContractCatalog) -> dict:
     """Serialize references; this export is never the typed declarations' source."""
     result = {
+        **({'id': catalog.id, 'name': catalog.name} if catalog.id else {}),
         **({'value_objects': [d.definition() for d in catalog.value_objects]} if catalog.value_objects else {}),
         'roles': [{'id': r.id, 'name': r.name, 'display_name': r.display_name} for r in catalog.roles],
         'artifacts': [{'id': a.id, 'name': a.name, 'key': a.key, 'type': a.type, **({'value_object': a.value_object.id} if a.value_object else {})} for a in catalog.artifacts],

@@ -18,6 +18,8 @@ def export_business(program, *, extension_encoder=None):
     model = program.model
     from copy import deepcopy
     result = {'schema_version': 2, 'completion': deepcopy(COMPLETION), **{name: {} for name in SECTIONS}}
+    if model.id:
+        result['catalog'] = {'id': model.id, 'name': model.name}
     if model.value_objects:
         result['value_objects'] = {d.id: {k: v for k, v in d.definition(extension_encoder=extension_encoder).items() if k != 'id'} for d in model.value_objects}
     for role in model.roles:
@@ -58,8 +60,10 @@ def business_to_spec(document):
     """Convert the reviewed output format into the existing interface generator input."""
     if document.get('schema_version') != 2 or type(document.get('schema_version')) is not int:
         raise ValueError('Unsupported business document schema')
-    if set(document) != {'schema_version', 'completion', *SECTIONS, *(key for key in ('value_objects', 'extensions') if key in document)} or any(not isinstance(document[k], dict) for k in SECTIONS):
+    if set(document) != {'schema_version', 'completion', *SECTIONS, *(key for key in ('value_objects', 'extensions', 'catalog') if key in document)} or any(not isinstance(document[k], dict) for k in SECTIONS):
         raise ValueError('Business document must contain exactly the supported sections')
+    if 'catalog' in document and (not isinstance(document['catalog'], dict) or set(document['catalog']) != {'id', 'name'}):
+        raise ValueError('catalog must contain exactly id and name')
     if 'value_objects' in document and not isinstance(document['value_objects'], dict):
         raise ValueError('value_objects must be an object')
     from myworkflow._internal.json_values import same
@@ -86,6 +90,6 @@ def business_to_spec(document):
     for section, used in [('steps', used_steps), ('bindings', used_bindings), ('triggers', used_triggers)]:
         if set(used) != set(document[section]) or len(used) != len(set(used)):
             raise ValueError(f'{section}: unreferenced or multiply owned definitions')
-    return {**({'extensions': document['extensions']} if 'extensions' in document else {}), **({'value_objects': list(declarations('value_objects'))} if 'value_objects' in document else {}),
+    return {**(document['catalog'] if 'catalog' in document else {}), **({'extensions': document['extensions']} if 'extensions' in document else {}), **({'value_objects': list(declarations('value_objects'))} if 'value_objects' in document else {}),
             'roles': list(declarations('roles')), 'artifacts': list(declarations('artifacts')),
             'pipelines': pipelines, 'workflows': workflows}

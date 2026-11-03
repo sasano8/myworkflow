@@ -36,3 +36,20 @@ CIも同じ `--check` を使います。出力一致は意味の正しさの証�
 購買サンプルの [screens.py](../examples/apps/purchase/screens.py) は、画面ID・画面名の中に機能ID・機能名・画面上の契機・内容を定義します。`ScreenFeature.workflow_call` を省略すると画面単体の機能、`WorkflowCall` を指定すると既存ワークフローの配置・トリガーを呼び出す機能になります。例は金額変更時の再計算、クリアボタン、申請・承認・アップロードボタンです。
 
 生成する [画面機能一覧](../examples/apps/purchase/docs/screens.md) は、呼出先のワークフロー詳細・呼び出すロールの共有定義へリンクします。ロールはトリガーから取得し、画面側で複製しません。画面・機能のID重複、空の操作契機、存在しないワークフロー、別ワークフローの配置や別配置のトリガーは生成前に検出します。画面仕様のみを記述するサンプルで、実際の画面・イベント処理や認可の実装は生成しません。
+
+## 複数の要求カタログ
+
+[商品別サンプル](../examples/feature_demos/product_catalogs/docs/catalogs.md) は、ルートカタログの配下に保険商品・融資商品の要求カタログを並べます。各 `ContractCatalog` 自体が名前空間で、別の名前空間クラスや入れ子のラッパーは設けません。
+
+```python
+insurance = ContractCatalog(..., id='product.insurance', name='保険商品')
+loan = ContractCatalog(..., id='product.loan', name='融資商品')
+root = RootCatalog('org.example', '同一組織の商品別業務', (insurance, loan))
+workflow = root.workflow('product.insurance', 'w.main')
+```
+
+固定IDは要求カタログ内で一意です。両方に同じ `w.main`・`p.process` を定義できます。内部参照は従来どおりIDで解決し、外から選ぶときは要求カタログIDと定義IDを指定します。他の要求カタログへの暗黙の参照・検索はしません。組織共通のRole等は `shared.py` の同じ定義オブジェクトを参照します。
+
+ルートは一覧と参照先をまとめ、子カタログを独立して検証します。子カタログのIDと名前は必須です。従来の単一カタログはID・名前を省略したまま利用できます。`compile_workflows` でも `catalog_id`・`catalog_name` を指定でき、互換specとビルドの業務IRは指定した識別情報を保持します。
+
+生成文書は `catalogs.md` から `catalogs/<要求カタログID>/workflows.md` と専用詳細へ進みます。要求カタログは個別にProgram・Engineへ渡します。ルートは実行エンジンや永続化の境界ではなく、ワーカー・キュー・DB・権限による分離は別途設定します。

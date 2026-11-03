@@ -10,6 +10,8 @@ def render(catalog: ContractCatalog) -> str:
     pipelines = {p.id: p for p in catalog.pipelines}
     workflows = {w.id: w.name for w in catalog.workflows}
     lines = ["# 業務要件", ""]
+    if catalog.id:
+        lines.extend([f"要求カタログ：{escape(catalog.name)}（{escape(catalog.id)}）", ""])
 
     def names(ids):
         return "、".join(artifacts[i] for i in ids)
