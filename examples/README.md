@@ -6,7 +6,7 @@
 
 | ディレクトリ | 業務 | ドキュメント |
 | --- | --- | --- |
-| [apps/purchase](apps/purchase) | 申請から承認・発注確定まで | [docs](apps/purchase/docs/README.md) |
+| [apps/purchase](apps/purchase) | 申請から承認・発注確定まで（[画面機能一覧](apps/purchase/docs/screens.md)付き） | [docs](apps/purchase/docs/README.md) |
 | [apps/tickets](apps/tickets) | チケット発行 | [docs](apps/tickets/docs/README.md) |
 
 ## 機能単位の技術検証

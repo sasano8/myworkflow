@@ -57,7 +57,11 @@ def outputs():
     from examples.feature_demos.manual_receipt.contract import catalog as manual_catalog, graph as manual_graph, DOCUMENTATION_NOTICE
     for name, text in workflow_documents(manual_catalog, graphs=(manual_graph,), notice=DOCUMENTATION_NOTICE).items():
         result['examples/feature_demos/manual_receipt/docs/' + name] = text
+    from examples.apps.purchase.screens import SCREENS
+    from myworkflow.generation.screens import render_screens
+    result['examples/apps/purchase/docs/screens.md'] = render_screens(SCREENS, contract.program.model)
     labels = {
+        'screens.md': '画面IDごとの画面単体機能・操作契機・ワークフロー呼出',
         'workflows.md': 'ワークフロー一覧・未配置の定義',
         'shared-definitions.md': '処理・ロール・データの共有定義',
         'requirements.md': '業務要件・型・実装対応',
@@ -86,6 +90,8 @@ def outputs():
                  f'宣言コード：[{source_files[Path(directory).parent.name]}](../{source_files[Path(directory).parent.name]})', '',
                  '[ワークフロー一覧から読む](workflows.md)', '',
                  '| ドキュメント | 内容 |', '| --- | --- |']
+        if directory == 'examples/apps/purchase/docs':
+            lines[-2:-2] = ['画面機能定義：[screens.py](../screens.py)', '']
         lines.extend(f'| [{file}]({file}) | {labels[file]} |' for file in files)
         result[directory + '/README.md'] = '\n'.join(lines) + '\n'
     return result
