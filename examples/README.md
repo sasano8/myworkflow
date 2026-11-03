@@ -21,4 +21,6 @@
 | [feature_demos/manual_receipt](feature_demos/manual_receipt) | メール受信・申請書確認・台帳記入を人だけで行う業務の記述（自動実行なし） | [docs](feature_demos/manual_receipt/docs/README.md) |
 | [feature_demos/product_catalogs](feature_demos/product_catalogs) | [銀行の概要](feature_demos/product_catalogs/docs/overview.md)から商品別の要求カタログへ進む | [docs](feature_demos/product_catalogs/docs/README.md) |
 
+| [feature_demos/cron_reporting](feature_demos/cron_reporting) | cronによる日次実行・タイムゾーン・同じ対象日の再実行 | [docs](feature_demos/cron_reporting/docs/README.md) |
+
 各例のdocsは `python -m scripts.generate_docs` またはpre-commit hookで生成する。実装する機能の保証範囲や残課題は、各生成物とリポジトリの設計文書で確認する。

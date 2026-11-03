@@ -57,3 +57,9 @@ workflow = root.workflow('product.insurance', 'w.main')
 [銀行の概要](../examples/feature_demos/product_catalogs/docs/overview.md) は、ルートを銀行、子の要求カタログを商品とする例の入口です。対象業務・商品構成・共通担当・未定義の範囲を示し、各商品の詳細へリンクします。概要は `root.py` のルート定義を入力として、`myworkflow/generation/catalogs.py` の共通テンプレートから生成します。商品名・ワークフロー・処理・ステップ・共有ロールを宣言から取得し、例専用の概要本文は保持しません。
 
 生成はAIを使わず、Pythonの固定テンプレートと明示的な宣言順で行います。同じ定義・テンプレート・依存環境なら同じUTF-8出力になります。時刻や実行時の絶対パスは含めません。独立プロセスと異なる `PYTHONHASHSEED` での一致をテストし、`python -m scripts.generate_docs --check` でコミット済み生成物との差分を検出します。
+
+## cronによる定期実行
+
+[日次レポートの例](../examples/feature_demos/cron_reporting/docs/README.md) は、毎日6時（Asia/Tokyo）に前日分を作成する構成です。`CronSchedule` にcron式・タイムゾーン・ワークフロー・配置・トリガーを定義します。生成前に数値によるUNIXの5項目式、IANAタイムゾーン、呼出先の対応を検証します。定期実行一覧とワークフロー詳細は同じ宣言から生成します。
+
+実際の起動は外部cronが担当し、Pythonコマンドは1回分だけ処理します。生成するcrontab例は `CRON_TZ` をサポートするCronie向けです。登録や配備は行いません。同じ対象日の再実行・重複起動では、SQLiteの対象日主キーでレポートの重複を防ぎます。出力本文は固定のサンプルで、実際の集計は業務側で実装します。停止期間の追いつき実行は `--date` で手動指定します。

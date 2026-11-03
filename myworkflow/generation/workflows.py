@@ -5,8 +5,11 @@ from myworkflow._internal.markdown import escape
 from myworkflow.generation.documents import describe_step
 
 
-def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None, notice=None):
+def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None, notice=None, schedules=()):
     catalog.validate()
+    if schedules:
+        from myworkflow.contracts.schedules import validate_schedules
+        validate_schedules(schedules, catalog)
     if notice is None and catalog.id:
         notice = f"要求カタログ：{catalog.name}（{catalog.id}）。固定IDはこの要求カタログ内で解決します。"
     for graph in graphs:
@@ -96,6 +99,12 @@ def workflow_documents(catalog, *, graphs=(), cases=(), data_link=None, notice=N
             if binding.next_workflow_id:
                 target = binding.next_workflow_id
                 connections.append(f'- {escape(binding.id)} → [{escape(target)}]({paths[target].split("/", 1)[1]})')
+        for schedule in schedules:
+            if schedule.workflow_id == workflow.id:
+                related.add(schedule.id)
+                connections.append(f'- 定期起動：{escape(schedule.id)}／cron：{escape(schedule.expression)}／'
+                                   f'タイムゾーン：{escape(schedule.timezone)}／配置：{escape(schedule.binding_id)}／'
+                                   f'トリガー：{escape(schedule.trigger_id)}（[定期実行一覧](../schedules.md)）')
         for other in catalog.workflows:
             for binding in other.bindings:
                 if binding.next_workflow_id == workflow.id:

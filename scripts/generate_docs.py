@@ -60,7 +60,21 @@ def outputs():
     from examples.apps.purchase.screens import SCREENS
     from myworkflow.generation.screens import render_screens
     result['examples/apps/purchase/docs/screens.md'] = render_screens(SCREENS, contract.program.model)
+    from examples.feature_demos.cron_reporting.contract import CATALOG as CRON_CATALOG, SCHEDULE
+    from examples.feature_demos.cron_reporting.application import program as cron_program, registry as cron_registry
+    from myworkflow.generation.schedules import render_schedules
+    cron_directory = 'examples/feature_demos/cron_reporting/docs/'
+    for name, text in workflow_documents(CRON_CATALOG, schedules=(SCHEDULE,)).items():
+        result[cron_directory + name] = text
+    result[cron_directory + 'requirements.md'] = document_program(cron_program, cron_registry)
+    result[cron_directory + 'schedules.md'] = render_schedules((SCHEDULE,), CRON_CATALOG)
+    result[cron_directory + 'example.crontab'] = (
+        '# Cronie crontab example. Review deployment paths before installing.\n'
+        f'CRON_TZ={SCHEDULE.timezone}\n'
+        f'{" ".join(SCHEDULE.expression.split())} cd /opt/myworkflow && .venv/bin/python -m examples.feature_demos.cron_reporting --database /var/lib/myworkflow/daily-report.db\n')
     labels = {
+        'schedules.md': 'cron式・タイムゾーン・起動先の定義',
+        'example.crontab': 'Cronie用crontab例（未登録）',
         'screens.md': '画面IDごとの画面単体機能・操作契機・ワークフロー呼出',
         'workflows.md': 'ワークフロー一覧・未配置の定義',
         'shared-definitions.md': '処理・ロール・データの共有定義',
@@ -74,6 +88,7 @@ def outputs():
     }
     catalogs = {
         'examples/apps/purchase/docs': '購買',
+        'examples/feature_demos/cron_reporting/docs': 'cronによる日次レポート',
         'examples/feature_demos/approval_values/docs': '承認・バリューオブジェクト例',
         'examples/feature_demos/declarative_review/docs': '申請審査',
         'examples/feature_demos/prepared_approval/docs': 'アーティファクトの準備・確定',
@@ -81,7 +96,7 @@ def outputs():
         'examples/feature_demos/manual_receipt/docs': 'メールで届いた申請書の人手受付',
     }
     source_files = {'purchase': 'contract.py', 'tickets': 'contract.py', 'declarative_review': 'contract.py',
-                    'approval_values': 'application.py', 'prepared_approval': 'application.py', 'manual_receipt': 'contract.py'}
+                    'approval_values': 'application.py', 'prepared_approval': 'application.py', 'manual_receipt': 'contract.py', 'cron_reporting': 'contract.py'}
     for directory, name in catalogs.items():
         files = sorted(Path(file).name for file in result if str(Path(file).parent) == directory)
         purpose = '業務アプリのサンプル' if directory.startswith('examples/apps/') else '機能単位の技術検証'
@@ -93,6 +108,19 @@ def outputs():
         if directory == 'examples/apps/purchase/docs':
             lines[-2:-2] = ['画面機能定義：[screens.py](../screens.py)', '']
         lines.extend(f'| [{file}]({file}) | {labels[file]} |' for file in files)
+        if directory == cron_directory.rstrip('/'):
+            lines.extend(['', '## 手動で1回実行', '',
+                          'リポジトリのルートから実行します。集計結果はサンプルの固定本文です。', '',
+                          '```sh', '.venv/bin/python -m examples.feature_demos.cron_reporting --database /tmp/myworkflow-daily-report.db --date 2030-04-01', '```', '',
+                          '`--date` を省略すると、定義したタイムゾーンの前日を対象にします。'
+                          '対象日を主キーに保存するため、同じ日の再実行でもレポートは1件です。実行履歴は起動ごとに記録します。', '',
+                          '## 定期実行', '',
+                          '[example.crontab](example.crontab) はCRON_TZをサポートするCronie向けの例です。'
+                          '式とタイムゾーンはスケジュール定義から生成します。'
+                          '配置先 `/opt/myworkflow` とDB保存先を環境に合わせて変更し、外部のcronへ登録してください。'
+                          'このサンプルの生成・テストでは登録しません。', '',
+                          'cronが停止していた期間の追いつき実行は自動化しません。必要な対象日を `--date` で指定して再実行します。'
+                          'DB書込みが競合・失敗した場合はコマンドが失敗します。分散ロックや通知はこの例の対象外です。'])
         result[directory + '/README.md'] = '\n'.join(lines) + '\n'
     from examples.feature_demos.product_catalogs.root import ROOT as PRODUCT_ROOT
     from myworkflow.generation.catalogs import root_catalog_documents

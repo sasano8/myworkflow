@@ -1,0 +1,3 @@
+# Cronie crontab example. Review deployment paths before installing.
+CRON_TZ=Asia/Tokyo
+0 6 * * * cd /opt/myworkflow && .venv/bin/python -m examples.feature_demos.cron_reporting --database /var/lib/myworkflow/daily-report.db
