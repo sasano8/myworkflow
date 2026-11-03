@@ -94,13 +94,12 @@ def outputs():
             lines[-2:-2] = ['画面機能定義：[screens.py](../screens.py)', '']
         lines.extend(f'| [{file}]({file}) | {labels[file]} |' for file in files)
         result[directory + '/README.md'] = '\n'.join(lines) + '\n'
-    from examples.feature_demos.product_catalogs.root import ROOT as PRODUCT_ROOT, overview_document
+    from examples.feature_demos.product_catalogs.root import ROOT as PRODUCT_ROOT
     from myworkflow.generation.catalogs import root_catalog_documents
     for name, text in root_catalog_documents(PRODUCT_ROOT).items():
         result['examples/feature_demos/product_catalogs/docs/' + name] = text
-    result['examples/feature_demos/product_catalogs/docs/overview.md'] = overview_document()
     result['examples/feature_demos/product_catalogs/docs/README.md'] = (
-        '# サンプル銀行：商品別の要求カタログ\n\n'
+        f'# {PRODUCT_ROOT.name}：商品別の要求カタログ\n\n'
         'このディレクトリは宣言コードから自動生成する。\n\n'
         'ルート：[root.py](../root.py)／保険：[insurance.py](../insurance.py)／融資：[loan.py](../loan.py)／共通：[shared.py](../shared.py)\n\n'
         '[銀行の概要から読む](overview.md)／[要求カタログ一覧](catalogs.md)\n')

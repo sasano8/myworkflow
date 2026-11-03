@@ -41,3 +41,39 @@ def test_root_catalog_with_value_definitions_includes_local_data_documents():
 
 def test_empty_root_is_explicit():
     assert '要求カタログは未定義。' in root_catalog_documents(replace(ROOT, catalogs=()))['catalogs.md']
+
+
+def test_overview_tracks_catalog_changes_without_sample_specific_prose():
+    renamed = replace(insurance, name='新商品', workflows=(replace(insurance.workflows[0], name='新しい業務'),),
+                      pipelines=(replace(insurance.pipelines[0], name='新しい処理', steps=()),))
+    docs = root_catalog_documents(replace(ROOT, name='別の組織', catalogs=(renamed,)))
+    overview = docs['overview.md']
+    assert '# 別の組織：業務要求の概要' in overview
+    assert '新商品' in overview and '新しい業務' in overview and '新しい処理' in overview
+    assert 'サンプル銀行' not in overview and '保険料' not in overview and '融資' not in overview
+    assert '業務担当者' not in overview
+    assert '共有ロールは未定義。' in overview
+    assert '未定義' in overview  # No steps are declared in the changed catalog.
+
+
+def test_same_role_ids_do_not_imply_shared_role_definitions():
+    second = replace(insurance, id='product.other', roles=tuple(replace(r) for r in insurance.roles))
+    overview = root_catalog_documents(replace(ROOT, catalogs=(insurance, second)))['overview.md']
+    assert '共有ロールは未定義。' in overview
+
+
+def test_root_documents_are_byte_identical_across_processes_and_hash_seeds():
+    import os
+    from pathlib import Path
+    import subprocess
+    import sys
+
+    code = '''import json
+from examples.feature_demos.product_catalogs.root import ROOT
+from myworkflow.generation.catalogs import root_catalog_documents
+print(json.dumps(root_catalog_documents(ROOT), ensure_ascii=False, sort_keys=True))
+'''
+    outputs = [subprocess.check_output([sys.executable, '-c', code],
+                cwd=Path(__file__).resolve().parents[2],
+                env={**os.environ, 'PYTHONHASHSEED': seed}) for seed in ('1', '738')]
+    assert outputs[0] == outputs[1]

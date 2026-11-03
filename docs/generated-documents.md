@@ -54,4 +54,6 @@ workflow = root.workflow('product.insurance', 'w.main')
 
 生成文書は `catalogs.md` から `catalogs/<要求カタログID>/workflows.md` と専用詳細へ進みます。要求カタログは個別にProgram・Engineへ渡します。ルートは実行エンジンや永続化の境界ではなく、ワーカー・キュー・DB・権限による分離は別途設定します。
 
-[銀行の概要](../examples/feature_demos/product_catalogs/docs/overview.md) は、ルートを銀行、子の要求カタログを商品とする例の入口です。対象業務・商品構成・共通担当・未定義の範囲を示し、各商品の詳細へリンクします。概要はサンプルの `root.py` から生成します。
+[銀行の概要](../examples/feature_demos/product_catalogs/docs/overview.md) は、ルートを銀行、子の要求カタログを商品とする例の入口です。対象業務・商品構成・共通担当・未定義の範囲を示し、各商品の詳細へリンクします。概要は `root.py` のルート定義を入力として、`myworkflow/generation/catalogs.py` の共通テンプレートから生成します。商品名・ワークフロー・処理・ステップ・共有ロールを宣言から取得し、例専用の概要本文は保持しません。
+
+生成はAIを使わず、Pythonの固定テンプレートと明示的な宣言順で行います。同じ定義・テンプレート・依存環境なら同じUTF-8出力になります。時刻や実行時の絶対パスは含めません。独立プロセスと異なる `PYTHONHASHSEED` での一致をテストし、`python -m scripts.generate_docs --check` でコミット済み生成物との差分を検出します。
