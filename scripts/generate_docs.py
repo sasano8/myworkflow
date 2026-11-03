@@ -42,7 +42,21 @@ def outputs():
         directory = config.output_directory.relative_to(ROOT)
         result[str(directory / 'business.md')] = render_business(config.program, config.registry, cases, options=config.documents)
         result[str(directory / 'acceptance.md')] = render_cases(cases, config.definitions, options=config.documents)
+    from myworkflow.generation.workflows import workflow_documents
+    views = {
+        'examples/apps/purchase/docs': (contract.program.model, PURCHASE.compiled.graphs, purchase_acceptance.cases()),
+        'examples/apps/tickets/docs': (ticket_acceptance.program.model, (), ticket_acceptance.cases()),
+        'examples/feature_demos/approval_values/docs': (VALUES.compiled.catalog, VALUES.compiled.graphs, ()),
+        'examples/feature_demos/prepared_approval/docs': (PREPARED.compiled.catalog, PREPARED.compiled.graphs, ()),
+        'examples/feature_demos/declarative_review/docs': (compiled.catalog, compiled.graphs, ()),
+    }
+    for directory, (catalog, graphs, cases) in views.items():
+        data_link = 'data-definitions.md' if directory + '/data-definitions.md' in result else None
+        for name, text in workflow_documents(catalog, graphs=graphs, cases=cases, data_link=data_link).items():
+            result[directory + '/' + name] = text
     labels = {
+        'workflows.md': 'ワークフロー一覧・未配置の定義',
+        'shared-definitions.md': '処理・ロール・データの共有定義',
         'requirements.md': '業務要件・型・実装対応',
         'business.md': '業務要件と受入条件の対応',
         'acceptance.md': '受入シナリオ',
@@ -66,6 +80,7 @@ def outputs():
         lines = [f'# {name}：{purpose}', '',
                  'このディレクトリは宣言コードから自動生成する。変更は元のコード・受入シナリオへ反映する。', '',
                  f'宣言コード：[{source_files[Path(directory).parent.name]}](../{source_files[Path(directory).parent.name]})', '',
+                 '[ワークフロー一覧から読む](workflows.md)', '',
                  '| ドキュメント | 内容 |', '| --- | --- |']
         lines.extend(f'| [{file}]({file}) | {labels[file]} |' for file in files)
         result[directory + '/README.md'] = '\n'.join(lines) + '\n'

@@ -34,7 +34,8 @@ def test_generated_documents_are_grouped_by_catalog_and_local_links_resolve():
     from urllib.parse import unquote, urlsplit
     from scripts.generate_docs import outputs
     generated = outputs()
-    directories = {str(Path(name).parent) for name in generated if name != 'examples/apps/purchase/interfaces.py'}
+    directories = {str(Path(name).parent.parent if Path(name).parent.name == 'workflows' else Path(name).parent)
+                   for name in generated if name != 'examples/apps/purchase/interfaces.py'}
     assert directories == {'examples/apps/purchase/docs', 'examples/feature_demos/approval_values/docs',
                            'examples/feature_demos/declarative_review/docs', 'examples/apps/tickets/docs', 'examples/feature_demos/prepared_approval/docs'}
     for directory in directories:
