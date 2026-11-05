@@ -2,13 +2,13 @@ from myworkflow import annotate, declaration
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.executable import Context, Engine, Principal, Registry
 from myworkflow.adapters.inprocess import InProcessLockProvider
-from examples.apps.tickets.contract import number, program, receipt, save_ticket
+from examples.apps.tickets.contract import TicketNumber, TicketReceipt, program, save_ticket
 
 
 @annotate(save_ticket)
 def issue(ctx: Context) -> None:
-    ctx.services.issue(ctx.values[declaration(number).key])
-    ctx.values[declaration(receipt).key] = '発行済み:' + ctx.values[declaration(number).key]
+    ctx.services.issue(ctx.values[declaration(TicketNumber).key])
+    ctx.values[declaration(TicketReceipt).key] = '発行済み:' + ctx.values[declaration(TicketNumber).key]
 
 
 registry = Registry()
