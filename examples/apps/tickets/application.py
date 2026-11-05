@@ -17,7 +17,7 @@ class TicketRepository:
         with database.connect() as db:
             db.execute("CREATE TABLE IF NOT EXISTS tickets(number TEXT PRIMARY KEY)")
 
-    def issue(self, number):
+    def create_ticket(self, number):
         with self.database.connect() as db:
             db.execute("INSERT INTO tickets VALUES (?)", (number,))
 

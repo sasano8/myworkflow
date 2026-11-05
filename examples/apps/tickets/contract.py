@@ -50,7 +50,7 @@ def number_lock():
 )
 def save_ticket(ctx: Context) -> None:
     number = ctx.values[declaration(TicketNumber).key]
-    ctx.services.issue(number)
+    ctx.services.create_ticket(number)
     ctx.values[declaration(TicketReceipt).key] = "発行済み:" + number
 
 
