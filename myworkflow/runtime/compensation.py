@@ -1,4 +1,5 @@
 """Reverse compensation with per-registration context snapshots."""
+
 from copy import deepcopy
 from dataclasses import replace
 
@@ -17,14 +18,14 @@ class CompensationStack:
     def unwind(self, registry, ctx):
         failures = []
         for identity, snapshot in reversed(self.entries):
-            ctx.events.append((identity, 'compensating'))
+            ctx.events.append((identity, "compensating"))
             try:
                 # Compensation sees the registered inputs, shared services and durable run ID.
                 result = registry.handlers[identity](replace(ctx, values=snapshot))
                 if result is not None:
-                    raise TypeError('Compensation must return None')
-                ctx.events.append((identity, 'compensated'))
+                    raise TypeError("Compensation must return None")
+                ctx.events.append((identity, "compensated"))
             except Exception as exc:
                 failures.append((identity, str(exc)))
-                ctx.events.append((identity, 'compensation-failed'))
+                ctx.events.append((identity, "compensation-failed"))
         return failures

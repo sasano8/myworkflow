@@ -1,4 +1,5 @@
 """State graph declarations; optional execution is provided by TransitionRuntime."""
+
 from myworkflow.contracts.annotations import Extensible, extension_fields
 from dataclasses import dataclass
 from collections.abc import Callable
@@ -33,6 +34,7 @@ class StateGraph(Extensible):
     This model alone neither executes guards nor updates persisted business state.
     Failure, compensation and commit policies belong to the execution adapter.
     """
+
     workflow: Workflow
     initial: State
     states: tuple[State, ...]
@@ -41,55 +43,87 @@ class StateGraph(Extensible):
     def validate(self, catalog: ContractCatalog) -> None:
         catalog.validate()
         if not any(w is self.workflow for w in catalog.workflows):
-            raise ContractError(f'{self.workflow.id}: workflow must belong to catalog')
-        if not isinstance(self.states, tuple) or not isinstance(self.transitions, tuple):
-            raise ContractError(f'{self.workflow.id}: graph declarations must be tuples')
+            raise ContractError(f"{self.workflow.id}: workflow must belong to catalog")
+        if not isinstance(self.states, tuple) or not isinstance(
+            self.transitions, tuple
+        ):
+            raise ContractError(
+                f"{self.workflow.id}: graph declarations must be tuples"
+            )
         ids = {e.id for e in catalog.entities}
         for entity in (*self.states, *self.transitions):
-            if not isinstance(entity.id, str) or not entity.id or not isinstance(entity.name, str) or not entity.name:
-                raise ContractError('state graph: nonempty IDs and names are required')
+            if (
+                not isinstance(entity.id, str)
+                or not entity.id
+                or not isinstance(entity.name, str)
+                or not entity.name
+            ):
+                raise ContractError("state graph: nonempty IDs and names are required")
             if entity.id in ids:
-                raise ContractError(f'{entity.id}: duplicate graph ID')
+                raise ContractError(f"{entity.id}: duplicate graph ID")
             ids.add(entity.id)
+
         def declared(state):
             return any(state is candidate for candidate in self.states)
+
         if not declared(self.initial):
-            raise ContractError(f'{self.workflow.id}: initial state is not declared')
+            raise ContractError(f"{self.workflow.id}: initial state is not declared")
         for transition in self.transitions:
             if not declared(transition.source) or not declared(transition.target):
-                raise ContractError(f'{transition.id}: undeclared source or target state')
+                raise ContractError(
+                    f"{transition.id}: undeclared source or target state"
+                )
             if not any(transition.binding is b for b in self.workflow.bindings):
-                raise ContractError(f'{transition.id}: binding must belong to workflow')
+                raise ContractError(f"{transition.id}: binding must belong to workflow")
             if not any(transition.trigger is t for t in transition.binding.triggers):
-                raise ContractError(f'{transition.id}: trigger must belong to binding')
+                raise ContractError(f"{transition.id}: trigger must belong to binding")
             if transition.guard is not None and not isfunction(transition.guard):
-                raise ContractError(f'{transition.id}: guard must be a Python function')
+                raise ContractError(f"{transition.id}: guard must be a Python function")
             if not isinstance(transition.condition, str):
-                raise ContractError(f'{transition.id}: condition must be text')
+                raise ContractError(f"{transition.id}: condition must be text")
         # Reachability, rather than topological sorting: revision/resubmission cycles are legal.
         reachable = {self.initial.id}
         while True:
-            expanded = reachable | {t.target.id for t in self.transitions if t.source.id in reachable}
+            expanded = reachable | {
+                t.target.id for t in self.transitions if t.source.id in reachable
+            }
             if expanded == reachable:
                 break
             reachable = expanded
         missing = [s.id for s in self.states if s.id not in reachable]
         if missing:
-            raise ContractError(f'{self.workflow.id}: unreachable states: {missing}')
+            raise ContractError(f"{self.workflow.id}: unreachable states: {missing}")
 
     def to_dict(self, catalog: ContractCatalog, *, extension_encoder=None) -> dict:
         """Normalized comparison/export form; symbolic references become stable IDs."""
         self.validate(catalog)
         return {
-            **extension_fields(self, extension_encoder), 'schema_version': 1,
-            'workflow': self.workflow.id,
-            'initial': self.initial.id,
-            'states': [{'id': s.id, 'name': s.name, **extension_fields(s, extension_encoder)} for s in self.states],
-            'transitions': [{
-                **extension_fields(t, extension_encoder), 'id': t.id, 'name': t.name, 'source': t.source.id, 'target': t.target.id,
-                'binding': t.binding.id, 'pipeline': t.binding.pipeline_id,
-                'trigger': t.trigger.id, 'actor': t.trigger.actor_role_id,
-                'condition': t.condition,
-                **({'guard': f"{t.guard.__module__}:{t.guard.__qualname__}"} if t.guard is not None else {}),
-            } for t in self.transitions],
+            **extension_fields(self, extension_encoder),
+            "schema_version": 1,
+            "workflow": self.workflow.id,
+            "initial": self.initial.id,
+            "states": [
+                {"id": s.id, "name": s.name, **extension_fields(s, extension_encoder)}
+                for s in self.states
+            ],
+            "transitions": [
+                {
+                    **extension_fields(t, extension_encoder),
+                    "id": t.id,
+                    "name": t.name,
+                    "source": t.source.id,
+                    "target": t.target.id,
+                    "binding": t.binding.id,
+                    "pipeline": t.binding.pipeline_id,
+                    "trigger": t.trigger.id,
+                    "actor": t.trigger.actor_role_id,
+                    "condition": t.condition,
+                    **(
+                        {"guard": f"{t.guard.__module__}:{t.guard.__qualname__}"}
+                        if t.guard is not None
+                        else {}
+                    ),
+                }
+                for t in self.transitions
+            ],
         }

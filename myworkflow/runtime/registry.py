@@ -1,4 +1,5 @@
 """Explicit, validated implementation registration and test replacement."""
+
 import inspect
 from types import MappingProxyType
 from typing import get_type_hints
@@ -19,18 +20,23 @@ class Registry:
         try:
             hints = get_type_hints(fn)
         except (TypeError, NameError) as exc:
-            raise ContractError(f'{identity}: invalid handler annotations') from exc
-        if list(inspect.signature(fn).parameters) != ['ctx'] or hints != {'ctx': Context, 'return': type(None)}:
-            raise ContractError(f'{identity}: expected (ctx: Context) -> None')
+            raise ContractError(f"{identity}: invalid handler annotations") from exc
+        if list(inspect.signature(fn).parameters) != ["ctx"] or hints != {
+            "ctx": Context,
+            "return": type(None),
+        }:
+            raise ContractError(f"{identity}: expected (ctx: Context) -> None")
 
     def implements(self, identity):
         identity = definition_id(identity)
+
         def register(fn):
             if identity in self._handlers:
-                raise ContractError(f'{identity}: duplicate implementation')
+                raise ContractError(f"{identity}: duplicate implementation")
             self._validate(identity, fn)
             self._handlers[identity] = fn
             return fn
+
         return register
 
     def register(self, fn):
@@ -40,7 +46,7 @@ class Registry:
     def replace(self, identity, fn):
         identity = definition_id(identity)
         if identity not in self._handlers:
-            raise ContractError(f'{identity}: missing implementation')
+            raise ContractError(f"{identity}: missing implementation")
         self._validate(identity, fn)
         self._handlers[identity] = fn
 

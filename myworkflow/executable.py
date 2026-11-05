@@ -1,4 +1,5 @@
 """Compatibility imports for the original executable API."""
+
 from myworkflow.contracts.errors import ContractError, ExecutionFailed, RetryableError
 from myworkflow.runtime import Context, Engine, Principal
 from myworkflow.runtime.registry import Registry

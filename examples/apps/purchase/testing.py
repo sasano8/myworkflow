@@ -1,4 +1,5 @@
 """Explicit fault/observation wrappers for the sample's development adapters."""
+
 from examples.apps.purchase.repository import PurchaseRepository
 from myworkflow.contracts.errors import RetryableError
 
@@ -12,7 +13,7 @@ class Faults:
         queue = self.rules.get(operation, [])
         if queue and queue[0] == point:
             queue.pop(0)
-            raise RetryableError(f'Injected {operation}:{point}')
+            raise RetryableError(f"Injected {operation}:{point}")
 
 
 class ObservedRepository(PurchaseRepository):
@@ -21,7 +22,7 @@ class ObservedRepository(PurchaseRepository):
         self.faults = faults
 
     def after_order_insert(self):
-        self.faults.inject('confirm', 'after-insert')
+        self.faults.inject("confirm", "after-insert")
 
 
 class ObservedObjectStore:
@@ -29,14 +30,14 @@ class ObservedObjectStore:
         self.inner, self.faults = inner, faults
 
     def put(self, run_id, slot, body):
-        self.faults.calls.append(f'put-{slot}')
+        self.faults.calls.append(f"put-{slot}")
         self.inner.prepare(run_id, slot)
-        self.faults.inject(f'put-{slot}', 'before')
+        self.faults.inject(f"put-{slot}", "before")
         result = self.inner.put(run_id, slot, body)
-        self.faults.inject(f'put-{slot}', 'after')
+        self.faults.inject(f"put-{slot}", "after")
         return result
 
     def delete(self, run_id, slot):
-        self.faults.calls.append(f'delete-{slot}')
-        self.faults.inject(f'delete-{slot}', 'before')
+        self.faults.calls.append(f"delete-{slot}")
+        self.faults.inject(f"delete-{slot}", "before")
         return self.inner.delete(run_id, slot)

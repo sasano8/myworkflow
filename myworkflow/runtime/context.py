@@ -20,7 +20,7 @@ class Context:
     messages: list[Message] = field(default_factory=list)
     changes: Changes | None = None
 
-    def add_message(self, text: str, *, level: MessageLevel = 'info') -> None:
+    def add_message(self, text: str, *, level: MessageLevel = "info") -> None:
         self.messages.append(Message(level, text))
 
     @property

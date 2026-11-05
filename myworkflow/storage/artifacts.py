@@ -1,17 +1,20 @@
 """Execution-independent contract for prepared artifacts and their final commit."""
+
 from myworkflow.storage.blobs import BlobRef, BlobStore
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 
-type ArtifactValue = None | bool | int | float | str | list[ArtifactValue] | dict[str, ArtifactValue]
+type ArtifactValue = (
+    None | bool | int | float | str | list[ArtifactValue] | dict[str, ArtifactValue]
+)
 
 
 class JobState(StrEnum):
-    PREPARED = 'prepared'
-    COMMITTED = 'committed'
-    DISCARDED = 'discarded'
+    PREPARED = "prepared"
+    COMMITTED = "committed"
+    DISCARDED = "discarded"
 
 
 @dataclass(frozen=True)
@@ -33,7 +36,9 @@ class ArtifactJob:
     job_id: str
     state: JobState
     keys: tuple[str, ...]
-    versions: tuple[tuple[str, int], ...] = ()  # versions committed by this job, not today's values
+    versions: tuple[
+        tuple[str, int], ...
+    ] = ()  # versions committed by this job, not today's values
 
 
 class JobConflict(ValueError):
@@ -56,10 +61,13 @@ class ArtifactCoordinator(Protocol):
     outcomes queryable, and commit writes and the receipt atomically within their
     advertised storage boundary. Network/transaction details are not pipeline code.
     """
+
     @property
     def blobs(self) -> BlobStore: ...
     def read(self, key: str) -> ArtifactSnapshot | None: ...
-    def prepare(self, job_id: str, writes: tuple[ArtifactWrite, ...]) -> ArtifactJob: ...
+    def prepare(
+        self, job_id: str, writes: tuple[ArtifactWrite, ...]
+    ) -> ArtifactJob: ...
     def commit(self, job_id: str) -> ArtifactJob: ...
     def status(self, job_id: str) -> ArtifactJob | None: ...
     def discard(self, job_id: str) -> ArtifactJob: ...

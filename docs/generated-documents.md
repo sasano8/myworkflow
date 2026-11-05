@@ -42,10 +42,10 @@ CIも同じ `--check` を使います。出力一致は意味の正しさの証�
 [商品別サンプル](../examples/feature_demos/product_catalogs/docs/catalogs.md) は、ルートカタログの配下に保険商品・融資商品の要求カタログを並べます。各 `ContractCatalog` 自体が名前空間で、別の名前空間クラスや入れ子のラッパーは設けません。
 
 ```python
-insurance = ContractCatalog(..., id='product.insurance', name='保険商品')
-loan = ContractCatalog(..., id='product.loan', name='融資商品')
-root = RootCatalog('org.example', 'サンプル銀行', (insurance, loan))
-workflow = root.workflow('product.insurance', 'w.main')
+insurance = ContractCatalog(..., id="product.insurance", name="保険商品")
+loan = ContractCatalog(..., id="product.loan", name="融資商品")
+root = RootCatalog("org.example", "サンプル銀行", (insurance, loan))
+workflow = root.workflow("product.insurance", "w.main")
 ```
 
 固定IDは要求カタログ内で一意です。両方に同じ `w.main`・`p.process` を定義できます。内部参照は従来どおりIDで解決し、外から選ぶときは要求カタログIDと定義IDを指定します。他の要求カタログへの暗黙の参照・検索はしません。組織共通のRole等は `shared.py` の同じ定義オブジェクトを参照します。

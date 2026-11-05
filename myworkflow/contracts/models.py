@@ -1,4 +1,5 @@
 """Business contracts. Declarations describe behavior; they do not execute it."""
+
 from myworkflow.contracts.annotations import Extensible
 from dataclasses import dataclass, field
 from myworkflow.contracts.value_objects import ValueObject
@@ -53,16 +54,20 @@ class Lock(Extensible):
     timeout: float = 0
 
     @property
-    def kind(self): return "lock"
+    def kind(self):
+        return "lock"
 
     @property
-    def reads(self): return self.keys
+    def reads(self):
+        return self.keys
 
     @property
-    def writes(self): return ()
+    def writes(self):
+        return ()
 
     @property
-    def uses(self): return ()
+    def uses(self):
+        return ()
 
 
 @dataclass(frozen=True)
@@ -104,6 +109,7 @@ class Workflow(Extensible):
 @dataclass(frozen=True)
 class ContractCatalog(Extensible):
     """業務契約カタログ: shared business declarations and value definitions."""
+
     artifacts: tuple[Artifact, ...]
     pipelines: tuple[Pipeline, ...]
     workflows: tuple[Workflow, ...]
@@ -115,13 +121,20 @@ class ContractCatalog(Extensible):
 
     @property
     def entities(self):
-        return (*self.artifacts, *self.pipelines, *self.workflows, *self.roles, *self.value_objects,
-                *(s for p in self.pipelines for s in p.steps),
-                *(b for w in self.workflows for b in w.bindings),
-                *(t for w in self.workflows for b in w.bindings for t in b.triggers))
+        return (
+            *self.artifacts,
+            *self.pipelines,
+            *self.workflows,
+            *self.roles,
+            *self.value_objects,
+            *(s for p in self.pipelines for s in p.steps),
+            *(b for w in self.workflows for b in w.bindings),
+            *(t for w in self.workflows for b in w.bindings for t in b.triggers),
+        )
 
     def validate(self) -> None:
         from myworkflow.contracts.validation import validate_catalog
+
         validate_catalog(self)
 
 

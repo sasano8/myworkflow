@@ -1,4 +1,6 @@
 """Public contract and execution failures."""
+
+
 class ContractError(ValueError):
     pass
 
@@ -13,15 +15,19 @@ class ExecutionFailed(Exception):
         self.cause = cause
         self.compensation_errors = compensation_errors
         self.secondary_errors = ()
-        super().__init__(f"{step_id}: {cause}; compensation failures: {compensation_errors}")
+        super().__init__(
+            f"{step_id}: {cause}; compensation failures: {compensation_errors}"
+        )
 
 
 class PipelineError(Exception):
     """An explicitly coded failure. Codes are application codes, not HTTP statuses."""
-    def __init__(self, code: int, message: str, *, level='error'):
+
+    def __init__(self, code: int, message: str, *, level="error"):
         from myworkflow.contracts.messages import Message
+
         if type(code) is not int or code <= 0:
-            raise ValueError('Failure code must be a positive integer')
+            raise ValueError("Failure code must be a positive integer")
         Message(level, message)
         self.code, self.level = code, level
         super().__init__(message)

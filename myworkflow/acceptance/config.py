@@ -15,7 +15,9 @@ class AcceptanceConfig:
     documents: DocumentOptions = DocumentOptions()
     registry: object | None = None
     output_directory: Path | None = None
-    capabilities: tuple[tuple[str, str], ...] = (('temporal', 'RUN_TEMPORAL_ACCEPTANCE'),)
+    capabilities: tuple[tuple[str, str], ...] = (
+        ("temporal", "RUN_TEMPORAL_ACCEPTANCE"),
+    )
 
     def cases(self):
         return load_cases(list(self.features), self.program, self.definitions)

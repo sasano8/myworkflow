@@ -3,8 +3,8 @@
 `PipelineResult(code, messages)` を共通の戻り値とします。業務データはアーティファクトへ置きます。
 
 ```python
-PipelineResult(code=0, messages=(Message(level='info', text='申請を受け付けました'),))
-raise BusinessError(10, '発注条件を満たしていません', level='warning')
+PipelineResult(code=0, messages=(Message(level="info", text="申請を受け付けました"),))
+raise BusinessError(10, "発注条件を満たしていません", level="warning")
 ```
 
 | 項目・原因 | 契約 |

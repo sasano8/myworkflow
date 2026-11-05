@@ -8,7 +8,9 @@
 from myworkflow.runtime.transitions import TransitionRuntime
 
 transitions = TransitionRuntime(
-    compiled, compiled.graphs[0], coordinator,
+    compiled,
+    compiled.graphs[0],
+    coordinator,
     key=lambda values: f"application:{values['application_id']}",
     state_field="status",
 )
@@ -42,10 +44,17 @@ ctx.changes.update(
 def may_approve(ctx):
     return ctx.application["owner"] != ctx.actor and ctx.application["amount"] > 0
 
+
 # ワークフローのクラス内
 approve = transition(
-    "tr.approve", "承認", waiting, approved, execute, requested,
-    condition="申請者本人ではなく、金額が正である", guard=may_approve,
+    "tr.approve",
+    "承認",
+    waiting,
+    approved,
+    execute,
+    requested,
+    condition="申請者本人ではなく、金額が正である",
+    guard=may_approve,
 )
 ```
 

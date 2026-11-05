@@ -22,10 +22,12 @@ IDは必須です。step・pipeline・workflowで省略した名前には関数�
 from myworkflow import step
 from myworkflow.runtime import Context
 
-@step(id='s.notify', extensions={'ui': {'label': '通知する'}})
+
+@step(id="s.notify", extensions={"ui": {"label": "通知する"}})
 def notify(ctx: Context) -> None:
     """処理状況を通知する。"""
-    ctx.add_message('処理しました')
+    ctx.add_message("処理しました")
+
 
 # @annotate(StepDeclaration(...)) と同じ宣言を保持する。
 ```
@@ -54,7 +56,8 @@ Mappingと配列のコンテナは読取り専用にコピーします。任意�
 
 ```python
 BUILD = BuildConfig(
-    compiled, registry,
+    compiled,
+    registry,
     document_renderer=my_document,  # (program, graphs, registry) -> str
     extension_encoder=my_encoder,  # 独自値 -> JSON互換の値
 )
@@ -69,16 +72,23 @@ BUILD = BuildConfig(
 ```python
 from myworkflow import role, artifact, trigger
 
-@role(id='role.operator', name='窓口担当者', display_name='担当者')
+
+@role(id="role.operator", name="窓口担当者", display_name="担当者")
 class Operator:
     pass
 
-@artifact(id='ticket.number', name='受付番号', key='number')
+
+@artifact(id="ticket.number", name="受付番号", key="number")
 class TicketNumber:
     pass
 
-@trigger(id='ticket.requested', name='発行依頼', actor=Operator,
-         mapping=((TicketNumber, '受付番号'),))
+
+@trigger(
+    id="ticket.requested",
+    name="発行依頼",
+    actor=Operator,
+    mapping=((TicketNumber, "受付番号"),),
+)
 class Requested:
     pass
 ```

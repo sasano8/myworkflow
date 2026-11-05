@@ -13,10 +13,11 @@ HandlerはPipelineを呼ぶ合成で、共通の実行基底クラスは設け�
 
 ```python
 # engineと、認証済み入口で構築したprincipalを使用する。
-handler = engine.handler('b.submit', 't.submit')
+handler = engine.handler("b.submit", "t.submit")
 response = handler.handle(
-    {'id': 'purchase-001', 'vendor': '取引先', 'amount': 100},
-    principal, run_id='submit-001',
+    {"id": "purchase-001", "vendor": "取引先", "amount": 100},
+    principal,
+    run_id="submit-001",
     respond=lambda result: (result.to_dict(), 200 if result.ok else 400),
 )
 ```
