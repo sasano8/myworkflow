@@ -35,7 +35,7 @@
 
 | 固定ID | 実装 |
 | --- | --- |
-| ticket.save | examples.apps.tickets.contract.save_ticket |
+| ticket.save | examples.apps.tickets.steps.save_ticket |
 
 ロックはEngine → LockProvider、受付認可はEngine → Principal.rolesで実行。詳細は[実行設計](../../../../docs/architecture.md)を参照。
 

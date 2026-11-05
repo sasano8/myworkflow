@@ -67,7 +67,7 @@ BUILD = BuildConfig(
 
 ## 全要素を注釈にする例
 
-[チケットサンプル](../examples/apps/tickets/contract.py)では、全要素を注釈付きクラスで宣言します。参照にはクラスそのものを渡し、属性の読み取りには `declaration(Number).key` のように共通プロトコルを使います。`annotate(注釈付きクラス)` で別の実装関数へ同じ契約を付けられます。
+[チケットサンプル](../examples/apps/tickets/contract.py)は、親の構成をcontract.py、子の処理を[steps.py](../examples/apps/tickets/steps.py)、共通のロール・アーティファクトを[definitions.py](../examples/apps/tickets/definitions.py)に分けています。ステップの実装関数へ直接注釈を付け、親とRegistryから同じ関数を参照します。属性の読み取りには `declaration(TicketNumber).key` のように共通プロトコルを使います。
 
 ```python
 from myworkflow import role, artifact, trigger
