@@ -24,8 +24,8 @@ class receipt:
 
 
 @mutex(id='ticket.lock', name='受付番号の排他', keys=(number,))
-class number_lock:
-    pass
+def number_lock():
+    raise NotImplementedError("The engine acquires the declared mutex")
 
 
 @step(id='ticket.save', name='チケット保存',
