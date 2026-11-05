@@ -31,14 +31,14 @@ class number_lock:
 @step(id='ticket.save', name='チケット保存',
       summary='受付番号を重複なく登録し、発行結果を返す。',
       reads=(number,), writes=(receipt,), uses=((number, 'DB作成'), (receipt, '保持')))
-class save_ticket:
-    pass
+def save_ticket(ctx) -> None:
+    raise NotImplementedError("Implementation is registered in application.py")
 
 
 @pipeline(id='ticket.issue', name='チケット発行', inputs=(number,),
           produces=(receipt,), steps=(number_lock, save_ticket))
-class issue_ticket:
-    pass
+def issue_ticket():
+    raise NotImplementedError("The engine executes the declared steps")
 
 
 @workflow(id='ticket.workflow', name='窓口でのチケット発行')
