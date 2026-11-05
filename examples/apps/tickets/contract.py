@@ -1,7 +1,18 @@
 """Annotated ticket declarations; SPEC is a generated compatibility snapshot."""
 
-from myworkflow import artifact, binding, mutex, pipeline, role, step, trigger, workflow
+from myworkflow import (
+    artifact,
+    binding,
+    declaration,
+    mutex,
+    pipeline,
+    role,
+    step,
+    trigger,
+    workflow,
+)
 from myworkflow.compiler.declarations import compile_workflows
+from myworkflow.runtime.context import Context
 
 
 @role(id="role.system", name="チケット管理システム", display_name="システム")
@@ -37,8 +48,10 @@ def number_lock():
     writes=(TicketReceipt,),
     uses=((TicketNumber, "DB作成"), (TicketReceipt, "保持")),
 )
-def save_ticket(ctx) -> None:
-    raise NotImplementedError("Implementation is registered in application.py")
+def save_ticket(ctx: Context) -> None:
+    number = ctx.values[declaration(TicketNumber).key]
+    ctx.services.issue(number)
+    ctx.values[declaration(TicketReceipt).key] = "発行済み:" + number
 
 
 @pipeline(
