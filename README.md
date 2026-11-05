@@ -35,6 +35,8 @@ python -m pytest -q
 
 新しいcloneごとにpre-commit hookをインストールしてください。[部分コミット・既存hookとの接続](docs/generated-documents.md)。Temporalは[任意の追加設定](docs/temporal.md)です。
 
+`uv`をインストールした環境では、`make format`でRuff 0.17.3による整形、`make format-check`で整形確認を実行できます。
+
 ## 試す
 
 ```sh
