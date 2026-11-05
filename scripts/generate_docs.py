@@ -69,6 +69,19 @@ def outputs():
         result[str(directory / "acceptance.md")] = render_cases(
             cases, config.definitions, options=config.documents
         )
+    from myworkflow.generation.data_definitions import (
+        data_definitions_source,
+        render_data_definitions,
+    )
+
+    ticket_catalog = ticket_acceptance.program.model
+    result["examples/apps/tickets/docs/data-definitions.md"] = render_data_definitions(
+        ticket_catalog
+    )
+    result["examples/apps/tickets/docs/data-definitions.json"] = (
+        data_definitions_source(ticket_catalog)
+    )
+
     from myworkflow.generation.workflows import workflow_documents
 
     views = {

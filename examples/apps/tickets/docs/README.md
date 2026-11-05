@@ -10,5 +10,7 @@
 | --- | --- |
 | [acceptance.md](acceptance.md) | 受入シナリオ |
 | [business.md](business.md) | 業務要件と受入条件の対応 |
+| [data-definitions.json](data-definitions.json) | 機械可読のデータ定義・JSON Schema |
+| [data-definitions.md](data-definitions.md) | データ定義（1項目1行） |
 | [shared-definitions.md](shared-definitions.md) | 処理・ロール・データの共有定義 |
 | [workflows.md](workflows.md) | ワークフロー一覧・未配置の定義 |

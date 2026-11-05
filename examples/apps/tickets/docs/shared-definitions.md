@@ -17,6 +17,8 @@
 
 キー：number／型：str
 
+データ制約：[vo.ticket.number](data-definitions.md#vo.ticket.number)
+
 <a id="ticket.receipt"></a>
 ## ticket.receipt：発行結果
 

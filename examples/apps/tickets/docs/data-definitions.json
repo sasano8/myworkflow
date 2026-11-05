@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "value_objects": [
+    {
+      "id": "vo.ticket.number",
+      "name": "受付番号",
+      "description": "受付番号を文字列として扱う。書式・長さ・空文字の制約は未定義。",
+      "python_type": "examples.apps.tickets.value_objects:TicketNumber",
+      "rules": [],
+      "validators": [],
+      "schema": {
+        "description": "チケットを識別する受付番号。",
+        "examples": [
+          "T-001"
+        ],
+        "title": "TicketNumber",
+        "type": "string"
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "ticket.number",
+      "name": "受付番号",
+      "value_object": "vo.ticket.number"
+    }
+  ]
+}

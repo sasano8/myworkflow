@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         state,
         transition,
         operation,
+        value_object,
     )
 
 from myworkflow.contracts.annotations import Annotated, annotate, declaration
@@ -46,6 +47,7 @@ __all__ = [
     "state",
     "transition",
     "operation",
+    "value_object",
     "step",
     "pipeline",
     "workflow",
@@ -96,6 +98,7 @@ def __getattr__(name):
         "state",
         "transition",
         "operation",
+        "value_object",
     ):
         from importlib import import_module
 

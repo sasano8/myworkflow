@@ -3,13 +3,13 @@
 import copy
 from dataclasses import FrozenInstanceError
 import pytest
-from examples.apps.tickets.contract import SPEC
+from examples.apps.tickets.contract import SPEC, compiled
 from myworkflow.executable import ContractError, Program
 
 
 def test_contract_is_immutable_and_uses_one_model():
     source = copy.deepcopy(SPEC)
-    program = Program(source)
+    program = Program(source, value_objects=compiled.catalog.value_objects)
     source["pipelines"][0]["name"] = "changed"
     snapshot = program.spec
     snapshot["pipelines"][0]["name"] = "also changed"
@@ -32,7 +32,7 @@ def test_malformed_contracts_have_domain_errors(case_index):
     cases[3]["workflows"][0]["bindings"][0]["triggers"][0]["mapping"] = None
     spec = cases[case_index]
     with pytest.raises(ContractError):
-        Program(spec)
+        Program(spec, value_objects=compiled.catalog.value_objects)
 
 
 def test_tested_condition_cannot_be_reassigned():
@@ -64,4 +64,4 @@ def test_tested_condition_cannot_be_reassigned():
         }
     )
     with pytest.raises(ContractError, match="reassigned"):
-        Program(spec)
+        Program(spec, value_objects=compiled.catalog.value_objects)

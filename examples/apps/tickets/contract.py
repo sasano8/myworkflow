@@ -2,14 +2,14 @@
 
 from myworkflow import binding, pipeline, trigger, workflow
 from myworkflow.compiler.declarations import compile_workflows
-from .definitions import RoleSystem, RoleOperator, TicketNumber, TicketReceipt
+from .definitions import RoleSystem, RoleOperator, RequestedTicketNumber, TicketReceipt
 from .steps import number_lock, save_ticket
 
 
 @pipeline(
     id="ticket.issue",
     name="チケット発行",
-    inputs=(TicketNumber,),
+    inputs=(RequestedTicketNumber,),
     produces=(TicketReceipt,),
     steps=(number_lock, save_ticket),
 )
@@ -23,7 +23,7 @@ class TicketIssuance:
         id="ticket.trigger",
         name="担当者が発行を依頼",
         actor=RoleOperator,
-        mapping=((TicketNumber, "受付番号"),),
+        mapping=((RequestedTicketNumber, "受付番号"),),
     )
     class Requested:
         pass
@@ -40,7 +40,7 @@ class TicketIssuance:
 
 compiled = compile_workflows(
     TicketIssuance,
-    artifacts=(TicketNumber, TicketReceipt),
+    artifacts=(RequestedTicketNumber, TicketReceipt),
     roles=(RoleSystem, RoleOperator),
 )
 program = compiled.program

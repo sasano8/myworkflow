@@ -1,6 +1,7 @@
 """Shared ticket roles and artifacts."""
 
 from myworkflow import artifact, role
+from .value_objects import TicketNumber
 
 
 @role(id="role.system", name="チケット管理システム", display_name="システム")
@@ -13,8 +14,8 @@ class RoleOperator:
     pass
 
 
-@artifact(id="ticket.number", name="受付番号", key="number")
-class TicketNumber:
+@artifact(id="ticket.number", name="受付番号", key="number", value_object=TicketNumber)
+class RequestedTicketNumber:
     pass
 
 

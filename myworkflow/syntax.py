@@ -3,8 +3,9 @@
 from collections.abc import Callable, Mapping
 from typing import TypeVar
 
-from myworkflow.contracts.annotations import annotate
+from myworkflow.contracts.annotations import annotate, declaration
 from myworkflow.contracts.models import Artifact, Role
+from myworkflow.contracts.value_objects import ValueObject
 from myworkflow.compiler.pipelines import (
     Mutex,
     Operation,
@@ -128,7 +129,7 @@ def artifact(
             name,
             key,
             type,
-            value_object,
+            declaration(value_object),
             extensions={} if extensions is None else extensions,
         )
     )
@@ -242,3 +243,26 @@ def transition(
 
 def operation(*, id: str) -> Callable[[F], F]:
     return annotate(Operation(id))
+
+
+def value_object(
+    *,
+    id: str,
+    name: str,
+    description: str = "",
+    rules: tuple[str, ...] = (),
+    extensions: Mapping[str, object] | None = None,
+) -> Callable[[F], F]:
+    def decorate(target: F) -> F:
+        spec = ValueObject(
+            id,
+            name,
+            target,
+            description,
+            rules,
+            extensions={} if extensions is None else extensions,
+        )
+        spec.check()
+        return annotate(spec)(target)
+
+    return decorate

@@ -3,7 +3,7 @@
 from contextlib import contextmanager
 import copy
 import pytest
-from examples.apps.tickets.contract import SPEC
+from examples.apps.tickets.contract import SPEC, compiled
 from myworkflow.executable import (
     Context,
     ContractError,
@@ -51,7 +51,7 @@ def test_registry_replacement_is_explicit_and_validated():
 
 
 def test_engine_works_without_database_or_purchase_services():
-    program = Program(SPEC)
+    program = Program(SPEC, value_objects=compiled.catalog.value_objects)
     registry = Registry()
 
     @registry.implements("ticket.save")
@@ -91,7 +91,11 @@ def test_original_error_survives_cleanup_and_journal_failures():
             raise OSError("unlock unavailable")
 
     runner = Engine(
-        Program(SPEC), registry, object(), locks=BrokenLock(), store=BrokenJournal()
+        Program(SPEC, value_objects=compiled.catalog.value_objects),
+        registry,
+        object(),
+        locks=BrokenLock(),
+        store=BrokenJournal(),
     )
     with pytest.raises(ExecutionFailed) as caught:
         runner.run_or_raise("ticket.issue", {"number": "x"}, actor="op", run_id="x")
@@ -109,7 +113,12 @@ def test_empty_pipeline_journal_error_has_pipeline_location():
         def record(self, *args):
             raise OSError("journal unavailable")
 
-    runner = Engine(Program(spec), Registry(), object(), store=BrokenJournal())
+    runner = Engine(
+        Program(spec, value_objects=compiled.catalog.value_objects),
+        Registry(),
+        object(),
+        store=BrokenJournal(),
+    )
     with pytest.raises(ExecutionFailed) as caught:
         runner.run_or_raise("ticket.issue", {}, actor="op", run_id="x")
     assert caught.value.step_id == "ticket.issue/journal"
@@ -146,7 +155,7 @@ def test_compensation_uses_step_boundary_values_not_later_mutations():
         observed.append(ctx.values["receipt"])
 
     runner = Engine(
-        Program(spec),
+        Program(spec, value_objects=compiled.catalog.value_objects),
         registry,
         object(),
         locks=InProcessLockProvider(),
@@ -162,7 +171,7 @@ def test_stale_business_response_is_rejected_before_execution():
     from types import SimpleNamespace
     from myworkflow.generation.interfaces import interfaces_source
 
-    program = Program(SPEC)
+    program = Program(SPEC, value_objects=compiled.catalog.value_objects)
     interfaces = SimpleNamespace()
     exec(interfaces_source(program), interfaces.__dict__)
 

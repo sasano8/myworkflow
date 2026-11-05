@@ -22,8 +22,16 @@
 
 | 固定ID | 名前 | コード上のキー | Python型 |
 | --- | --- | --- | --- |
-| ticket.number | 受付番号 | number | str |
+| ticket.number | 受付番号 | number | TicketNumber |
 | ticket.receipt | 発行結果 | receipt | str |
+
+## データ定義への参照
+
+詳細な制約は別ファイルの[データ定義](data-definitions.md)を参照。
+
+| アーティファクト固定ID | データ定義固定ID |
+| --- | --- |
+| ticket.number | [vo.ticket.number](data-definitions.md#vo.ticket.number) |
 
 ## 起動定義の対応
 

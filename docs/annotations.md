@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | @role(...) | Role | ロールを表すクラス |
 | @artifact(...) | Artifact | 入出力物を表すクラス |
+| @value_object(...) | ValueObject | 値の型・制約を持つPydanticモデル |
 | @mutex(...) | Mutex | 排他を表すクラス |
 | @trigger(...) | TriggerDeclaration | 起動条件を表すクラス |
 | @binding(...) | Placement | パイプライン配置を表すクラス |
@@ -67,7 +68,7 @@ BUILD = BuildConfig(
 
 ## 全要素を注釈にする例
 
-[チケットサンプル](../examples/apps/tickets/contract.py)は、親の構成をcontract.py、子の処理を[steps.py](../examples/apps/tickets/steps.py)、共通のロール・アーティファクトを[definitions.py](../examples/apps/tickets/definitions.py)に分けています。ステップの実装関数へ直接注釈を付け、親とRegistryから同じ関数を参照します。属性の読み取りには `declaration(TicketNumber).key` のように共通プロトコルを使います。
+[チケットサンプル](../examples/apps/tickets/contract.py)は、親の構成をcontract.py、子の処理を[steps.py](../examples/apps/tickets/steps.py)、共通のロール・アーティファクトを[definitions.py](../examples/apps/tickets/definitions.py)に分けています。ステップの実装関数へ直接注釈を付け、親とRegistryから同じ関数を参照します。属性の読み取りには `declaration(RequestedTicketNumber).key` のように共通プロトコルを使います。
 
 ```python
 from myworkflow import role, artifact, trigger
@@ -79,7 +80,7 @@ class Operator:
 
 
 @artifact(id="ticket.number", name="受付番号", key="number")
-class TicketNumber:
+class RequestedTicketNumber:
     pass
 
 
@@ -87,8 +88,10 @@ class TicketNumber:
     id="ticket.requested",
     name="発行依頼",
     actor=Operator,
-    mapping=((TicketNumber, "受付番号"),),
+    mapping=((RequestedTicketNumber, "受付番号"),),
 )
 class Requested:
     pass
 ```
+
+受付番号の値の型は[value_objects.py](../examples/apps/tickets/value_objects.py)の`TicketNumber`で定義します。`@value_object(...)`をPydanticモデルに付け、`@artifact(..., value_object=TicketNumber)`で利用箇所と型を結びます。値の型と、処理内の入出力物は別の宣言です。

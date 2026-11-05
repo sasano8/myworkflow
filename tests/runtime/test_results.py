@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import pytest
 
-from examples.apps.tickets.contract import SPEC
+from examples.apps.tickets.contract import SPEC, compiled
 from myworkflow.adapters.sqlite import SQLiteDatabase, SQLiteExecutionStore
 from myworkflow.executable import Context, Engine, Principal, Program, Registry
 from myworkflow.contracts.errors import (
@@ -39,7 +39,7 @@ def make_engine(tmp_path):
 
         store = SQLiteExecutionStore(SQLiteDatabase(tmp_path / "runs.db"))
         engine = Engine(
-            Program(spec),
+            Program(spec, value_objects=compiled.catalog.value_objects),
             registry,
             object(),
             locks=InProcessLockProvider(),
