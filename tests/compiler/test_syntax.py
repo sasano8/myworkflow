@@ -88,3 +88,100 @@ def test_workflow_class_keeps_named_members_and_constructor_identity():
         pass
     assert workflow(id='w.empty', name='空の業務')(Definition) is Definition
     assert compile_workflows(Definition).workflow(Definition).name == '空の業務'
+
+
+def test_catalog_can_use_only_annotated_references():
+    from myworkflow import artifact, binding, mutex, role, trigger as trigger_annotation
+
+    @role(id='r.operator', name='担当者', display_name='担当')
+    class Operator:
+        pass
+
+    @artifact(id='a.number', name='番号', key='number')
+    class Number:
+        pass
+
+    @mutex(id='s.lock', name='番号の排他', keys=(Number,))
+    class NumberLock:
+        pass
+
+    @step(id='s.save', reads=(Number,), uses=((Number, '参照'),))
+    def save(ctx):
+        """番号を保存する。"""
+        raise AssertionError('Compilation must not execute steps')
+
+    @pipeline(id='p.issue', inputs=(Number,), steps=(NumberLock, save))
+    class Issue:
+        pass
+
+    @workflow(id='w.issue')
+    class Issuance:
+        @trigger_annotation(id='t.issue', name='発行', actor=Operator, mapping=((Number, '番号'),))
+        class Requested:
+            pass
+
+        @binding(id='b.issue', pipeline=Issue, triggers=(Requested,), roles=(('system', Operator),))
+        class IssueNumber:
+            pass
+
+    compiled = compile_workflows(Issuance, artifacts=(Number,), roles=(Operator,))
+    assert compiled.program.model.artifacts == (declaration(Number),)
+    assert compiled.program.steps['s.lock'].keys == ('a.number',)
+    assert compiled.program.steps['s.save'].reads == ('a.number',)
+    assert compiled.program.steps['s.save'].summary == '番号を保存する。'
+    assert compiled.workflow(Issuance).bindings[0].triggers[0].actor_role_id == 'r.operator'
+
+    # Separate implementations can reuse an annotated contract without repeating its ID.
+    from myworkflow import annotate
+    @annotate(save)
+    def implementation(ctx):
+        pass
+    assert declaration(implementation) is declaration(save)
+
+
+def test_annotated_states_transitions_and_compensation_compile():
+    from myworkflow import (binding, operation, state, transition,
+                            trigger as trigger_annotation, role)
+
+    @role(id='r.system', name='システム', display_name='システム')
+    class System:
+        pass
+
+    @operation(id='c.undo')
+    def undo(ctx):
+        pass
+
+    @step(id='s.run', summary='処理する。', compensate=undo)
+    def run(ctx):
+        pass
+
+    @pipeline(id='p.run', steps=(run,))
+    class Run:
+        pass
+
+    @workflow(id='w.run')
+    class Flow:
+        @state(id='state.ready', name='準備', initial=True)
+        class Ready:
+            pass
+
+        @state(id='state.done', name='完了')
+        class Done:
+            pass
+
+        @trigger_annotation(id='t.run', name='実行', actor=System)
+        class Requested:
+            pass
+
+        @binding(id='b.run', pipeline=Run, triggers=(Requested,), roles=(('system', System),))
+        class Execute:
+            pass
+
+        @transition(id='tr.run', name='完了する', source=Ready, target=Done,
+                    binding=Execute, trigger=Requested)
+        class Complete:
+            pass
+
+    compiled = compile_workflows(Flow)
+    assert compiled.program.steps['s.run'].compensate == 'c.undo'
+    assert compiled.graphs[0].transitions[0].target.id == 'state.done'

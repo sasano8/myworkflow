@@ -1,14 +1,22 @@
 # 注釈と拡張
 
-専用構文は `@step`・`@pipeline`・`@workflow` です。内部では型付き宣言を作り、共通の `対象.__myworkflow__` へ取り付けます。関数のラップや実行方式の変更は行いません。
+ロール・アーティファクト・排他・トリガー・配置・状態・遷移も、すべて注釈形式で宣言できます。内部では型付き宣言を作り、共通の `対象.__myworkflow__` へ取り付けます。関数のラップや実行方式の変更は行いません。
 
 | 構文 | 保持する宣言 | 対象 |
 | --- | --- | --- |
+| @role(...) | Role | ロールを表すクラス |
+| @artifact(...) | Artifact | 入出力物を表すクラス |
+| @mutex(...) | Mutex | 排他を表すクラス |
+| @trigger(...) | TriggerDeclaration | 起動条件を表すクラス |
+| @binding(...) | Placement | パイプライン配置を表すクラス |
+| @state(...) | StateDeclaration | 業務状態を表すクラス |
+| @transition(...) | TransitionDeclaration | 状態遷移を表すクラス |
+| @operation(...) | Operation | 補償処理の関数・クラス |
 | @step(...) | StepDeclaration | ステップの処理関数 |
 | @pipeline(...) | PipelineDeclaration | stepsで構成を示す関数 |
 | @workflow(...) | WorkflowDeclaration | 名前付き属性を持つクラス、またはmembersを指定した関数 |
 
-IDは必須です。省略した名前には関数名・クラス名、ステップの概要にはdocstringを使います。各宣言と同じ標準属性とextensionsを指定できます。
+IDは必須です。step・pipeline・workflowで省略した名前には関数名・クラス名、ステップの概要にはdocstringを使います。各宣言と同じ標準属性とextensionsを指定できます。
 
 ```python
 from myworkflow import step
@@ -53,3 +61,24 @@ BUILD = BuildConfig(
 ```
 
 独自出力器は型付きモデル・状態グラフ・拡張属性を直接参照できます。extension_encoderはJSON出力の境界だけで使い、元の注釈を書き換えません。業務JSON・IR・辞書スナップショットは拡張属性を保持します。JSONから任意のPythonオブジェクトを自動復元する機能はありません。
+
+## 全要素を注釈にする例
+
+[チケットサンプル](../examples/apps/tickets/contract.py)では、全要素を注釈付きクラスで宣言します。参照にはクラスそのものを渡し、属性の読み取りには `declaration(Number).key` のように共通プロトコルを使います。`annotate(注釈付きクラス)` で別の実装関数へ同じ契約を付けられます。
+
+```python
+from myworkflow import role, artifact, trigger
+
+@role(id='role.operator', name='窓口担当者', display_name='担当者')
+class Operator:
+    pass
+
+@artifact(id='ticket.number', name='受付番号', key='number')
+class TicketNumber:
+    pass
+
+@trigger(id='ticket.requested', name='発行依頼', actor=Operator,
+         mapping=((TicketNumber, '受付番号'),))
+class Requested:
+    pass
+```

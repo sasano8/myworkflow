@@ -1,29 +1,57 @@
-"""Code-owned ticket declarations; SPEC is only a generated compatibility snapshot."""
-from myworkflow import Artifact, Role, workflow
-from myworkflow.compiler.declarations import bind, compile_workflows, trigger
-from myworkflow.compiler.pipelines import Mutex, PipelineDeclaration, StepDeclaration
+"""Annotated ticket declarations; SPEC is a generated compatibility snapshot."""
+from myworkflow import artifact, binding, mutex, pipeline, role, step, trigger, workflow
+from myworkflow.compiler.declarations import compile_workflows
 
-system = Role('role.system', 'チケット管理システム', 'システム')
-operator = Role('ticket.operator', '窓口担当者', '受付担当')
 
-number = Artifact('ticket.number', '受付番号', 'number')
-receipt = Artifact('ticket.receipt', '発行結果', 'receipt')
+@role(id='role.system', name='チケット管理システム', display_name='システム')
+class system:
+    pass
 
-number_lock = Mutex('ticket.lock', '受付番号の排他', (number,))
-save_ticket = StepDeclaration(
-    'ticket.save', 'チケット保存', '受付番号を重複なく登録し、発行結果を返す。',
-    reads=(number,), writes=(receipt,),
-    uses=((number, 'DB作成'), (receipt, '保持')),
-)
-issue_ticket = PipelineDeclaration(
-    'ticket.issue', 'チケット発行', (number,), (receipt,), (number_lock, save_ticket),
-)
+
+@role(id='ticket.operator', name='窓口担当者', display_name='受付担当')
+class operator:
+    pass
+
+
+@artifact(id='ticket.number', name='受付番号', key='number')
+class number:
+    pass
+
+
+@artifact(id='ticket.receipt', name='発行結果', key='receipt')
+class receipt:
+    pass
+
+
+@mutex(id='ticket.lock', name='受付番号の排他', keys=(number,))
+class number_lock:
+    pass
+
+
+@step(id='ticket.save', name='チケット保存',
+      summary='受付番号を重複なく登録し、発行結果を返す。',
+      reads=(number,), writes=(receipt,), uses=((number, 'DB作成'), (receipt, '保持')))
+class save_ticket:
+    pass
+
+
+@pipeline(id='ticket.issue', name='チケット発行', inputs=(number,),
+          produces=(receipt,), steps=(number_lock, save_ticket))
+class issue_ticket:
+    pass
 
 
 @workflow(id='ticket.workflow', name='窓口でのチケット発行')
 class TicketIssuance:
-    requested = trigger('ticket.trigger', '担当者が発行を依頼', operator, ((number, '受付番号'),))
-    issue = bind('ticket.binding', issue_ticket, (requested,), (('system', system),))
+    @trigger(id='ticket.trigger', name='担当者が発行を依頼', actor=operator,
+             mapping=((number, '受付番号'),))
+    class requested:
+        pass
+
+    @binding(id='ticket.binding', pipeline=issue_ticket, triggers=(requested,),
+             roles=(('system', system),))
+    class issue:
+        pass
 
 
 compiled = compile_workflows(TicketIssuance, artifacts=(number, receipt), roles=(system, operator))

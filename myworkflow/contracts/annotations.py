@@ -24,6 +24,7 @@ F = TypeVar('F', bound=Callable)
 
 def annotate(spec: object) -> Callable[[F], F]:
     """Attach a declaration; leave signatures, identity and execution unchanged."""
+    spec = declaration(spec)
     if not isinstance(getattr(spec, 'id', None), str) or not spec.id:
         raise ContractError('Annotation requires a declaration with a nonempty string ID')
     def decorate(target: F) -> F:
