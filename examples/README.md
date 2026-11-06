@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | [apps/purchase](apps/purchase) | 申請から承認・発注確定まで（[画面機能一覧](apps/purchase/docs/screens.md)付き） | [docs](apps/purchase/docs/README.md) |
 | [apps/tickets](apps/tickets) | チケット発行 | [docs](apps/tickets/docs/README.md) |
-| [apps/myworkflow_web](apps/myworkflow_web) | myworkflow自身をWebアプリとして提供する要件案（未実装） | [手書きの要件入力](apps/myworkflow_web/README.md) |
+| [apps/myworkflow_web](apps/myworkflow_web) | myworkflow自身のWebアプリの要件カタログ（実行機能は未実装） | [docs](apps/myworkflow_web/docs/README.md)・[要件入力](apps/myworkflow_web/README.md) |
 
 ## 機能単位の技術検証
 
@@ -24,4 +24,4 @@
 
 | [feature_demos/cron_reporting](feature_demos/cron_reporting) | cronによる日次実行・タイムゾーン・同じ対象日の再実行 | [docs](feature_demos/cron_reporting/docs/README.md) |
 
-myworkflow_webの要件案を除き、各例のdocsは `python -m scripts.generate_docs` またはpre-commit hookで生成する。実装する機能の保証範囲や残課題は、各生成物とリポジトリの設計文書で確認する。
+各例のdocsは `python -m scripts.generate_docs` またはpre-commit hookで生成する。実装する機能の保証範囲や残課題は、各生成物とリポジトリの設計文書で確認する。

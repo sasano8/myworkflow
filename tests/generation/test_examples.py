@@ -57,6 +57,7 @@ def test_generated_documents_are_grouped_by_catalog_and_local_links_resolve():
         "examples/feature_demos/approval_values/docs",
         "examples/feature_demos/declarative_review/docs",
         "examples/apps/tickets/docs",
+        "examples/apps/myworkflow_web/docs",
         "examples/feature_demos/prepared_approval/docs",
         "examples/feature_demos/manual_receipt/docs",
         "examples/feature_demos/product_catalogs/docs",

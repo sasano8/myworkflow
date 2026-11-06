@@ -131,12 +131,27 @@ def outputs():
         manual_catalog, graphs=(manual_graph,), notice=DOCUMENTATION_NOTICE
     ).items():
         result["examples/feature_demos/manual_receipt/docs/" + name] = text
+    from examples.apps.myworkflow_web.contract import (
+        CATALOG as WEB_CATALOG,
+        NOTICE as WEB_NOTICE,
+        compiled as WEB_COMPILED,
+    )
+    from examples.apps.myworkflow_web.screens import SCREENS as WEB_SCREENS
     from examples.apps.purchase.screens import SCREENS
     from myworkflow.generation.screens import render_screens
 
     result["examples/apps/purchase/docs/screens.md"] = render_screens(
         SCREENS, contract.program.model
     )
+    for name, text in workflow_documents(WEB_CATALOG, notice=WEB_NOTICE).items():
+        result["examples/apps/myworkflow_web/docs/" + name] = text
+    result["examples/apps/myworkflow_web/docs/screens.md"] = render_screens(
+        WEB_SCREENS, WEB_CATALOG
+    )
+    result["examples/apps/myworkflow_web/docs/requirements.md"] = document_program(
+        WEB_COMPILED.program
+    ).replace("# 業務要件\n", "# 業務要件\n\n" + WEB_NOTICE + "\n", 1)
+
     from examples.feature_demos.cron_reporting.contract import (
         CATALOG as CRON_CATALOG,
         SCHEDULE,
@@ -182,11 +197,13 @@ def outputs():
         "examples/feature_demos/declarative_review/docs": "申請審査",
         "examples/feature_demos/prepared_approval/docs": "アーティファクトの準備・確定",
         "examples/apps/tickets/docs": "チケット発行",
+        "examples/apps/myworkflow_web/docs": "myworkflow Webアプリ（要件定義・未実装）",
         "examples/feature_demos/manual_receipt/docs": "メールで届いた申請書の人手受付",
     }
     source_files = {
         "purchase": "contract.py",
         "tickets": "contract.py",
+        "myworkflow_web": "contract.py",
         "declarative_review": "contract.py",
         "approval_values": "application.py",
         "prepared_approval": "application.py",
@@ -214,7 +231,10 @@ def outputs():
             "| ドキュメント | 内容 |",
             "| --- | --- |",
         ]
-        if directory == "examples/apps/purchase/docs":
+        if directory in (
+            "examples/apps/purchase/docs",
+            "examples/apps/myworkflow_web/docs",
+        ):
             lines[-2:-2] = ["画面機能定義：[screens.py](../screens.py)", ""]
         lines.extend(f"| [{file}]({file}) | {labels[file]} |" for file in files)
         if directory == cron_directory.rstrip("/"):
