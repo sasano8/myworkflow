@@ -3,6 +3,7 @@
 from myworkflow import declaration
 from myworkflow.contracts.screens import Screen, ScreenFeature, WorkflowCall
 from . import contract as c
+from . import requirements as r
 
 
 def call(workflow, placement, trigger):
@@ -13,27 +14,28 @@ def call(workflow, placement, trigger):
     )
 
 
+def feature(requirement, event, workflow_call=None):
+    spec = declaration(requirement)
+    return ScreenFeature(spec.id, spec.name, event, spec.summary, workflow_call)
+
+
 SCREENS = (
     Screen(
         "web.screen.projects",
         "プロジェクト一覧",
         (
-            ScreenFeature(
-                "WEB-001",
-                "プロジェクト一覧の表示",
+            feature(
+                r.ProjectListing,
                 "一覧を開く",
-                "プロジェクト一覧を表示する",
                 call(
                     c.ProjectManagement,
                     c.ProjectManagement.browse,
                     c.ProjectManagement.BrowseRequested,
                 ),
             ),
-            ScreenFeature(
-                "WEB-002",
-                "プロジェクト作成",
+            feature(
+                r.ProjectCreation,
                 "作成ボタンを押す",
-                "プロジェクトを作成できる",
                 call(
                     c.ProjectManagement,
                     c.ProjectManagement.create,
@@ -46,44 +48,36 @@ SCREENS = (
         "web.screen.project",
         "プロジェクト詳細",
         (
-            ScreenFeature(
-                "WEB-003",
-                "プロジェクト詳細の表示",
+            feature(
+                r.ProjectDetails,
                 "プロジェクトを選ぶ",
-                "選択したプロジェクトの専用ページを表示する",
                 call(
                     c.DocumentReview,
                     c.DocumentReview.review,
                     c.DocumentReview.ReviewRequested,
                 ),
             ),
-            ScreenFeature(
-                "WEB-006",
-                "文書トップページの表示",
+            feature(
+                r.DocumentTop,
                 "文書トップを開く",
-                "ドキュメントのトップページを表示する",
                 call(
                     c.DocumentReview,
                     c.DocumentReview.review,
                     c.DocumentReview.ReviewRequested,
                 ),
             ),
-            ScreenFeature(
-                "WEB-011",
-                "手動ビルド",
+            feature(
+                r.ManualBuild,
                 "ビルドボタンを押す",
-                "手動ビルドボタンを持つ",
                 call(
                     c.RequirementsDevelopment,
                     c.RequirementsDevelopment.build,
                     c.RequirementsDevelopment.BuildRequested,
                 ),
             ),
-            ScreenFeature(
-                "WEB-013",
-                "プロジェクト削除",
+            feature(
+                r.ProjectDeletion,
                 "削除操作を行う",
-                "プロジェクトを削除できる",
                 call(
                     c.ProjectManagement,
                     c.ProjectManagement.delete,
@@ -96,17 +90,10 @@ SCREENS = (
         "web.screen.settings",
         "プロジェクト設定",
         (
-            ScreenFeature(
-                "WEB-004",
-                "設定画面を開く",
-                "設定を開く",
-                "プロジェクトの設定画面を持つ",
-            ),
-            ScreenFeature(
-                "WEB-005",
-                "GitHub保存先の設定",
+            feature(r.ProjectSettings, "設定を開く"),
+            feature(
+                r.GitHubDestination,
                 "GitHub保存先を保存する",
-                "保存先にGitHubを指定できる",
                 call(
                     c.ProjectConfiguration,
                     c.ProjectConfiguration.configure,
@@ -119,17 +106,10 @@ SCREENS = (
         "web.screen.guide",
         "開発ガイド設定",
         (
-            ScreenFeature(
-                "WEB-014",
-                "開発ガイド設定画面",
-                "開発ガイドを開く",
-                "プロジェクトごとに開発ガイドを設定する画面を持つ",
-            ),
-            ScreenFeature(
-                "WEB-015",
-                "push先・ブランチ戦略の設定",
+            feature(r.DevelopmentGuide, "開発ガイドを開く"),
+            feature(
+                r.BranchStrategy,
                 "push先・ブランチ戦略を保存する",
-                "push先と作業ブランチの切り方の戦略を設定する。選択肢・既定値は未決",
                 call(
                     c.ProjectConfiguration,
                     c.ProjectConfiguration.configure,
@@ -142,11 +122,9 @@ SCREENS = (
         "web.screen.templates",
         "開発ガイドテンプレート管理",
         (
-            ScreenFeature(
-                "WEB-016",
-                "開発ガイドテンプレートの管理",
+            feature(
+                r.GuideTemplateManagement,
                 "テンプレートを管理する",
-                "プロジェクトの設定画面とは別に、開発ガイドテンプレートを管理する画面を持つ",
                 call(
                     c.TemplateManagement,
                     c.TemplateManagement.template,
@@ -159,33 +137,27 @@ SCREENS = (
         "web.screen.chat",
         "チャット",
         (
-            ScreenFeature(
-                "WEB-008",
-                "対話による要件入力",
+            feature(
+                r.RequirementChat,
                 "要件を送信する",
-                "利用者が対話で要件を伝えられる",
                 call(
                     c.RequirementsDevelopment,
                     c.RequirementsDevelopment.revise,
                     c.RequirementsDevelopment.ReviseRequested,
                 ),
             ),
-            ScreenFeature(
-                "WEB-009",
-                "要件のコード・文書反映",
+            feature(
+                r.RequirementReflection,
                 "要件をコードへ反映する",
-                "対話内容をコードへ反映し、対応するドキュメントを生成する",
                 call(
                     c.RequirementsDevelopment,
                     c.RequirementsDevelopment.revise,
                     c.RequirementsDevelopment.ReviseRequested,
                 ),
             ),
-            ScreenFeature(
-                "WEB-010",
-                "開発環境の自動準備",
+            feature(
+                r.DevelopmentEnvironment,
                 "開発環境の準備を依頼する",
-                "Codespacesなどで開発環境を自動準備する。提供基盤は未決",
                 call(
                     c.RequirementsDevelopment,
                     c.RequirementsDevelopment.revise,
@@ -198,11 +170,9 @@ SCREENS = (
         "web.screen.documents",
         "ドキュメント",
         (
-            ScreenFeature(
-                "WEB-007",
-                "MkDocs文書の閲覧",
+            feature(
+                r.MkDocsViewing,
                 "生成文書を閲覧する",
-                "プロジェクトのMkDocsサイトをそのまま閲覧する体験を目指す。表示方式は未決",
                 call(
                     c.DocumentReview,
                     c.DocumentReview.review,
@@ -215,11 +185,9 @@ SCREENS = (
         "web.screen.build",
         "ビルド状況",
         (
-            ScreenFeature(
-                "WEB-012",
-                "要件反映後の自動ビルド",
+            feature(
+                r.AutomaticBuild,
                 "要件反映完了を受ける",
-                "チャットによる要件反映後に自動ビルドできる",
                 call(
                     c.RequirementsDevelopment,
                     c.RequirementsDevelopment.build,

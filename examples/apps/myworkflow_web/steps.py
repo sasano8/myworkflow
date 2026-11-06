@@ -2,6 +2,7 @@
 
 from myworkflow import step
 from myworkflow.runtime.context import Context
+from . import requirements as r
 from .definitions import (
     ProjectQuery,
     ProjectList,
@@ -25,7 +26,7 @@ from .definitions import (
     reads=(ProjectQuery,),
     writes=(ProjectList,),
     uses=((ProjectQuery, "参照"), (ProjectList, "保持")),
-    extensions={"requirements": ("WEB-001", "WEB-017")},
+    extensions={"requirements": r.requirement_ids(r.ProjectListing, r.CodeAsSource)},
 )
 def list_projects(ctx: Context) -> None:
     raise NotImplementedError("Requirements outline only")
@@ -38,7 +39,7 @@ def list_projects(ctx: Context) -> None:
     reads=(ProjectRequest,),
     writes=(Project,),
     uses=((ProjectRequest, "参照"), (Project, "保持")),
-    extensions={"requirements": ("WEB-002", "WEB-003")},
+    extensions={"requirements": r.requirement_ids(r.ProjectCreation, r.ProjectDetails)},
 )
 def create_project(ctx: Context) -> None:
     raise NotImplementedError("Requirements outline only")
@@ -51,7 +52,11 @@ def create_project(ctx: Context) -> None:
     reads=(Project, Settings),
     writes=(Settings,),
     uses=((Project, "参照"), (Settings, "参照")),
-    extensions={"requirements": ("WEB-004", "WEB-005", "WEB-014", "WEB-015")},
+    extensions={
+        "requirements": r.requirement_ids(
+            r.ProjectSettings, r.GitHubDestination, r.DevelopmentGuide, r.BranchStrategy
+        )
+    },
 )
 def save_settings(ctx: Context) -> None:
     raise NotImplementedError("Requirements outline only")
@@ -64,7 +69,7 @@ def save_settings(ctx: Context) -> None:
     reads=(Template,),
     writes=(Template,),
     uses=((Template, "参照"),),
-    extensions={"requirements": ("WEB-016",)},
+    extensions={"requirements": r.requirement_ids(r.GuideTemplateManagement)},
 )
 def manage_template(ctx: Context) -> None:
     raise NotImplementedError("Requirements outline only")
@@ -77,7 +82,7 @@ def manage_template(ctx: Context) -> None:
     reads=(ChatRequest,),
     writes=(),
     uses=((ChatRequest, "参照"),),
-    extensions={"requirements": ("WEB-010",)},
+    extensions={"requirements": r.requirement_ids(r.DevelopmentEnvironment)},
 )
 def prepare_environment(ctx: Context) -> None:
     raise NotImplementedError("Requirements outline only")
@@ -90,7 +95,14 @@ def prepare_environment(ctx: Context) -> None:
     reads=(ChatRequest,),
     writes=(ChangeSet, BuildRequest),
     uses=((ChatRequest, "参照"), (ChangeSet, "保持"), (BuildRequest, "保持")),
-    extensions={"requirements": ("WEB-008", "WEB-009", "WEB-017", "WEB-020")},
+    extensions={
+        "requirements": r.requirement_ids(
+            r.RequirementChat,
+            r.RequirementReflection,
+            r.CodeAsSource,
+            r.ChangeTraceability,
+        )
+    },
 )
 def apply_requirements(ctx: Context) -> None:
     raise NotImplementedError("Requirements outline only")
@@ -104,13 +116,13 @@ def apply_requirements(ctx: Context) -> None:
     writes=(BuildResult,),
     uses=((BuildRequest, "参照"), (BuildResult, "保持")),
     extensions={
-        "requirements": (
-            "WEB-009",
-            "WEB-011",
-            "WEB-012",
-            "WEB-018",
-            "WEB-019",
-            "WEB-020",
+        "requirements": r.requirement_ids(
+            r.RequirementReflection,
+            r.ManualBuild,
+            r.AutomaticBuild,
+            r.LastSuccessfulVersion,
+            r.PreviewBeforeFinalization,
+            r.ChangeTraceability,
         )
     },
 )
@@ -125,7 +137,14 @@ def build_preview(ctx: Context) -> None:
     reads=(Project,),
     writes=(DisplayedVersion,),
     uses=((Project, "参照"), (DisplayedVersion, "保持")),
-    extensions={"requirements": ("WEB-006", "WEB-007", "WEB-018", "WEB-020")},
+    extensions={
+        "requirements": r.requirement_ids(
+            r.DocumentTop,
+            r.MkDocsViewing,
+            r.LastSuccessfulVersion,
+            r.ChangeTraceability,
+        )
+    },
 )
 def show_documents(ctx: Context) -> None:
     raise NotImplementedError("Requirements outline only")
@@ -138,7 +157,7 @@ def show_documents(ctx: Context) -> None:
     reads=(Project,),
     writes=(DeletionResult,),
     uses=((Project, "参照"), (DeletionResult, "保持")),
-    extensions={"requirements": ("WEB-013",)},
+    extensions={"requirements": r.requirement_ids(r.ProjectDeletion)},
 )
 def delete_project(ctx: Context) -> None:
     raise NotImplementedError("Requirements outline only")

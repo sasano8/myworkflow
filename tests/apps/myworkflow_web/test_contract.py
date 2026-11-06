@@ -1,7 +1,10 @@
 """Validate requirement traceability and screen entry points before implementation."""
 
-from pathlib import Path
-import re
+import pytest
+
+from myworkflow.contracts.errors import ContractError
+from examples.apps.myworkflow_web import requirements as r
+from examples.apps.myworkflow_web.documentation import requirement_references
 
 from myworkflow import declaration
 from myworkflow.contracts.screens import validate_screens
@@ -13,17 +16,26 @@ from examples.apps.myworkflow_web.contract import (
 from examples.apps.myworkflow_web.screens import SCREENS
 
 
-def test_all_input_requirements_have_catalog_or_screen_references():
-    source = (
-        Path(__file__).resolve().parents[3] / "examples/apps/myworkflow_web/README.md"
-    )
-    requested = set(re.findall(r"^\| (WEB-\d+) \|", source.read_text(), re.MULTILINE))
-    declared = {feature.id for screen in SCREENS for feature in screen.features}
-    for entity in CATALOG.entities:
-        declared.update(entity.extensions.get("requirements", ()))
-    assert requested
-    assert declared == requested
-    # This checks links, not semantic completeness or implemented behavior.
+def test_all_annotated_requirements_have_catalog_or_screen_references():
+    references = requirement_references(CATALOG, SCREENS)
+    assert set(references) == {declaration(target).id for target in r.REQUIREMENTS}
+
+
+def test_annotation_missing_from_inventory_is_rejected(monkeypatch):
+    monkeypatch.setattr(r, "REQUIREMENTS", r.REQUIREMENTS[1:])
+    with pytest.raises(ContractError, match="registered once"):
+        requirement_references(CATALOG, SCREENS)
+
+
+def test_new_requirement_without_screen_or_step_reference_is_rejected(monkeypatch):
+    @r.requirement(id="WEB-new", name="追加要件", summary="対応先がまだない")
+    class NewRequirement:
+        pass
+
+    monkeypatch.setattr(r, "NewRequirement", NewRequirement, raising=False)
+    monkeypatch.setattr(r, "REQUIREMENTS", (*r.REQUIREMENTS, NewRequirement))
+    with pytest.raises(ContractError, match="missing=.*WEB-new"):
+        requirement_references(CATALOG, SCREENS)
 
 
 def test_screen_calls_belong_to_the_declared_workflows():

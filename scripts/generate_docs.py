@@ -137,11 +137,15 @@ def outputs():
         compiled as WEB_COMPILED,
     )
     from examples.apps.myworkflow_web.screens import SCREENS as WEB_SCREENS
+    from examples.apps.myworkflow_web.documentation import render_requirement_catalog
     from examples.apps.purchase.screens import SCREENS
     from myworkflow.generation.screens import render_screens
 
     result["examples/apps/purchase/docs/screens.md"] = render_screens(
         SCREENS, contract.program.model
+    )
+    result["examples/apps/myworkflow_web/docs/requirement-catalog.md"] = (
+        render_requirement_catalog(WEB_CATALOG, WEB_SCREENS)
     )
     for name, text in workflow_documents(WEB_CATALOG, notice=WEB_NOTICE).items():
         result["examples/apps/myworkflow_web/docs/" + name] = text
@@ -183,6 +187,7 @@ def outputs():
         "workflows.md": "ワークフロー一覧・未配置の定義",
         "shared-definitions.md": "処理・ロール・データの共有定義",
         "requirements.md": "業務要件・型・実装対応",
+        "requirement-catalog.md": "注釈付きの要件と画面・処理の対応",
         "business.md": "業務要件と受入条件の対応",
         "acceptance.md": "受入シナリオ",
         "data-definitions.md": "データ定義（1項目1行）",

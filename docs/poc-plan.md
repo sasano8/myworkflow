@@ -15,6 +15,10 @@ Pythonの業務契約からインターフェース・概要を生成し、実�
 詳細な状態機械・補償・復旧を概要表の外へ置くこと自体は見直し理由にしない。
 完了した計画は掲載しない。検証根拠はテスト、[PoC評価](poc-evaluation.md)、[受入評価](acceptance-evaluation.md)、[往復品質](requirements-quality.md)を参照。
 
+## AIによる要件変更
+
+- [ ] [注釈を正本にする対策](quality/annotation-first.md)の残タスク：開発ガイド、Markdownのみの変更検出、意味の充足を含むAI評価、Linear登録。
+
 ## 受入と品質
 
 - [ ] 顧客による生成業務フロー・受入条件のレビューと、工数・トークン削減の実測。
